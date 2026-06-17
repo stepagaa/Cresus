@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a1a15">
+<meta name="theme-color" content="#0a0f1e">
 <title>Crésus — chances simples</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,10 +27,15 @@
   .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
   button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
 
-  header{display:flex;align-items:baseline;justify-content:space-between;padding:18px 2px 14px;border-bottom:1px solid var(--line)}
-  header h1{font-size:23px;font-weight:800;color:var(--ivory);letter-spacing:-.02em}
-  header h1 .c{color:var(--gold)}
-  header .tag{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--sage-dim)}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;flex-direction:column;gap:5px}
+  .brand h1{font-size:22px;font-weight:800;color:var(--ivory);letter-spacing:-.02em}
+  .brand h1 .c{color:var(--gold)}
+  .brand .tag{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sage-dim)}
+  .hbal{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .hbal .solde{font-family:var(--mono);font-size:24px;line-height:1;color:var(--ivory);font-weight:500}
+  .hbal .pnl{font-family:var(--mono);font-size:14px;line-height:1.2}
+  .hbal .mise{font-family:var(--mono);font-size:10.5px;color:var(--sage-dim);margin-top:2px}
 
   /* ===== CARTES COUPLES ===== */
   #cards{margin-top:16px}
@@ -68,7 +73,7 @@
   @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
   .cpl-mise{border-left:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;padding:9px 14px}
   .cpl-mise .ph{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:4px}
-  .cpl-mise .m{font-family:var(--mono);font-size:25px;color:var(--gold);line-height:1;font-weight:500}
+  .cpl-mise .m{font-family:var(--mono);font-size:20px;color:var(--gold);line-height:1;font-weight:500}
   .cpl-mise .mu{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
 
   /* ===== SECTIONS ===== */
@@ -128,8 +133,15 @@
 </head>
 <body>
   <header>
-    <h1><span class="c">C</span>résus</h1>
-    <span class="tag">chances simples</span>
+    <div class="brand">
+      <h1><span class="c">C</span>résus</h1>
+      <span class="tag">chances simples</span>
+    </div>
+    <div class="hbal">
+      <div class="solde mono" id="solde">100,00 €</div>
+      <div class="pnl mono" id="pnl">0,00 €</div>
+      <div class="mise mono" id="wagered">misé 0,00 €</div>
+    </div>
   </header>
 
   <div id="cards"></div>
@@ -150,12 +162,7 @@
     </div>
   </section>
 
-  <!-- LEDGER -->
-  <div class="ledger">
-    <div class="cell"><div class="lab">Solde</div><div class="val mono" id="solde">200</div><div class="eur mono" id="soldeEur">= 100,00 €</div></div>
-    <div class="cell"><div class="lab">+ / −</div><div class="val small mono" id="pnl">0</div><div class="eur mono">pièces</div></div>
-    <div class="cell"><div class="lab">Misé</div><div class="val small mono" id="wagered">0</div><div class="eur mono">pièces</div></div>
-  </div>
+  <!-- LEDGER déplacé dans l'en-tête -->
 
   <!-- JOURNAL -->
   <section>
@@ -166,8 +173,8 @@
   <details class="set">
     <summary><span>Réglages</span><span style="color:var(--gold)">⚙</span></summary>
     <div class="set-body">
-      <div class="field"><label>Capital de départ<span class="hint">en pièces · remet le solde</span></label><input type="number" id="inBank" inputmode="numeric" value="200"></div>
-      <div class="field"><label>Valeur d'une pièce<span class="hint">en € · pour l'affichage</span></label><input type="number" id="inPiece" inputmode="decimal" value="0.50" step="0.05"></div>
+      <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="100" step="1"></div>
+      <div class="field"><label>Mise de départ<span class="hint">en € · valeur d'1 pièce, base de la montante</span></label><input type="number" id="inPiece" inputmode="decimal" value="0.50" step="0.05"></div>
       <button class="reset-all" id="resetAll">Tout réinitialiser (solde, piste, journal)</button>
     </div>
   </details>
@@ -193,7 +200,7 @@ const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
 let S={
-  capital:200, pieceEur:0.5,
+  capitalEur:100, pieceEur:0.5, capital:200,
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[]
@@ -201,8 +208,9 @@ let S={
 function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 
-async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capital:S.capital,pieceEur:S.pieceEur,spins:S.spins})); }catch(e){} }
-async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.capital=o.capital??200; S.pieceEur=o.pieceEur??0.5; S.spins=o.spins||[]; } } }catch(e){} }
+function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
+async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins})); }catch(e){} }
+async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.pieceEur=o.pieceEur??0.5; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; recalcCapital(); } } }catch(e){} }
 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
@@ -235,7 +243,21 @@ function resolveC(ch,C,result){
   if(was){ if(ev==="won"||ev==="epuise") C.sig.phase="none"; else if(ev==="ride") C.sig.phase="play"; else C.sig.phase="await"; }
   if(C.sig.phase==="none" && balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; }
 }
-function partageC(ch,C){ const half=stakeC(C)/2; S.solde-=half; S.wagered+=half; C.pMise+=half; C.pBilan-=half; S.log.push({ch,r:"Z",amt:stakeC(C),ph:phaseLabel(C)}); }
+function zeroC(ch,C){
+  // Zéro pendant un coup joué = perte totale, on avance au palier suivant et on rejoue
+  // immédiatement (même côté, sans repasser par une boule d'observation).
+  const stake=stakeC(C), ph=phaseLabel(C);
+  S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
+  S.log.push({ch,r:"Z",amt:stake,ph});
+  if(C.phase==="m1"){
+    C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · zéro → massage 2"); }
+    else mt(CLABELS[ch].join("/")+" · zéro, palier suivant");
+  } else { // massage 2 : le zéro fait échouer la tentative en cours
+    nextTentC(C); if(C.phase!=="fini") mt(CLABELS[ch].join("/")+" · zéro, tentative suivante");
+  }
+  if(C.phase==="fini"){ C.sig.phase="none"; if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } }
+  else { C.sig.phase="play"; } // on reste en jeu, même côté, mise au nouveau palier
+}
 
 /* ---- alimentation d'un couple par le numéro courant (index CUR_I) ---- */
 function feedCouple(ch){
@@ -244,7 +266,7 @@ function feedCouple(ch){
   if(prev==="none"){ if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
   if(!isZero) C.acc[memb(n,ch)]++;
   if(prev==="await"){ if(!isZero){ C.sig.side=memb(n,ch); C.sig.obs=n; C.sig.phase="play"; } }
-  else { if(isZero){ partageC(ch,C); } else { resolveC(ch,C, memb(n,ch)===C.sig.side?"G":"P"); } }
+  else { if(isZero){ zeroC(ch,C); } else { resolveC(ch,C, memb(n,ch)===C.sig.side?"G":"P"); } }
 }
 
 /* ---- replay : tout est dérivé de S.spins ---- */
@@ -281,7 +303,7 @@ function buildCards(){
           <div class="half ha" id="${id}-ha"><span class="dot"></span><span class="nm">${A}</span><span class="jb">▶</span></div>
           <div class="half hb" id="${id}-hb"><span class="dot"></span><span class="nm">${B}</span><span class="jb">▶</span></div>
         </div>
-        <div class="cpl-mise"><div class="ph" id="${id}-ph">prêt</div><div class="m mono" id="${id}-m">1</div><div class="mu">pièces</div></div>
+        <div class="cpl-mise"><div class="ph" id="${id}-ph">prêt</div><div class="m mono" id="${id}-m">0,50 €</div><div class="mu">mise</div></div>
       </div>
     </div>`; }).join("");
 }
@@ -306,14 +328,13 @@ function render(){
       else if(C.sig.phase==="play"){ (C.sig.side==="a"?ha:hb).classList.add("on"); }
     }
     $(id+"-ph").textContent = C.phase==="fini"?"épuisé":(activeC(C)?phaseLabel(C):(C.pMise===0?"prêt":phaseLabel(C)));
-    $(id+"-m").textContent = C.phase==="fini"?"—":stakeC(C);
+    $(id+"-m").textContent = C.phase==="fini"?"—":eur(stakeC(C));
   }
 
-  $("solde").textContent=fmt(round2(S.solde));
-  $("soldeEur").textContent="= "+eur(S.solde);
+  $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
-  const pe=$("pnl"); pe.textContent=(pnl>0?"+":"")+fmt(pnl); pe.className="val small mono "+(pnl>0?"pos":pnl<0?"neg":"");
-  $("wagered").textContent=fmt(round2(S.wagered));
+  const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
+  $("wagered").textContent="misé "+eur(S.wagered);
 
   const l12=S.spins.slice(-12); $("count12").textContent=l12.length+"/12";
   const tr=$("track");
@@ -322,11 +343,11 @@ function render(){
 
   const lg=$("log"); const items=S.log.slice(-80).reverse();
   lg.innerHTML=items.length===0?'<li class="log-empty">Aucun coup joué pour l\'instant.</li>'
-    :items.map(e=>{ const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.r==="Z"?e.amt/2:e.amt;
+    :items.map(e=>{ const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.amt;
         const cpl=CLABELS[e.ch].map(s=>s[0]).join("/");
-        return `<li><span>${word} <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${fmt(amt)}</span></li>`; }).join("");
+        return `<li><span>${word} <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${eur(amt)}</span></li>`; }).join("");
 
-  $("inBank").value=S.capital; $("inPiece").value=S.pieceEur;
+  $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur;
 }
 
 /* ---- events ---- */
@@ -336,14 +357,14 @@ $("numAdd").addEventListener("click",addNumber);
 $("numIn").addEventListener("keydown",e=>{ if(e.key==="Enter") addNumber(); });
 $("undo").addEventListener("click",undoSpin);
 $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
-$("inBank").addEventListener("change",e=>{ const v=parseFloat(e.target.value)||0; S.capital=v; replay(false); render(); save(); });
-$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0,parseFloat(e.target.value)||0); render(); save(); });
+$("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
+$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0.01,parseFloat(e.target.value)||0.5); recalcCapital(); replay(false); render(); save(); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
 
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
-(async function(){ buildCards(); buildPad(); await load(); replay(false); render(); })();
+(async function(){ buildCards(); buildPad(); await load(); recalcCapital(); replay(false); render(); })();
 </script>
 </body>
 </html>
