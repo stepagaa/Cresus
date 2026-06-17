@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a1a15">
+<title>Crésus — chances simples</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --felt:#0a0f1e; --felt2:#121a31; --card:#0f1730; --card2:#16203f;
+    --line:#222c47; --line-soft:rgba(255,255,255,.05);
+    --gold:#e7b24e; --gold-dim:#39435f;
+    --rouge:#e0473f; --rouge-d:#b5322c; --noir:#0d1426; --noir-edge:#2c3650;
+    --ivory:#eaeef8; --sage:#8b93ad; --sage-dim:#586079;
+    --win:#33c08d; --lose:#e0473f;
+    --mono:"DM Mono",ui-monospace,monospace;
+    --disp:"Bricolage Grotesque",system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--felt);color:var(--ivory);font-family:var(--body)}
+  body{max-width:520px;margin:0 auto;padding:0 14px 44px;background:radial-gradient(130% 60% at 50% -18%, #16203f 0%, var(--felt) 62%);min-height:100vh}
+  h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:-.015em}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;padding:18px 2px 14px;border-bottom:1px solid var(--line)}
+  header h1{font-size:23px;font-weight:800;color:var(--ivory);letter-spacing:-.02em}
+  header h1 .c{color:var(--gold)}
+  header .tag{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--sage-dim)}
+
+  /* ===== CARTES COUPLES ===== */
+  #cards{margin-top:16px}
+  .cpl{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);margin-bottom:10px;transition:border-color .18s, box-shadow .18s, background .18s}
+  .cpl.bal{border-color:var(--gold);box-shadow:0 0 0 1px rgba(231,178,78,.22)}
+  .cpl.won{border-color:var(--win);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
+  .cpl-top{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
+  .cpl.bal .cpl-top{background:rgba(231,178,78,.05)}
+  .cpl.won .cpl-top{background:rgba(51,192,141,.06)}
+  .cpl-name{font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:-.01em}
+  .cpl-state{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-left:9px}
+  .cpl.won .cpl-state{color:var(--win)}
+  .cpl-score{font-family:var(--mono);font-size:21px;display:flex;align-items:baseline;gap:8px;color:var(--ivory)}
+  .cpl-score .dash{color:var(--sage-dim);font-size:16px}
+  .cpl-score b{font-weight:400}
+  .cpl.rn .cpl-score .a{color:#ff7b73}
+
+  .cpl-bot{display:grid;grid-template-columns:1.5fr 1fr}
+  .cpl-sig{display:flex;flex-direction:column}
+  .half{flex:1;display:flex;align-items:center;gap:9px;padding:9px 14px;min-height:39px;transition:background .15s}
+  .half+.half{border-top:1px solid var(--line-soft)}
+  .half .dot{width:9px;height:9px;border-radius:50%;flex:none;background:#34405f}
+  .cpl.rn .ha .dot{background:var(--rouge)}
+  .cpl.rn .hb .dot{background:#11192c;border:1px solid #38445f}
+  .half .nm{font-family:var(--body);font-weight:600;font-size:13px;color:var(--sage)}
+  .half .jb{margin-left:auto;font-size:11px;color:var(--gold);opacity:0;transition:opacity .15s}
+  .half.pending .dot{animation:pulse 1.15s infinite}
+  .half.pending .nm{color:var(--sage)}
+  .half.on{background:rgba(231,178,78,.12)}
+  .half.on .nm{color:var(--gold);font-weight:700}
+  .half.on .jb{opacity:1}
+  .cpl.rn .ha.on{background:rgba(224,71,63,.16)} .cpl.rn .ha.on .nm{color:#ff8c84}
+  .cpl.rn .hb.on{background:rgba(255,255,255,.07)} .cpl.rn .hb.on .nm{color:#fff}
+  .half.on .dot{box-shadow:0 0 0 3px rgba(231,178,78,.15)}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  .cpl-mise{border-left:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;padding:9px 14px}
+  .cpl-mise .ph{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:4px}
+  .cpl-mise .m{font-family:var(--mono);font-size:25px;color:var(--gold);line-height:1;font-weight:500}
+  .cpl-mise .mu{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
+
+  /* ===== SECTIONS ===== */
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:11px}
+  .sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .sec-h h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:600}
+
+  .zero-row{display:flex;margin-bottom:6px}
+  .num-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:14px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid transparent;transition:transform .08s}
+  .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}
+  .num.zero{flex:1;aspect-ratio:auto;padding:13px;background:#16203f;border:1px solid var(--line);color:var(--ivory);margin-right:6px;font-size:15px}
+  .num:active{transform:scale(.9)}
+  .typewrap{display:flex;gap:8px;margin-top:11px}
+  .typewrap input{flex:1;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center;min-width:0}
+  .typewrap input::placeholder{color:var(--sage-dim)}
+  .typewrap button{padding:0 22px;border-radius:11px;background:var(--felt2);border:1px solid var(--line);color:var(--gold);font-size:14px;font-weight:600}
+  .track{display:flex;flex-wrap:wrap;gap:6px;min-height:30px;margin-top:14px}
+  .chip{min-width:30px;height:30px;padding:0 7px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;border:1px solid transparent}
+  .chip.r{background:var(--rouge);color:#fff}.chip.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}.chip.z{background:#16203f;border-color:var(--line);color:var(--ivory)}
+  .chip.last{box-shadow:0 0 0 2px var(--gold)}
+  .empty-note{color:var(--sage-dim);font-size:13px}
+  .pad-actions{display:flex;gap:8px;margin-top:12px}
+  .pad-actions button{flex:1;padding:10px;border-radius:9px;font-size:12px;background:transparent;border:1px solid var(--line);color:var(--sage)}
+
+  /* ===== LEDGER ===== */
+  .ledger{display:grid;grid-template-columns:1.5fr 1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:11px}
+  .ledger .cell{padding:13px 14px}
+  .ledger .cell+.cell{border-left:1px solid var(--line-soft)}
+  .ledger .lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:6px}
+  .ledger .val{font-family:var(--mono);font-size:23px;line-height:1;font-weight:500}
+  .ledger .val.small{font-size:19px}
+  .ledger .eur{font-family:var(--mono);font-size:10px;color:var(--sage-dim);margin-top:5px}
+  .pos{color:var(--win)} .neg{color:var(--lose)}
+
+  .log{list-style:none;margin:0;padding:0;max-height:200px;overflow-y:auto}
+  .log li{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:8px 2px;border-bottom:1px solid var(--line-soft)}
+  .log li:last-child{border-bottom:none}
+  .log .lphase{font-size:10px;color:var(--sage-dim)}
+  .log .lamt{font-family:var(--mono)}
+  .log-empty{color:var(--sage-dim);font-size:13px}
+
+  details.set{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 15px;margin-bottom:11px}
+  details.set summary{list-style:none;padding:15px 0;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:600;cursor:pointer;display:flex;justify-content:space-between}
+  details.set summary::-webkit-details-marker{display:none}
+  .set-body{padding-bottom:15px}
+  .field{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+  .field label{font-size:13px;color:var(--ivory)}
+  .field .hint{font-size:11px;color:var(--sage-dim);display:block;margin-top:2px}
+  .field input{width:96px;background:var(--felt2);border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--ivory);font-family:var(--mono);font-size:15px;text-align:right}
+  .reset-all{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--lose);font-size:13px;margin-top:4px}
+
+  footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#1a1208;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+  <header>
+    <h1><span class="c">C</span>résus</h1>
+    <span class="tag">chances simples</span>
+  </header>
+
+  <div id="cards"></div>
+
+  <!-- SAISIE -->
+  <section>
+    <div class="sec-h"><h2>Numéro sorti</h2><span class="mono" id="count12" style="font-size:12px;color:var(--sage)">0/12</span></div>
+    <div class="zero-row"><div class="num zero" data-n="0">0</div></div>
+    <div class="num-grid" id="numGrid"></div>
+    <div class="typewrap">
+      <input type="number" id="numIn" inputmode="numeric" placeholder="taper un n° (0–36)" min="0" max="36">
+      <button id="numAdd">OK</button>
+    </div>
+    <div class="track" id="track"><span class="empty-note">Saisis les numéros qui sortent ↑</span></div>
+    <div class="pad-actions">
+      <button id="undo">↶ Annuler le dernier</button>
+      <button id="clearTrack">Vider la piste</button>
+    </div>
+  </section>
+
+  <!-- LEDGER -->
+  <div class="ledger">
+    <div class="cell"><div class="lab">Solde</div><div class="val mono" id="solde">200</div><div class="eur mono" id="soldeEur">= 100,00 €</div></div>
+    <div class="cell"><div class="lab">+ / −</div><div class="val small mono" id="pnl">0</div><div class="eur mono">pièces</div></div>
+    <div class="cell"><div class="lab">Misé</div><div class="val small mono" id="wagered">0</div><div class="eur mono">pièces</div></div>
+  </div>
+
+  <!-- JOURNAL -->
+  <section>
+    <div class="sec-h"><h2>Journal des coups</h2></div>
+    <ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul>
+  </section>
+
+  <details class="set">
+    <summary><span>Réglages</span><span style="color:var(--gold)">⚙</span></summary>
+    <div class="set-body">
+      <div class="field"><label>Capital de départ<span class="hint">en pièces · remet le solde</span></label><input type="number" id="inBank" inputmode="numeric" value="200"></div>
+      <div class="field"><label>Valeur d'une pièce<span class="hint">en € · pour l'affichage</span></label><input type="number" id="inPiece" inputmode="decimal" value="0.50" step="0.05"></div>
+      <button class="reset-all" id="resetAll">Tout réinitialiser (solde, piste, journal)</button>
+    </div>
+  </details>
+
+  <footer>
+    Suivi personnel de la méthode « Crésus » (N. Fijeac), 3 chances simples surveillées en parallèle.
+    Aucune montante ne change l'avantage de la maison — fixe-toi une limite.
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const M1=[1,2,4,8];
+const M2=[5,7,9,12,16,21,28,37,50];
+const COUPLES=["R/N","P/I","M/P"];
+const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["Manque","Passe"]};
+const CID={"R/N":"RN","P/I":"PI","M/P":"MP"};
+const CCLASS={"R/N":"rn","P/I":"pi","M/P":"mp"};
+const STORE_KEY="cresus:cs:v6";
+const $=id=>document.getElementById(id);
+
+let EMIT=false, CUR_I=-1;
+let S={
+  capital:200, pieceEur:0.5,
+  solde:200, wagered:0,
+  spins:[],                  // numéros 0–36
+  cpl:{}, log:[]
+};
+function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
+function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
+
+async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capital:S.capital,pieceEur:S.pieceEur,spins:S.spins})); }catch(e){} }
+async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.capital=o.capital??200; S.pieceEur=o.pieceEur??0.5; S.spins=o.spins||[]; } } }catch(e){} }
+
+/* ---- appartenance / comptage ---- */
+function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
+function countsUpto(ch,idx){ const start=Math.max(0,idx-11); let a=0,b=0; for(let i=start;i<=idx;i++){ const n=S.spins[i]; if(n===0)continue; memb(n,ch)==="a"?a++:b++; } return [a,b]; }
+function balancedUpto(ch,idx){ const[a,b]=countsUpto(ch,idx); return a===6&&b===6; }
+const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
+
+/* ---- moteur par couple ---- */
+function stakeC(C){ if(C.phase==="m1")return M1[C.step]; if(C.phase==="m2"){const b=M2[C.tent];return C.coup==="A"?b:b*2;} return 0; }
+function closeC(C){ C.phase="m1"; C.step=0; C.tent=0; C.coup="A"; C.pMise=0; C.pBilan=0; }
+function nextTentC(C){ C.tent++; C.coup="A"; if(C.tent>=M2.length) C.phase="fini"; }
+function phaseLabel(C){ return C.phase==="m1"?"M1 · coup "+(C.step+1)+"/4":C.phase==="m2"?"M2 · t"+(C.tent+1)+(C.coup==="A"?" ·1er":" ·2e"):"—"; }
+function advanceC(ch,C,result){
+  const stake=stakeC(C); const ph=phaseLabel(C);
+  S.wagered+=stake; C.pMise+=stake;
+  if(result==="G"){ S.solde+=stake; C.pBilan+=stake; } else { S.solde-=stake; C.pBilan-=stake; }
+  S.log.push({ch,r:result,amt:stake,ph});
+  if(C.phase==="m1"){
+    if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; mt(CLABELS[ch][0]+"/"+CLABELS[ch][1]+" gagné "+plus(b)); return "won"; }
+    C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · massage 2"); }
+    return "lost";
+  } else {
+    if(C.coup==="A"){ if(result==="G"){ C.coup="B"; return "ride"; } nextTentC(C); return C.phase==="fini"?"epuise":"lost"; }
+    else { if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; mt(CLABELS[ch].join("/")+" · paroli "+plus(b)); return "won"; } nextTentC(C); return C.phase==="fini"?"epuise":"lost"; }
+  }
+}
+function resolveC(ch,C,result){
+  const was=activeC(C);
+  const ev=advanceC(ch,C,result);
+  if(was){ if(ev==="won"||ev==="epuise") C.sig.phase="none"; else if(ev==="ride") C.sig.phase="play"; else C.sig.phase="await"; }
+  if(C.sig.phase==="none" && balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; }
+}
+function partageC(ch,C){ const half=stakeC(C)/2; S.solde-=half; S.wagered+=half; C.pMise+=half; C.pBilan-=half; S.log.push({ch,r:"Z",amt:stakeC(C),ph:phaseLabel(C)}); }
+
+/* ---- alimentation d'un couple par le numéro courant (index CUR_I) ---- */
+function feedCouple(ch){
+  const C=S.cpl[ch]; C.flash=null;
+  const n=S.spins[CUR_I]; const isZero=(n===0); const prev=C.sig.phase;
+  if(prev==="none"){ if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
+  if(!isZero) C.acc[memb(n,ch)]++;
+  if(prev==="await"){ if(!isZero){ C.sig.side=memb(n,ch); C.sig.obs=n; C.sig.phase="play"; } }
+  else { if(isZero){ partageC(ch,C); } else { resolveC(ch,C, memb(n,ch)===C.sig.side?"G":"P"); } }
+}
+
+/* ---- replay : tout est dérivé de S.spins ---- */
+function replay(emitLast){
+  S.solde=S.capital; S.wagered=0; S.log=[]; freshAll();
+  const N=S.spins.length;
+  for(let i=0;i<N;i++){ CUR_I=i; EMIT=!!emitLast&&(i===N-1); for(const ch of COUPLES) feedCouple(ch); }
+  EMIT=false; CUR_I=N-1;
+}
+
+/* ---- saisie ---- */
+function addSpin(n){ S.spins.push(n); if(S.spins.length>400) S.spins.shift(); replay(true); render(); save(); }
+function addNumber(){ const v=$("numIn").value.trim(); if(v==="")return; const num=parseInt(v,10); if(isNaN(num)||num<0||num>36){ toast("Numéro 0–36"); return; } $("numIn").value=""; addSpin(num); }
+function undoSpin(){ S.spins.pop(); replay(false); render(); save(); }
+
+/* ---- utils ---- */
+const round2=x=>Math.round((x+Number.EPSILON)*100)/100;
+const fmt=x=>Number.isInteger(x)?String(x):x.toFixed(2);
+const eur=p=>(p*S.pieceEur).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+const plus=x=>(x>0?"+":"")+round2(x);
+const colorOf=n=>n===0?"z":(RED.has(n)?"r":"n");
+function mt(msg){ if(EMIT) toast(msg); }
+
+/* ---- construction des cartes ---- */
+function buildCards(){
+  $("cards").innerHTML=COUPLES.map(ch=>{ const [A,B]=CLABELS[ch], id=CID[ch];
+    return `<div class="cpl ${CCLASS[ch]}" id="c-${id}">
+      <div class="cpl-top">
+        <div><span class="cpl-name">${A} / ${B}</span><span class="cpl-state" id="${id}-st"></span></div>
+        <div class="cpl-score"><b class="a" id="${id}-a">0</b><span class="dash">–</span><b class="b" id="${id}-b">0</b></div>
+      </div>
+      <div class="cpl-bot">
+        <div class="cpl-sig">
+          <div class="half ha" id="${id}-ha"><span class="dot"></span><span class="nm">${A}</span><span class="jb">▶</span></div>
+          <div class="half hb" id="${id}-hb"><span class="dot"></span><span class="nm">${B}</span><span class="jb">▶</span></div>
+        </div>
+        <div class="cpl-mise"><div class="ph" id="${id}-ph">prêt</div><div class="m mono" id="${id}-m">1</div><div class="mu">pièces</div></div>
+      </div>
+    </div>`; }).join("");
+}
+
+/* ---- pavé ---- */
+function buildPad(){ const g=$("numGrid"); for(let n=1;n<=36;n++){ const d=document.createElement("div"); d.className="num "+(RED.has(n)?"r":"n"); d.dataset.n=n; d.textContent=n; g.appendChild(d);} }
+
+/* ---- rendu ---- */
+function render(){
+  const last=S.spins.length-1;
+  for(const ch of COUPLES){
+    const C=S.cpl[ch], id=CID[ch], card=$("c-"+id);
+    const bal=balancedUpto(ch,last);
+    const [a,b]= activeC(C) ? [C.acc.a,C.acc.b] : countsUpto(ch,last);
+    $(id+"-a").textContent=a; $(id+"-b").textContent=b;
+    card.className="cpl "+CCLASS[ch]+(C.flash==="won"?" won":((activeC(C)||bal)?" bal":""));
+    $(id+"-st").textContent = C.flash==="won"?"gagné ✓":(C.sig.phase==="await"?"attends la boule":(C.sig.phase==="play"?"à jouer":(bal?"équilibre":"")));
+    const ha=$(id+"-ha"), hb=$(id+"-hb");
+    ha.className="half ha"; hb.className="half hb";
+    if(C.flash!=="won"){
+      if(C.sig.phase==="await"){ ha.classList.add("pending"); hb.classList.add("pending"); }
+      else if(C.sig.phase==="play"){ (C.sig.side==="a"?ha:hb).classList.add("on"); }
+    }
+    $(id+"-ph").textContent = C.phase==="fini"?"épuisé":(activeC(C)?phaseLabel(C):(C.pMise===0?"prêt":phaseLabel(C)));
+    $(id+"-m").textContent = C.phase==="fini"?"—":stakeC(C);
+  }
+
+  $("solde").textContent=fmt(round2(S.solde));
+  $("soldeEur").textContent="= "+eur(S.solde);
+  const pnl=round2(S.solde-S.capital);
+  const pe=$("pnl"); pe.textContent=(pnl>0?"+":"")+fmt(pnl); pe.className="val small mono "+(pnl>0?"pos":pnl<0?"neg":"");
+  $("wagered").textContent=fmt(round2(S.wagered));
+
+  const l12=S.spins.slice(-12); $("count12").textContent=l12.length+"/12";
+  const tr=$("track");
+  tr.innerHTML=S.spins.length===0?'<span class="empty-note">Saisis les numéros qui sortent ↑</span>'
+    :l12.map((n,i)=>`<div class="chip ${colorOf(n)}${i===l12.length-1?' last':''}">${n}</div>`).join("");
+
+  const lg=$("log"); const items=S.log.slice(-80).reverse();
+  lg.innerHTML=items.length===0?'<li class="log-empty">Aucun coup joué pour l\'instant.</li>'
+    :items.map(e=>{ const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.r==="Z"?e.amt/2:e.amt;
+        const cpl=CLABELS[e.ch].map(s=>s[0]).join("/");
+        return `<li><span>${word} <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${fmt(amt)}</span></li>`; }).join("");
+
+  $("inBank").value=S.capital; $("inPiece").value=S.pieceEur;
+}
+
+/* ---- events ---- */
+$("numGrid").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(parseInt(t.dataset.n,10)); });
+document.querySelector(".zero-row").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(0); });
+$("numAdd").addEventListener("click",addNumber);
+$("numIn").addEventListener("keydown",e=>{ if(e.key==="Enter") addNumber(); });
+$("undo").addEventListener("click",undoSpin);
+$("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
+$("inBank").addEventListener("change",e=>{ const v=parseFloat(e.target.value)||0; S.capital=v; replay(false); render(); save(); });
+$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0,parseFloat(e.target.value)||0); render(); save(); });
+$("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
+
+let toastT;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+
+(async function(){ buildCards(); buildPad(); await load(); replay(false); render(); })();
+</script>
+</body>
+</html>
