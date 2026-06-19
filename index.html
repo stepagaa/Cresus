@@ -27,24 +27,34 @@
   .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
   button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
 
-  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line)}
-  .brand{display:flex;flex-direction:column;gap:5px}
-  .brand h1{font-size:22px;font-weight:800;color:var(--ivory);letter-spacing:-.02em}
-  .brand h1 .c{color:var(--gold)}
-  .brand .tag{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sage-dim)}
-  .hbal{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-  .hbal .solde{font-family:var(--mono);font-size:24px;line-height:1;color:var(--ivory);font-weight:500}
-  .hbal .pnl{font-family:var(--mono);font-size:14px;line-height:1.2}
-  .hbal .mise{font-family:var(--mono);font-size:10.5px;color:var(--sage-dim);margin-top:2px}
+  header{display:flex;flex-direction:column;gap:12px;padding:16px 2px 12px;border-bottom:1px solid var(--line)}
+  .htop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .hmoney{display:flex;flex-direction:column;gap:3px}
+  .hmoney .solde{font-family:var(--mono);font-size:26px;line-height:1;color:var(--ivory);font-weight:500}
+  .hmoney .pnl{font-family:var(--mono);font-size:14px;line-height:1.2}
+  .hchrono{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .hchrono .mise{font-family:var(--mono);font-size:10.5px;color:var(--sage-dim)}
+  .chrono{display:flex;align-items:center;gap:6px}
+  .chrono-btn{font-family:var(--mono);font-size:11px;background:var(--felt2);border:1px solid var(--line);border-radius:14px;padding:3px 9px;color:var(--ivory)}
+  .chrono-btn.running{border-color:var(--gold);color:var(--gold)}
+  .chrono-rate{font-size:10.5px;color:var(--sage)}
+  .chrono-reset{font-size:12px;color:var(--sage-dim);padding:2px 4px;line-height:1}
+  .brand{display:flex;align-items:baseline;gap:9px}
+  .brand .bname{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--ivory);letter-spacing:-.02em}
+  .brand .bname .c{color:var(--gold)}
+  .brand .tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage-dim)}
 
   /* ===== CARTES COUPLES ===== */
   #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px;align-items:start}
   .mcell{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:11px 8px;text-align:center;transition:border-color .18s,background .18s,box-shadow .18s}
   .mcell .mname{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--sage);letter-spacing:.02em}
   .mcell .mscore{font-family:var(--mono);font-size:20px;margin-top:6px;color:var(--ivory);line-height:1}
-  .mcell.bal{border-color:var(--gold);background:rgba(231,178,78,.06);box-shadow:0 0 0 1px rgba(231,178,78,.22)}
+  .mcell.bal{border-color:var(--gold);background:rgba(231,178,78,.06)}
   .mcell.bal .mscore{color:var(--gold)}
-  .mcell.await .mscore{animation:pulse 1.15s infinite}
+  .mcell.await{border:1px dashed var(--gold);background:rgba(231,178,78,.04)}
+  .mcell.await .mscore{color:var(--gold);animation:pulse 1.15s infinite}
+  .mcell.play{border-color:var(--gold);background:rgba(231,178,78,.14);box-shadow:0 0 0 1px var(--gold),0 8px 22px -10px rgba(231,178,78,.6)}
+  .mcell.play .mscore{color:var(--gold)}
   .mcell.won{border-color:var(--win);background:rgba(51,192,141,.07);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
   .mcell.won .mscore{color:var(--win)}
   .mdetail{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft)}
@@ -124,6 +134,14 @@
   .pos{color:var(--win)} .neg{color:var(--lose)}
 
   .log{list-style:none;margin:0;padding:0;max-height:200px;overflow-y:auto}
+  .jarrow{font-size:15px;color:var(--gold);padding:3px 11px;border:1px solid var(--line);border-radius:9px;background:var(--felt2);line-height:1}
+  .jwrap{overflow:hidden}
+  .jslider{display:flex;transition:transform .32s ease}
+  .jslide{min-width:100%}
+  .chart{padding-top:2px}
+  .chartsvg{width:100%;height:150px;display:block;border-radius:8px}
+  .chart-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--sage);margin-top:9px}
+  .chart-empty{color:var(--sage-dim);font-size:13px;padding:14px 0}
   .log li{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:8px 2px;border-bottom:1px solid var(--line-soft)}
   .log li:last-child{border-bottom:none}
   .log .lphase{font-size:10px;color:var(--sage-dim)}
@@ -143,20 +161,67 @@
   footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#1a1208;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* alerte +10% */
+  .banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(51,192,141,.12);border:1px solid var(--win)}
+  .banner-txt{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--win)}
+  .banner-act{display:flex;align-items:center;gap:8px;flex:none}
+  .banner-act #goalSave{font-size:12px;font-weight:600;color:#06251a;background:var(--win);border-radius:9px;padding:7px 11px}
+  .banner-act #goalDismiss{font-size:18px;color:var(--sage);padding:0 4px;line-height:1}
+
+  /* sessions */
+  .sess-actions{display:flex;gap:8px;margin-bottom:12px}
+  .save-session{flex:1;padding:11px;border-radius:10px;border:1px solid var(--gold-dim);background:var(--felt2);color:var(--gold);font-size:13px;font-weight:600}
+  .export-session{flex:none;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--sage);font-size:13px}
+  .slist{list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto}
+  .slist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line-soft)}
+  .slist li:last-child{border-bottom:none}
+  .slist .s-main{display:flex;flex-direction:column;gap:2px}
+  .slist .s-date{font-size:12px;color:var(--ivory)}
+  .slist .s-meta{font-size:10.5px;color:var(--sage-dim);font-family:var(--mono)}
+  .slist .s-gain{font-family:var(--mono);font-size:14px;font-weight:500}
+  .slist .s-del{font-size:13px;color:var(--sage-dim);padding:2px 6px}
+  .log-empty{color:var(--sage-dim);font-size:13px}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(6,10,20,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80}
+  .modal{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+  .modal-title{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--ivory)}
+  .modal-sub{font-size:12.5px;color:var(--sage);line-height:1.5;margin:8px 0 16px}
+  .modal-lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);display:block;margin-bottom:7px}
+  .modal input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--ivory);font-family:var(--mono);font-size:20px;text-align:center}
+  .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 16px}
+  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700}
+  .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
 </style>
 </head>
 <body>
   <header>
-    <div class="brand">
-      <h1><span class="c">C</span>résus</h1>
-      <span class="tag">chances simples</span>
+    <div class="htop">
+      <div class="hmoney">
+        <div class="solde mono" id="solde">200,00 €</div>
+        <div class="pnl mono" id="pnl">0,00 €</div>
+      </div>
+      <div class="hchrono">
+        <div class="chrono">
+          <button class="chrono-btn mono" id="chronoBtn">▶ 00:00</button>
+          <span class="chrono-rate mono" id="chronoRate">— €/h</span>
+          <button class="chrono-reset" id="chronoReset" aria-label="réinitialiser le chrono">⟲</button>
+        </div>
+        <div class="mise mono" id="wagered">misé 0,00 €</div>
+      </div>
     </div>
-    <div class="hbal">
-      <div class="solde mono" id="solde">100,00 €</div>
-      <div class="pnl mono" id="pnl">0,00 €</div>
-      <div class="mise mono" id="wagered">misé 0,00 €</div>
-    </div>
+    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span></div>
   </header>
+
+  <!-- ALERTE +10% -->
+  <div class="banner" id="goalBanner" style="display:none">
+    <div class="banner-txt" id="goalTxt">🎯 Objectif +10 % atteint !</div>
+    <div class="banner-act">
+      <button id="goalSave">Enregistrer la session</button>
+      <button id="goalDismiss" aria-label="fermer">×</button>
+    </div>
+  </div>
 
   <!-- DERNIERS NUMÉROS (1 ligne, au-dessus de la grille) -->
   <div class="track" id="track"><span class="empty-note">Les numéros sortis apparaîtront ici</span></div>
@@ -178,15 +243,30 @@
 
   <!-- JOURNAL -->
   <section>
-    <div class="sec-h"><h2>Journal des coups</h2></div>
-    <ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul>
+    <div class="sec-h"><h2 id="jtitle">Journal des coups</h2><button class="jarrow" id="jToggle" aria-label="afficher le graphique">→</button></div>
+    <div class="jwrap">
+      <div class="jslider" id="jslider">
+        <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
+        <div class="jslide"><div class="chart" id="chart"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SESSIONS -->
+  <section>
+    <div class="sec-h"><h2>Sessions enregistrées</h2><button class="jarrow" id="newSessionBtn" style="font-size:12px">+ nouvelle</button></div>
+    <div class="sess-actions">
+      <button class="save-session" id="saveSessionBtn">Enregistrer la session</button>
+      <button class="export-session" id="exportBtn">Exporter (CSV)</button>
+    </div>
+    <ul class="slist" id="sessionsList"><li class="log-empty">Aucune session enregistrée.</li></ul>
   </section>
 
   <details class="set">
     <summary><span>Réglages</span><span style="color:var(--gold)">⚙</span></summary>
     <div class="set-body">
-      <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="100" step="1"></div>
-      <div class="field"><label>Mise de départ<span class="hint">en € · valeur d'1 pièce, base de la montante</span></label><input type="number" id="inPiece" inputmode="decimal" value="0.50" step="0.05"></div>
+      <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
+      <div class="field"><label>Mise de départ<span class="hint">en € · valeur d'1 pièce, base de la montante</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.05"></div>
       <button class="reset-all" id="resetAll">Tout réinitialiser (solde, piste, journal)</button>
     </div>
   </details>
@@ -196,6 +276,19 @@
     Aucune montante ne change l'avantage de la maison — fixe-toi une limite.
   </footer>
 
+  <!-- FENÊTRE D'OUVERTURE -->
+  <div class="modal-bg" id="startModal">
+    <div class="modal">
+      <h3 class="modal-title">Nouvelle session</h3>
+      <p class="modal-sub">Quel est ton solde de départ ? Les mises s'adaptent automatiquement (mise de base = solde ÷ 200, la réserve conseillée par la méthode).</p>
+      <label class="modal-lab">Solde de départ (€)</label>
+      <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
+      <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
+      <button class="modal-go" id="startNew">Démarrer la session</button>
+      <button class="modal-resume" id="startResume" style="display:none">Reprendre la session en cours</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
 <script>
@@ -204,15 +297,20 @@ const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const M1=[1,2,4,8];
 const M2=[5,7,9,12,16,21,28,37,50];
 const COUPLES=["R/N","P/I","M/P"];
-const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["Manque","Passe"]};
+const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
+const CNAME={"R/N":"R / N","P/I":"P / I","M/P":"1-18 / 19-36"};
 const CID={"R/N":"RN","P/I":"PI","M/P":"MP"};
 const CCLASS={"R/N":"rn","P/I":"pi","M/P":"mp"};
 const STORE_KEY="cresus:cs:v6";
 const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
+let jview="log";
+let timer={running:false, start:0, accum:0};
+let sessions=[]; let goalDismissed=false;
+const SESS_KEY="cresus:sessions:v1";
 let S={
-  capitalEur:100, pieceEur:0.5, capital:200,
+  capitalEur:200, pieceEur:1, capital:200, sessionStart:Date.now(),
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[]
@@ -221,12 +319,14 @@ function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
-async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins})); }catch(e){} }
-async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.pieceEur=o.pieceEur??0.5; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; recalcCapital(); } } }catch(e){} }
+async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart})); }catch(e){} }
+async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); recalcCapital(); } } }catch(e){} }
+async function loadSessions(){ try{ if(window.storage){ const r=await window.storage.get(SESS_KEY); if(r&&r.value) sessions=JSON.parse(r.value)||[]; } }catch(e){} }
+async function saveSessions(){ try{ if(window.storage) await window.storage.set(SESS_KEY, JSON.stringify(sessions)); }catch(e){} }
 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
-function countsUpto(ch,idx){ const start=Math.max(0,idx-11); let a=0,b=0; for(let i=start;i<=idx;i++){ const n=S.spins[i]; if(n===0)continue; memb(n,ch)==="a"?a++:b++; } return [a,b]; }
+function countsUpto(ch,idx){ let a=0,b=0,c=0; for(let i=idx;i>=0&&c<12;i--){ const n=S.spins[i]; if(n===0)continue; (memb(n,ch)==="a")?a++:b++; c++; } return [a,b]; }
 function balancedUpto(ch,idx){ const[a,b]=countsUpto(ch,idx); return a===6&&b===6; }
 const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
 
@@ -303,8 +403,8 @@ const colorOf=n=>n===0?"z":(RED.has(n)?"r":"n");
 function mt(msg){ if(EMIT) toast(msg); }
 
 function buildMini(){
-  $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch], [A,B]=CLABELS[ch];
-    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}"><div class="mname">${A[0]} / ${B[0]}</div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mside" id="${id}-side"></div><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
+  $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch];
+    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}"><div class="mname">${CNAME[ch]}</div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mside" id="${id}-side"></div><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
   }).join("");
 }
 
@@ -332,6 +432,105 @@ function buildPad(){ const g=$("numGrid");
   const z=document.createElement("div"); z.className="num z0"; z.dataset.n="0"; z.textContent="0"; g.appendChild(z);
   for(let n=1;n<=36;n++){ const d=document.createElement("div"); d.className="num "+(RED.has(n)?"r":"n"); d.dataset.n=n; d.textContent=n; g.appendChild(d);} }
 
+/* ---- chronomètre & €/h ---- */
+const fmtEur2=v=>v.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+function timerMs(){ return timer.accum + (timer.running ? (Date.now()-timer.start) : 0); }
+function fmtDur(ms){ const s=Math.floor(ms/1000), hh=Math.floor(s/3600), mm=Math.floor((s%3600)/60), ss=s%60;
+  return (hh>0?String(hh).padStart(2,"0")+":":"")+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0"); }
+function renderTimer(){
+  const ms=timerMs();
+  $("chronoBtn").textContent=(timer.running?"⏸ ":"▶ ")+fmtDur(ms);
+  $("chronoBtn").className="chrono-btn mono"+(timer.running?" running":"");
+  const h=ms/3600000, pnlEur=(S.solde-S.capital)*S.pieceEur;
+  $("chronoRate").textContent = h>0.0008
+    ? (pnlEur>=0?"+":"−")+Math.abs(pnlEur/h).toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1})+" €/h"
+    : "— €/h";
+}
+function toggleTimer(){ if(timer.running){ timer.accum=timerMs(); timer.running=false; } else { timer.start=Date.now(); timer.running=true; } renderTimer(); }
+function resetTimer(){ timer={running:false,start:0,accum:0}; renderTimer(); }
+
+/* ---- graphique du solde ---- */
+function setJview(v){ jview=v;
+  $("jslider").style.transform = v==="chart"?"translateX(-100%)":"translateX(0)";
+  $("jtitle").textContent = v==="chart"?"Évolution du solde":"Journal des coups";
+  $("jToggle").textContent = v==="chart"?"←":"→";
+  if(v==="chart") drawChart();
+}
+function drawChart(){
+  const el=$("chart");
+  let bal=S.capital; const pts=[bal*S.pieceEur];
+  for(const e of S.log){ bal += (e.r==="G"? e.amt : -e.amt); pts.push(bal*S.pieceEur); }
+  if(pts.length<2){ el.innerHTML='<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'; return; }
+  const W=300,H=150,pad=10;
+  const min=Math.min(...pts), max=Math.max(...pts), span=(max-min)||1;
+  const x=i=> pad + i*(W-2*pad)/(pts.length-1);
+  const y=v=> H-pad - (v-min)*(H-2*pad)/span;
+  const d=pts.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
+  const base=S.capitalEur, yb=y(base), up=pts[pts.length-1]>=base;
+  const col=up?"var(--win)":"var(--lose)";
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
+      <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <div class="chart-meta"><span>min ${fmtEur2(min)}</span><span>départ ${fmtEur2(base)}</span><span>max ${fmtEur2(max)}</span></div>`;
+}
+
+function exportSessions(){
+  if(!sessions.length){ toast("Aucune session à exporter"); return; }
+  const sep=";", num=v=>(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const head=["Date","Solde début (€)","Solde fin (€)","Gain (€)","Ratio (%)","Temps","€/h","Coups"];
+  const rows=sessions.map(s=>{
+    const d=new Date(s.date), date=d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const h=(s.duree||0)/3600000, rate=h>0?s.gain/h:0;
+    return [date,num(s.debut),num(s.fin),num(s.gain),(s.pct||0).toFixed(1).replace(".",","),fmtDur(s.duree||0),num(rate),s.coups].join(sep);
+  });
+  const csv="\uFEFF"+[head.join(sep),...rows].join("\r\n");
+  try{
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download="cresus-sessions-"+new Date().toISOString().slice(0,10)+".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500); toast("Fichier CSV créé");
+  }catch(e){ toast("Export impossible ici"); }
+}
+
+/* ---- sessions & fenêtre d'ouverture ---- */
+function saveCurrentSession(){
+  const finEur=S.solde*S.pieceEur, gainEur=finEur-S.capitalEur;
+  sessions.unshift({ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
+    pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:Date.now()-(S.sessionStart||Date.now()),
+    coups:S.spins.length, base:S.pieceEur });
+  if(sessions.length>100) sessions.pop();
+  saveSessions(); renderSessions(); goalDismissed=true; render(); toast("Session enregistrée");
+}
+function renderSessions(){
+  const el=$("sessionsList");
+  if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; return; }
+  el.innerHTML=sessions.map((s,i)=>{
+    const d=new Date(s.date);
+    const ds=d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const g=(s.gain>=0?"+":"−")+Math.abs(s.gain).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+    const pct=(s.gain>=0?"+":"−")+Math.abs(s.pct).toFixed(1)+"%";
+    return `<li><div class="s-main"><span class="s-date">${ds}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
+  }).join("");
+}
+function openStartModal(){
+  $("startSolde").value=S.capitalEur||200; updateStartMise();
+  const has=S.spins&&S.spins.length>0;
+  const rb=$("startResume"); rb.style.display=has?"":"none";
+  if(has) rb.textContent="Reprendre la session en cours ("+S.spins.length+" n°)";
+  $("startModal").style.display="flex";
+}
+function closeStartModal(){ $("startModal").style.display="none"; }
+function updateStartMise(){ const v=Math.max(0,parseFloat($("startSolde").value)||0);
+  $("startMise").textContent="Mise de base : "+(v>0?(v/200).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—"); }
+function startNewSession(){
+  const v=Math.max(0,parseFloat($("startSolde").value)||0);
+  if(v<=0){ toast("Indique un solde valide"); return; }
+  S.capitalEur=v; S.pieceEur=v/200; recalcCapital();
+  S.spins=[]; S.log=[]; S.sessionStart=Date.now(); resetTimer(); goalDismissed=false;
+  replay(false); save(); render(); closeStartModal();
+}
+
 /* ---- rendu ---- */
 function render(){
   const last=S.spins.length-1;
@@ -340,7 +539,7 @@ function render(){
     const bal=balancedUpto(ch,last);
     const [a,b]= activeC(C) ? [C.acc.a,C.acc.b] : countsUpto(ch,last);
     const mc=$("m-"+id);
-    mc.className="mcell "+CCLASS[ch]+(C.flash==="won"?" won":(C.sig.phase==="await"?" bal await":((activeC(C)||bal)?" bal":"")));
+    mc.className="mcell "+CCLASS[ch]+(C.flash==="won"?" won":(C.sig.phase==="await"?" await":(C.sig.phase==="play"?" play":(bal?" bal":""))));
     $(id+"-msc").textContent=a+"–"+b;
     const det=$(id+"-det"), sideEl=$(id+"-side"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait");
     det.style.display="none"; sideEl.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
@@ -362,18 +561,25 @@ function render(){
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
   $("wagered").textContent="misé "+eur(S.wagered);
 
-  const l12=S.spins.slice(-12); $("count12").textContent=l12.length+"/12";
+  const l12=S.spins.slice(-12).reverse(); $("count12").textContent=l12.length+"/12";
   const tr=$("track");
   tr.innerHTML=S.spins.length===0?'<span class="empty-note">Les numéros sortis apparaîtront ici</span>'
-    :l12.map((n,i)=>`<div class="chip ${colorOf(n)}${i===l12.length-1?' last':''}">${n}</div>`).join("");
+    :l12.map((n,i)=>`<div class="chip ${colorOf(n)}${i===0?' last':''}">${n}</div>`).join("");
 
   const lg=$("log"); const items=S.log.slice(-80).reverse();
   lg.innerHTML=items.length===0?'<li class="log-empty">Aucun coup joué pour l\'instant.</li>'
     :items.map(e=>{ const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.amt;
-        const cpl=CLABELS[e.ch].map(s=>s[0]).join("/");
+        const cpl=CNAME[e.ch];
         return `<li><span>${word} <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${eur(amt)}</span></li>`; }).join("");
 
   $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur;
+  renderTimer();
+  // alerte +10%
+  const gainEur=S.solde*S.pieceEur-S.capitalEur, thr=0.10*S.capitalEur;
+  const reached=S.capitalEur>0 && gainEur>=thr-1e-9;
+  $("goalBanner").style.display=(reached&&!goalDismissed)?"":"none";
+  if(reached) $("goalTxt").textContent="🎯 +"+(gainEur/S.capitalEur*100).toFixed(1)+"% · "+fmtEur2(gainEur)+" de gain";
+  if(jview==="chart") drawChart();
 }
 
 /* ---- events ---- */
@@ -383,11 +589,25 @@ $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0.01,parseFloat(e.target.value)||0.5); recalcCapital(); replay(false); render(); save(); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
+$("chronoBtn").addEventListener("click",toggleTimer);
+$("chronoReset").addEventListener("click",resetTimer);
+$("jToggle").addEventListener("click",()=> setJview(jview==="chart"?"log":"chart"));
+$("goalSave").addEventListener("click",saveCurrentSession);
+$("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
+$("saveSessionBtn").addEventListener("click",saveCurrentSession);
+$("exportBtn").addEventListener("click",exportSessions);
+$("newSessionBtn").addEventListener("click",openStartModal);
+$("startNew").addEventListener("click",startNewSession);
+$("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
+$("startSolde").addEventListener("input",updateStartMise);
+$("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
+$("sessionsList").addEventListener("click",e=>{ const t=e.target.closest(".s-del"); if(!t)return; sessions.splice(parseInt(t.dataset.i,10),1); saveSessions(); renderSessions(); });
+setInterval(()=>{ if(timer.running) renderTimer(); },1000);
 
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
-(async function(){ buildMini(); buildPad(); await load(); recalcCapital(); replay(false); render(); })();
+(async function(){ buildMini(); buildPad(); await load(); await loadSessions(); recalcCapital(); replay(false); renderSessions(); render(); openStartModal(); })();
 </script>
 </body>
 </html>
