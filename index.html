@@ -38,7 +38,21 @@
   .hbal .mise{font-family:var(--mono);font-size:10.5px;color:var(--sage-dim);margin-top:2px}
 
   /* ===== CARTES COUPLES ===== */
-  #cards{margin-top:16px}
+  #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px;align-items:start}
+  .mcell{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:11px 8px;text-align:center;transition:border-color .18s,background .18s,box-shadow .18s}
+  .mcell .mname{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--sage);letter-spacing:.02em}
+  .mcell .mscore{font-family:var(--mono);font-size:20px;margin-top:6px;color:var(--ivory);line-height:1}
+  .mcell.bal{border-color:var(--gold);background:rgba(231,178,78,.06);box-shadow:0 0 0 1px rgba(231,178,78,.22)}
+  .mcell.bal .mscore{color:var(--gold)}
+  .mcell.await .mscore{animation:pulse 1.15s infinite}
+  .mcell.won{border-color:var(--win);background:rgba(51,192,141,.07);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
+  .mcell.won .mscore{color:var(--win)}
+  .mdetail{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft)}
+  .mside{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.02em;line-height:1.1}
+  .mside.rouge{color:#ff7a6e} .mside.noir{color:#fff} .mside.neutre{color:var(--gold)}
+  .mmise{font-family:var(--mono);font-size:15px;color:var(--gold);margin-top:5px}
+  .mwait{font-size:10px;color:var(--gold);line-height:1.3}
+  .mwait.won{color:var(--win);font-weight:600}
   .cpl{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);margin-bottom:10px;transition:border-color .18s, box-shadow .18s, background .18s}
   .cpl.bal{border-color:var(--gold);box-shadow:0 0 0 1px rgba(231,178,78,.22)}
   .cpl.won{border-color:var(--win);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
@@ -56,7 +70,8 @@
   .cpl-bot{display:grid;grid-template-columns:1.5fr 1fr}
   .cpl-sig{display:flex;flex-direction:column}
   .half{flex:1;display:flex;align-items:center;gap:9px;padding:9px 14px;min-height:39px;transition:background .15s}
-  .half+.half{border-top:1px solid var(--line-soft)}
+  .half-wait{display:flex;align-items:center;padding:9px 14px;min-height:60px;font-size:13px;font-weight:600;line-height:1.3;color:var(--gold)}
+  .half-wait.won{color:var(--win)}
   .half .dot{width:9px;height:9px;border-radius:50%;flex:none;background:#34405f}
   .cpl.rn .ha .dot{background:var(--rouge)}
   .cpl.rn .hb .dot{background:#11192c;border:1px solid #38445f}
@@ -81,21 +96,20 @@
   .sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .sec-h h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:600}
 
-  .zero-row{display:flex;margin-bottom:6px}
-  .num-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
-  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:14px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid transparent;transition:transform .08s}
+  .num-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid transparent;transition:transform .08s}
   .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}
-  .num.zero{flex:1;aspect-ratio:auto;padding:13px;background:#16203f;border:1px solid var(--line);color:var(--ivory);margin-right:6px;font-size:15px}
+  .num.z0{background:#1f9d63;color:#fff;border-color:transparent}
   .num:active{transform:scale(.9)}
   .typewrap{display:flex;gap:8px;margin-top:11px}
   .typewrap input{flex:1;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center;min-width:0}
   .typewrap input::placeholder{color:var(--sage-dim)}
   .typewrap button{padding:0 22px;border-radius:11px;background:var(--felt2);border:1px solid var(--line);color:var(--gold);font-size:14px;font-weight:600}
-  .track{display:flex;flex-wrap:wrap;gap:6px;min-height:30px;margin-top:14px}
-  .chip{min-width:30px;height:30px;padding:0 7px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;border:1px solid transparent}
-  .chip.r{background:var(--rouge);color:#fff}.chip.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}.chip.z{background:#16203f;border-color:var(--line);color:var(--ivory)}
+  .track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;min-height:28px;margin:18px 0 6px}
+  .chip{height:28px;min-width:0;padding:0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
+  .chip.r{background:var(--rouge);color:#fff}.chip.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}.chip.z{background:#1f9d63;border-color:transparent;color:#fff}
   .chip.last{box-shadow:0 0 0 2px var(--gold)}
-  .empty-note{color:var(--sage-dim);font-size:13px}
+  .empty-note{grid-column:1/-1;text-align:center;align-self:center;color:var(--sage-dim);font-size:12.5px}
   .pad-actions{display:flex;gap:8px;margin-top:12px}
   .pad-actions button{flex:1;padding:10px;border-radius:9px;font-size:12px;background:transparent;border:1px solid var(--line);color:var(--sage)}
 
@@ -144,23 +158,21 @@
     </div>
   </header>
 
-  <div id="cards"></div>
+  <!-- DERNIERS NUMÉROS (1 ligne, au-dessus de la grille) -->
+  <div class="track" id="track"><span class="empty-note">Les numéros sortis apparaîtront ici</span></div>
 
-  <!-- SAISIE -->
+  <!-- GRILLE -->
   <section>
     <div class="sec-h"><h2>Numéro sorti</h2><span class="mono" id="count12" style="font-size:12px;color:var(--sage)">0/12</span></div>
-    <div class="zero-row"><div class="num zero" data-n="0">0</div></div>
     <div class="num-grid" id="numGrid"></div>
-    <div class="typewrap">
-      <input type="number" id="numIn" inputmode="numeric" placeholder="taper un n° (0–36)" min="0" max="36">
-      <button id="numAdd">OK</button>
-    </div>
-    <div class="track" id="track"><span class="empty-note">Saisis les numéros qui sortent ↑</span></div>
     <div class="pad-actions">
       <button id="undo">↶ Annuler le dernier</button>
       <button id="clearTrack">Vider la piste</button>
     </div>
   </section>
+
+  <!-- 3 PETITES CASES (signal + détail) -->
+  <div id="mini"></div>
 
   <!-- LEDGER déplacé dans l'en-tête -->
 
@@ -290,6 +302,12 @@ const plus=x=>(x>0?"+":"")+round2(x);
 const colorOf=n=>n===0?"z":(RED.has(n)?"r":"n");
 function mt(msg){ if(EMIT) toast(msg); }
 
+function buildMini(){
+  $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch], [A,B]=CLABELS[ch];
+    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}"><div class="mname">${A[0]} / ${B[0]}</div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mside" id="${id}-side"></div><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
+  }).join("");
+}
+
 /* ---- construction des cartes ---- */
 function buildCards(){
   $("cards").innerHTML=COUPLES.map(ch=>{ const [A,B]=CLABELS[ch], id=CID[ch];
@@ -300,35 +318,43 @@ function buildCards(){
       </div>
       <div class="cpl-bot">
         <div class="cpl-sig">
-          <div class="half ha" id="${id}-ha"><span class="dot"></span><span class="nm">${A}</span><span class="jb">▶</span></div>
-          <div class="half hb" id="${id}-hb"><span class="dot"></span><span class="nm">${B}</span><span class="jb">▶</span></div>
+          <div class="half ha" id="${id}-ha"><span class="dot"></span><span class="nm">${A}</span><span class="jb">▶ jouer</span></div>
+          <div class="half hb" id="${id}-hb"><span class="dot"></span><span class="nm">${B}</span><span class="jb">▶ jouer</span></div>
+          <div class="half-wait" id="${id}-wait">⚑ Attends la prochaine boule</div>
         </div>
-        <div class="cpl-mise"><div class="ph" id="${id}-ph">prêt</div><div class="m mono" id="${id}-m">0,50 €</div><div class="mu">mise</div></div>
+        <div class="cpl-mise"><div class="ph" id="${id}-ph"></div><div class="m mono" id="${id}-m"></div><div class="mu" id="${id}-mu"></div></div>
       </div>
     </div>`; }).join("");
 }
 
 /* ---- pavé ---- */
-function buildPad(){ const g=$("numGrid"); for(let n=1;n<=36;n++){ const d=document.createElement("div"); d.className="num "+(RED.has(n)?"r":"n"); d.dataset.n=n; d.textContent=n; g.appendChild(d);} }
+function buildPad(){ const g=$("numGrid");
+  const z=document.createElement("div"); z.className="num z0"; z.dataset.n="0"; z.textContent="0"; g.appendChild(z);
+  for(let n=1;n<=36;n++){ const d=document.createElement("div"); d.className="num "+(RED.has(n)?"r":"n"); d.dataset.n=n; d.textContent=n; g.appendChild(d);} }
 
 /* ---- rendu ---- */
 function render(){
   const last=S.spins.length-1;
   for(const ch of COUPLES){
-    const C=S.cpl[ch], id=CID[ch], card=$("c-"+id);
+    const C=S.cpl[ch], id=CID[ch];
     const bal=balancedUpto(ch,last);
     const [a,b]= activeC(C) ? [C.acc.a,C.acc.b] : countsUpto(ch,last);
-    $(id+"-a").textContent=a; $(id+"-b").textContent=b;
-    card.className="cpl "+CCLASS[ch]+(C.flash==="won"?" won":((activeC(C)||bal)?" bal":""));
-    $(id+"-st").textContent = C.flash==="won"?"gagné ✓":(C.sig.phase==="await"?"attends la boule":(C.sig.phase==="play"?"à jouer":(bal?"équilibre":"")));
-    const ha=$(id+"-ha"), hb=$(id+"-hb");
-    ha.className="half ha"; hb.className="half hb";
-    if(C.flash!=="won"){
-      if(C.sig.phase==="await"){ ha.classList.add("pending"); hb.classList.add("pending"); }
-      else if(C.sig.phase==="play"){ (C.sig.side==="a"?ha:hb).classList.add("on"); }
+    const mc=$("m-"+id);
+    mc.className="mcell "+CCLASS[ch]+(C.flash==="won"?" won":(C.sig.phase==="await"?" bal await":((activeC(C)||bal)?" bal":"")));
+    $(id+"-msc").textContent=a+"–"+b;
+    const det=$(id+"-det"), sideEl=$(id+"-side"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait");
+    det.style.display="none"; sideEl.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
+    if(C.flash==="won"){
+      det.style.display=""; waitEl.style.display=""; waitEl.textContent="✓ gagné"; waitEl.classList.add("won");
+    } else if(C.sig.phase==="play"){
+      det.style.display=""; sideEl.style.display=""; miseEl.style.display="";
+      const sideName=CLABELS[ch][C.sig.side==="a"?0:1];
+      sideEl.textContent=sideName.toUpperCase();
+      sideEl.className="mside "+(ch==="R/N"?(C.sig.side==="a"?"rouge":"noir"):"neutre");
+      miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
+    } else if(C.sig.phase==="await"){
+      det.style.display=""; waitEl.style.display=""; waitEl.textContent="⚑ attends la boule";
     }
-    $(id+"-ph").textContent = C.phase==="fini"?"épuisé":(activeC(C)?phaseLabel(C):(C.pMise===0?"prêt":phaseLabel(C)));
-    $(id+"-m").textContent = C.phase==="fini"?"—":eur(stakeC(C));
   }
 
   $("solde").textContent=eur(S.solde);
@@ -338,7 +364,7 @@ function render(){
 
   const l12=S.spins.slice(-12); $("count12").textContent=l12.length+"/12";
   const tr=$("track");
-  tr.innerHTML=S.spins.length===0?'<span class="empty-note">Saisis les numéros qui sortent ↑</span>'
+  tr.innerHTML=S.spins.length===0?'<span class="empty-note">Les numéros sortis apparaîtront ici</span>'
     :l12.map((n,i)=>`<div class="chip ${colorOf(n)}${i===l12.length-1?' last':''}">${n}</div>`).join("");
 
   const lg=$("log"); const items=S.log.slice(-80).reverse();
@@ -352,9 +378,6 @@ function render(){
 
 /* ---- events ---- */
 $("numGrid").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(parseInt(t.dataset.n,10)); });
-document.querySelector(".zero-row").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(0); });
-$("numAdd").addEventListener("click",addNumber);
-$("numIn").addEventListener("keydown",e=>{ if(e.key==="Enter") addNumber(); });
 $("undo").addEventListener("click",undoSpin);
 $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
@@ -364,7 +387,7 @@ $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
-(async function(){ buildCards(); buildPad(); await load(); recalcCapital(); replay(false); render(); })();
+(async function(){ buildMini(); buildPad(); await load(); recalcCapital(); replay(false); render(); })();
 </script>
 </body>
 </html>
