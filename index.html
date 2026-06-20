@@ -142,6 +142,11 @@
   .chartsvg{width:100%;height:150px;display:block;border-radius:8px}
   .chart-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--sage);margin-top:9px}
   .chart-empty{color:var(--sage-dim);font-size:13px;padding:14px 0}
+  .chart-stats{display:flex;gap:7px;margin-bottom:11px}
+  .cstat{flex:1;background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 6px;text-align:center}
+  .cstat .cs-v{display:block;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ivory);line-height:1.1}
+  .cstat .cs-v.win{color:var(--win)} .cstat .cs-v.lose{color:var(--lose)}
+  .cstat .cs-l{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
   .log li{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:8px 2px;border-bottom:1px solid var(--line-soft)}
   .log li:last-child{border-bottom:none}
   .log .lphase{font-size:10px;color:var(--sage-dim)}
@@ -157,6 +162,13 @@
   .field .hint{font-size:11px;color:var(--sage-dim);display:block;margin-top:2px}
   .field input{width:96px;background:var(--felt2);border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--ivory);font-family:var(--mono);font-size:15px;text-align:right}
   .reset-all{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--lose);font-size:13px;margin-top:4px}
+  .sheet-sync{margin:2px 0 14px;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--felt2)}
+  .sheet-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);margin-bottom:9px}
+  .sheet-sync input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--ivory);font-family:var(--mono);font-size:12px}
+  .sheet-btns{display:flex;gap:8px;margin-top:9px}
+  .sheet-b{flex:1;padding:10px;border-radius:9px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);font-size:12px;font-weight:600}
+  .sheet-help{font-size:10.5px;color:var(--sage-dim);line-height:1.45;margin-top:9px}
+  .sheet-help a{color:var(--sage)}
 
   footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#1a1208;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
@@ -181,6 +193,24 @@
   .slist .s-meta{font-size:10.5px;color:var(--sage-dim);font-family:var(--mono)}
   .slist .s-gain{font-family:var(--mono);font-size:14px;font-weight:500}
   .slist .s-del{font-size:13px;color:var(--sage-dim);padding:2px 6px}
+  .slist li.s-row{cursor:pointer}
+  .slist li.s-row.open{background:var(--felt2)}
+  .slist .s-caret{font-size:10px;color:var(--sage-dim);margin-left:2px;transition:transform .15s}
+  .slist li.s-row.open .s-caret{transform:rotate(90deg);color:var(--gold)}
+  .slist li.s-detail-row{display:block;padding:2px 4px 12px;background:var(--felt2)}
+  .sd-stats{display:flex;gap:6px;margin-bottom:9px}
+  .sd-stat{flex:1;text-align:center;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:6px 4px}
+  .sd-v{display:block;font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ivory);line-height:1.1}
+  .sd-v.win{color:var(--win)} .sd-v.lose{color:var(--lose)}
+  .sd-l{display:block;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
+  .s-spark{width:100%;height:72px;display:block;border-radius:7px}
+  .hist-count{font-family:var(--mono);font-size:11px;color:var(--sage-dim)}
+  .hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+  .hstat{background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:9px 5px;text-align:center}
+  .hstat .hv{display:block;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ivory);line-height:1.1}
+  .hstat .hv.pos{color:var(--win)} .hstat .hv.neg{color:var(--lose)}
+  .hstat .hl{display:block;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
+  .histsvg{width:100%;height:140px;display:block;border-radius:8px}
   .log-empty{color:var(--sage-dim);font-size:13px}
 
   /* modal */
@@ -252,9 +282,15 @@
     </div>
   </section>
 
+  <!-- SUIVI LONGUE DURÉE -->
+  <section id="histSection">
+    <div class="sec-h"><h2>Suivi longue durée</h2><span class="hist-count" id="histCount"></span></div>
+    <div id="histBody"><div class="chart-empty">Aucune session enregistrée — ton suivi cumulé apparaîtra ici.</div></div>
+  </section>
+
   <!-- SESSIONS -->
   <section>
-    <div class="sec-h"><h2>Sessions enregistrées</h2><button class="jarrow" id="newSessionBtn" style="font-size:12px">+ nouvelle</button></div>
+    <div class="sec-h"><h2>Journal des sessions</h2><button class="jarrow" id="newSessionBtn" style="font-size:12px">+ nouvelle</button></div>
     <div class="sess-actions">
       <button class="save-session" id="saveSessionBtn">Enregistrer la session</button>
       <button class="export-session" id="exportBtn">Exporter (CSV)</button>
@@ -267,6 +303,15 @@
     <div class="set-body">
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="field"><label>Mise de départ<span class="hint">en € · valeur d'1 pièce, base de la montante</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.05"></div>
+      <div class="sheet-sync">
+        <div class="sheet-h">Synchro Google Sheets</div>
+        <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
+        <div class="sheet-btns">
+          <button id="sheetTest" class="sheet-b">Tester</button>
+          <button id="sheetSyncAll" class="sheet-b">Envoyer tout l'historique</button>
+        </div>
+        <p class="sheet-help">Colle l'URL de ton script Google (déploiement « application web »). Chaque session enregistrée y est ensuite ajoutée automatiquement. Laisse vide pour ne rien envoyer.</p>
+      </div>
       <button class="reset-all" id="resetAll">Tout réinitialiser (solde, piste, journal)</button>
     </div>
   </details>
@@ -320,10 +365,51 @@ function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple();
 
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
 function baseMise(soldeEur){ return Math.max(0.5, Math.floor(soldeEur/125)*0.5); }
-async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart})); }catch(e){} }
-async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); recalcCapital(); } } }catch(e){} }
-async function loadSessions(){ try{ if(window.storage){ const r=await window.storage.get(SESS_KEY); if(r&&r.value) sessions=JSON.parse(r.value)||[]; } }catch(e){} }
-async function saveSessions(){ try{ if(window.storage) await window.storage.set(SESS_KEY, JSON.stringify(sessions)); }catch(e){} }
+const Store={
+  async get(k){
+    if(window.storage){ try{ const r=await window.storage.get(k); return (r&&r.value!=null)?r.value:null; }catch(e){ return null; } }
+    try{ const v=localStorage.getItem(k); return v!=null?v:null; }catch(e){ return null; }
+  },
+  async set(k,v){
+    if(window.storage){ try{ await window.storage.set(k,v); }catch(e){} return; }
+    try{ localStorage.setItem(k,v); }catch(e){}
+  }
+};
+async function save(){ await Store.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart})); }
+async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); recalcCapital(); }catch(e){} } }
+async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
+async function saveSessions(){ await Store.set(SESS_KEY, JSON.stringify(sessions)); }
+const SHEET_KEY="cresus:sheet:v1";
+let sheetUrl="";
+async function loadSheetUrl(){ const v=await Store.get(SHEET_KEY); if(v) sheetUrl=v; }
+async function saveSheetUrl(v){ sheetUrl=(v||"").trim(); await Store.set(SHEET_KEY, sheetUrl); }
+function sheetRow(s){
+  const d=new Date(s.date), date=d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  return [date, round2(s.debut), round2(s.fin), round2(s.gain), Math.round((s.pct||0)*10)/10,
+    fmtDur(s.duree||0), s.coups, s.wins!=null?s.wins:"", s.losses!=null?s.losses:"",
+    s.wagered!=null?round2(s.wagered):"", s.base];
+}
+function sheetSend(payload){
+  if(!sheetUrl) return Promise.reject(new Error("no-url"));
+  return fetch(sheetUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+}
+function pushToSheet(s){ if(sheetUrl) sheetSend({row:sheetRow(s)}).catch(()=>{}); }
+function pushAllToSheet(){
+  if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; }
+  if(!sessions.length){ toast("Aucune session à envoyer"); return; }
+  const rows=sessions.slice().reverse().map(sheetRow); // de la plus ancienne à la plus récente
+  toast("Envoi en cours…");
+  sheetSend({all:rows})
+    .then(()=>toast(rows.length+" session"+(rows.length>1?"s":"")+" resynchronisée"+(rows.length>1?"s":"")))
+    .catch(()=>toast("Bloqué ici — ouvre l'appli hors de Claude"));
+}
+function testSheet(){
+  if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; }
+  toast("Test en cours…");
+  sheetSend({test:true})
+    .then(()=>toast("Requête partie — vérifie ton Google Sheet"))
+    .catch(()=>toast("Bloqué ici — ouvre l'appli hors de Claude"));
+}
 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
@@ -478,9 +564,16 @@ function smoothPath(P){
 }
 function drawChart(){
   const el=$("chart");
+  let nG=0,nP=0;
+  for(const e of S.log){ if(e.r==="G")nG++; else nP++; }
+  const stats=`<div class="chart-stats">
+      <div class="cstat"><span class="cs-v win">${nG}</span><span class="cs-l">gains</span></div>
+      <div class="cstat"><span class="cs-v lose">${nP}</span><span class="cs-l">pertes</span></div>
+      <div class="cstat"><span class="cs-v">${eur(S.wagered)}</span><span class="cs-l">misé</span></div>
+    </div>`;
   let bal=S.capital; const pts=[bal*S.pieceEur];
   for(const e of S.log){ bal += (e.r==="G"? e.amt : -e.amt); pts.push(bal*S.pieceEur); }
-  if(pts.length<2){ el.innerHTML='<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'; return; }
+  if(pts.length<2){ el.innerHTML=stats+'<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'; return; }
   const W=300,H=150,pad=12;
   const min=Math.min(...pts), max=Math.max(...pts), span=(max-min)||1;
   const X=i=> pad + i*(W-2*pad)/(pts.length-1);
@@ -490,7 +583,7 @@ function drawChart(){
   const base=S.capitalEur, yb=Y(base), x0=X(0), x1=X(pts.length-1);
   const area=d+` L${x1.toFixed(1)},${yb.toFixed(1)} L${x0.toFixed(1)},${yb.toFixed(1)} Z`;
   const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
+  el.innerHTML=stats+`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
       <defs>
         <clipPath id="clipUp"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
         <clipPath id="clipDn"><rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hDn}"/></clipPath>
@@ -523,24 +616,108 @@ function exportSessions(){
 }
 
 /* ---- sessions & fenêtre d'ouverture ---- */
+let openSession=-1;
+function downsample(arr,max){ if(arr.length<=max) return arr; const out=[],step=(arr.length-1)/(max-1); for(let i=0;i<max;i++) out.push(arr[Math.round(i*step)]); out[out.length-1]=arr[arr.length-1]; return out; }
 function saveCurrentSession(){
   const finEur=S.solde*S.pieceEur, gainEur=finEur-S.capitalEur;
-  sessions.unshift({ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
+  let bal=S.capital, curve=[bal*S.pieceEur], nG=0,nP=0;
+  for(const e of S.log){ bal+=(e.r==="G"?e.amt:-e.amt); curve.push(bal*S.pieceEur); if(e.r==="G")nG++; else nP++; }
+  const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
     pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:Date.now()-(S.sessionStart||Date.now()),
-    coups:S.spins.length, base:S.pieceEur });
+    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, curve:downsample(curve,140) };
+  sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
-  saveSessions(); renderSessions(); goalDismissed=true; render(); toast("Session enregistrée");
+  saveSessions(); renderSessions(); goalDismissed=true; render();
+  pushToSheet(rec); toast("Session enregistrée");
+}
+function sparkSVG(curve, base){
+  if(!curve||curve.length<2) return '<div class="chart-empty" style="padding:6px 0">Courbe non disponible pour cette session.</div>';
+  const W=300,H=72,pad=7;
+  const min=Math.min(...curve), max=Math.max(...curve), span=(max-min)||1;
+  const X=i=>pad+i*(W-2*pad)/(curve.length-1), Y=v=>H-pad-(v-min)*(H-2*pad)/span;
+  const P=curve.map((v,i)=>({x:X(i),y:Y(v)})), d=smoothPath(P);
+  const b=(base!=null?base:curve[0]), yb=Y(b), x0=X(0), x1=X(curve.length-1);
+  const area=d+` L${x1.toFixed(1)},${yb.toFixed(1)} L${x0.toFixed(1)},${yb.toFixed(1)} Z`;
+  const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="s-spark">
+    <defs><clipPath id="sclipU"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
+    <clipPath id="sclipD"><rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hDn}"/></clipPath></defs>
+    <path d="${area}" fill="var(--win)" fill-opacity="0.13" clip-path="url(#sclipU)"/>
+    <path d="${area}" fill="var(--lose)" fill-opacity="0.13" clip-path="url(#sclipD)"/>
+    <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+    <path d="${d}" fill="none" stroke="var(--win)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#sclipU)"/>
+    <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#sclipD)"/>
+  </svg>`;
 }
 function renderSessions(){
   const el=$("sessionsList");
-  if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; return; }
+  if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; openSession=-1; renderHistory(); return; }
+  const num2=v=>(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
   el.innerHTML=sessions.map((s,i)=>{
     const d=new Date(s.date);
     const ds=d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
     const g=(s.gain>=0?"+":"−")+Math.abs(s.gain).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
     const pct=(s.gain>=0?"+":"−")+Math.abs(s.pct).toFixed(1)+"%";
-    return `<li><div class="s-main"><span class="s-date">${ds}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
+    const open=i===openSession;
+    let row=`<li class="s-row${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${ds}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
+    if(open){
+      const w=s.wins, l=s.losses, tot=(w!=null&&l!=null)?w+l:null, rate=tot?Math.round(w/tot*100):null;
+      const wagered=s.wagered!=null?num2(s.wagered)+" €":"—";
+      row+=`<li class="s-detail-row"><div class="sd-stats">
+        <div class="sd-stat"><span class="sd-v win">${w!=null?w:"—"}</span><span class="sd-l">gains</span></div>
+        <div class="sd-stat"><span class="sd-v lose">${l!=null?l:"—"}</span><span class="sd-l">pertes</span></div>
+        <div class="sd-stat"><span class="sd-v">${rate!=null?rate+" %":"—"}</span><span class="sd-l">réussite</span></div>
+        <div class="sd-stat"><span class="sd-v">${wagered}</span><span class="sd-l">misé</span></div>
+      </div>${sparkSVG(s.curve,s.debut)}</li>`;
+    }
+    return row;
   }).join("");
+  renderHistory();
+}
+function cumCurveSVG(vals){
+  if(vals.length<2) return "";
+  const W=300,H=140,pad=12;
+  const min=Math.min(...vals,0), max=Math.max(...vals,0), span=(max-min)||1;
+  const X=i=>pad+i*(W-2*pad)/(vals.length-1), Y=v=>H-pad-(v-min)*(H-2*pad)/span;
+  const P=vals.map((v,i)=>({x:X(i),y:Y(v)})), d=smoothPath(P);
+  const yb=Y(0), x0=X(0), x1=X(vals.length-1);
+  const area=d+` L${x1.toFixed(1)},${yb.toFixed(1)} L${x0.toFixed(1)},${yb.toFixed(1)} Z`;
+  const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="histsvg">
+    <defs><clipPath id="hclipU"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
+    <clipPath id="hclipD"><rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hDn}"/></clipPath></defs>
+    <path d="${area}" fill="var(--win)" fill-opacity="0.13" clip-path="url(#hclipU)"/>
+    <path d="${area}" fill="var(--lose)" fill-opacity="0.13" clip-path="url(#hclipD)"/>
+    <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+    <path d="${d}" fill="none" stroke="var(--win)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#hclipU)"/>
+    <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#hclipD)"/>
+  </svg>`;
+}
+function renderHistory(){
+  const el=$("histBody"), cnt=$("histCount");
+  if(!sessions.length){ el.innerHTML='<div class="chart-empty">Aucune session enregistrée — ton suivi cumulé apparaîtra ici.</div>'; cnt.textContent=""; return; }
+  const chrono=sessions.slice().reverse();
+  let tg=0,tw=0,tWins=0,tLoss=0,tCoups=0,tDur=0,best=-Infinity,worst=Infinity,pos=0;
+  const cum=[0];
+  for(const s of chrono){
+    tg+=s.gain||0; cum.push(tg);
+    tw+=s.wagered||0; tWins+=s.wins||0; tLoss+=s.losses||0; tCoups+=s.coups||0; tDur+=s.duree||0;
+    if((s.gain||0)>best)best=s.gain||0; if((s.gain||0)<worst)worst=s.gain||0; if((s.gain||0)>=0)pos++;
+  }
+  const n=chrono.length, avg=tg/n, rate=(tWins+tLoss)?Math.round(tWins/(tWins+tLoss)*100):null;
+  cnt.textContent=n+" session"+(n>1?"s":"");
+  const sg=v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+  const cls=v=>v>=0?"pos":"neg";
+  const grid=`<div class="hgrid">
+    <div class="hstat"><span class="hv ${cls(tg)}">${sg(tg)}</span><span class="hl">résultat net</span></div>
+    <div class="hstat"><span class="hv">${fmtEur2(tw)}</span><span class="hl">misé total</span></div>
+    <div class="hstat"><span class="hv">${rate!=null?rate+" %":"—"}</span><span class="hl">réussite</span></div>
+    <div class="hstat"><span class="hv ${cls(avg)}">${sg(avg)}</span><span class="hl">moy./session</span></div>
+    <div class="hstat"><span class="hv ${cls(best)}">${sg(best)}</span><span class="hl">meilleure</span></div>
+    <div class="hstat"><span class="hv ${cls(worst)}">${sg(worst)}</span><span class="hl">pire</span></div>
+  </div>`;
+  el.innerHTML=grid+cumCurveSVG(cum)+
+    `<div class="chart-meta"><span>${pos}/${n} positives</span><span>${tCoups} coups</span><span>${fmtDur(tDur)}</span></div>`;
 }
 function openStartModal(){
   $("startSolde").value=S.capitalEur||200; updateStartMise();
@@ -626,18 +803,26 @@ $("goalSave").addEventListener("click",saveCurrentSession);
 $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
 $("saveSessionBtn").addEventListener("click",saveCurrentSession);
 $("exportBtn").addEventListener("click",exportSessions);
+$("sheetUrl").addEventListener("change",e=>saveSheetUrl(e.target.value));
+$("sheetTest").addEventListener("click",testSheet);
+$("sheetSyncAll").addEventListener("click",pushAllToSheet);
 $("newSessionBtn").addEventListener("click",openStartModal);
 $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
-$("sessionsList").addEventListener("click",e=>{ const t=e.target.closest(".s-del"); if(!t)return; sessions.splice(parseInt(t.dataset.i,10),1); saveSessions(); renderSessions(); });
+$("sessionsList").addEventListener("click",e=>{
+  const del=e.target.closest(".s-del");
+  if(del){ const i=parseInt(del.dataset.i,10); sessions.splice(i,1); if(openSession===i)openSession=-1; else if(openSession>i)openSession--; saveSessions(); renderSessions(); return; }
+  const row=e.target.closest(".s-row"); if(!row)return; const i=parseInt(row.dataset.i,10);
+  openSession=(openSession===i?-1:i); renderSessions();
+});
 setInterval(()=>{ if(timer.running) renderTimer(); },1000);
 
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
-(async function(){ buildMini(); buildPad(); await load(); await loadSessions(); recalcCapital(); replay(false); renderSessions(); render(); openStartModal(); })();
+(async function(){ buildMini(); buildPad(); await load(); await loadSessions(); await loadSheetUrl(); if($("sheetUrl")) $("sheetUrl").value=sheetUrl; recalcCapital(); replay(false); renderSessions(); render(); openStartModal(); })();
 </script>
 </body>
 </html>
