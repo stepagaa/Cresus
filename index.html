@@ -280,7 +280,7 @@
   <div class="modal-bg" id="startModal">
     <div class="modal">
       <h3 class="modal-title">Nouvelle session</h3>
-      <p class="modal-sub">Quel est ton solde de départ ? La mise de base augmente par palier de 100 € : 0,50 € dès 100 €, 1 € dès 200 €, 1,50 € dès 300 €, et ainsi de suite.</p>
+      <p class="modal-sub">Quel est ton solde de départ ? La mise de base suit un palier (≈ solde ÷ 250), par pas de 0,50 € tous les 125 € : 0,50 € sous 250 €, 1 € dès 250 €, 2 € dès 500 €, 3 € dès 750 €…</p>
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
@@ -295,7 +295,7 @@
 "use strict";
 const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const M1=[1,2,4,8];
-const M2=[5,7,9,12,16,21,28,37,50];
+const M2=[6,8,11,14,19,25,34,45,60]; // paroli "+2 min" : chaque clôture rapporte au moins +2 pièces
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -319,7 +319,7 @@ function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
-function baseMise(soldeEur){ return Math.max(0.5, Math.floor(soldeEur/100)*0.5); }
+function baseMise(soldeEur){ return Math.max(0.5, Math.floor(soldeEur/125)*0.5); }
 async function save(){ try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart})); }catch(e){} }
 async function load(){ try{ if(window.storage){ const r=await window.storage.get(STORE_KEY); if(r&&r.value){ const o=JSON.parse(r.value); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); recalcCapital(); } } }catch(e){} }
 async function loadSessions(){ try{ if(window.storage){ const r=await window.storage.get(SESS_KEY); if(r&&r.value) sessions=JSON.parse(r.value)||[]; } }catch(e){} }
