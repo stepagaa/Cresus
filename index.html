@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0f1e">
 <title>Crésus — chances simples</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--felt);color:var(--ivory);font-family:var(--body)}
-  body{max-width:520px;margin:0 auto;padding:0 14px 44px;background:radial-gradient(130% 60% at 50% -18%, #16203f 0%, var(--felt) 62%);min-height:100vh}
+  body{max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top,0px),12px) 14px 44px;background:radial-gradient(130% 60% at 50% -18%, #16203f 0%, var(--felt) 62%);min-height:100vh}
   h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:-.015em}
   .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
   button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
@@ -39,7 +39,7 @@
   .chrono-btn.running{border-color:var(--gold);color:var(--gold)}
   .chrono-rate{font-size:10.5px;color:var(--sage)}
   .chrono-reset{font-size:12px;color:var(--sage-dim);padding:2px 4px;line-height:1}
-  .brand{display:flex;align-items:baseline;gap:9px}
+  .brand{display:flex;align-items:baseline;justify-content:flex-end;gap:9px}
   .brand .bname{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--ivory);letter-spacing:-.02em}
   .brand .bname .c{color:var(--gold)}
   .brand .tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage-dim)}
@@ -197,6 +197,7 @@
 </head>
 <body>
   <header>
+    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span></div>
     <div class="htop">
       <div class="hmoney">
         <div class="solde mono" id="solde">200,00 €</div>
@@ -211,7 +212,6 @@
         <div class="mise mono" id="wagered">misé 0,00 €</div>
       </div>
     </div>
-    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span></div>
   </header>
 
   <!-- ALERTE +10% -->
@@ -342,34 +342,39 @@ function advanceC(ch,C,result){
   if(result==="G"){ S.solde+=stake; C.pBilan+=stake; } else { S.solde-=stake; C.pBilan-=stake; }
   S.log.push({ch,r:result,amt:stake,ph});
   if(C.phase==="m1"){
-    if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; mt(CLABELS[ch][0]+"/"+CLABELS[ch][1]+" gagné "+plus(b)); return "won"; }
+    if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" gagné "+plusEur(b)); return "won"; }
     C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · massage 2"); }
     return "lost";
   } else {
     if(C.coup==="A"){ if(result==="G"){ C.coup="B"; return "ride"; } nextTentC(C); return C.phase==="fini"?"epuise":"lost"; }
-    else { if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; mt(CLABELS[ch].join("/")+" · paroli "+plus(b)); return "won"; } nextTentC(C); return C.phase==="fini"?"epuise":"lost"; }
+    else { if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" · paroli "+plusEur(b)); return "won"; } nextTentC(C); return C.phase==="fini"?"epuise":"lost"; }
   }
 }
+function setNextState(C){
+  // règle Crésus : on joue le côté EN AVANCE ; on n'attend une boule d'observation
+  // que lorsque le compte est à égalité (aucun côté en avance).
+  if(C.acc.a===C.acc.b){ C.sig.phase="await"; C.sig.side=null; }
+  else { C.sig.phase="play"; C.sig.side = C.acc.a>C.acc.b ? "a":"b"; }
+}
 function resolveC(ch,C,result){
-  const was=activeC(C);
   const ev=advanceC(ch,C,result);
-  if(was){ if(ev==="won"||ev==="epuise") C.sig.phase="none"; else if(ev==="ride") C.sig.phase="play"; else C.sig.phase="await"; }
-  if(C.sig.phase==="none" && balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; }
+  if(ev==="won"||ev==="epuise"){ C.sig.phase="none"; C.sig.side=null;
+    if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } }
+  else { setNextState(C); }
 }
 function zeroC(ch,C){
-  // Zéro pendant un coup joué = perte totale, on avance au palier suivant et on rejoue
-  // immédiatement (même côté, sans repasser par une boule d'observation).
+  // Zéro pendant un coup joué = perte totale + palier suivant. Le zéro ne change pas le
+  // compte : on reste donc sur le côté en avance et on rejoue au nouveau palier.
   const stake=stakeC(C), ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
   S.log.push({ch,r:"Z",amt:stake,ph});
   if(C.phase==="m1"){
     C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · zéro → massage 2"); }
     else mt(CLABELS[ch].join("/")+" · zéro, palier suivant");
-  } else { // massage 2 : le zéro fait échouer la tentative en cours
-    nextTentC(C); if(C.phase!=="fini") mt(CLABELS[ch].join("/")+" · zéro, tentative suivante");
-  }
-  if(C.phase==="fini"){ C.sig.phase="none"; if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } }
-  else { C.sig.phase="play"; } // on reste en jeu, même côté, mise au nouveau palier
+  } else { nextTentC(C); if(C.phase!=="fini") mt(CLABELS[ch].join("/")+" · zéro, tentative suivante"); }
+  if(C.phase==="fini"){ C.sig.phase="none"; C.sig.side=null;
+    if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } }
+  else { setNextState(C); }
 }
 
 /* ---- alimentation d'un couple par le numéro courant (index CUR_I) ---- */
@@ -377,9 +382,10 @@ function feedCouple(ch){
   const C=S.cpl[ch]; C.flash=null;
   const n=S.spins[CUR_I]; const isZero=(n===0); const prev=C.sig.phase;
   if(prev==="none"){ if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
-  if(!isZero) C.acc[memb(n,ch)]++;
-  if(prev==="await"){ if(!isZero){ C.sig.side=memb(n,ch); C.sig.obs=n; C.sig.phase="play"; } }
-  else { if(isZero){ zeroC(ch,C); } else { resolveC(ch,C, memb(n,ch)===C.sig.side?"G":"P"); } }
+  if(isZero){ if(prev==="play") zeroC(ch,C); return; }   // zéro ignoré en phase d'attente/équilibre
+  const side=memb(n,ch); C.acc[side]++;                   // la boule met à jour le compte
+  if(prev==="await"){ C.sig.obs=n; setNextState(C); }     // boule d'observation : le côté sorti prend l'avance, on le joue
+  else { resolveC(ch,C, side===C.sig.side ? "G":"P"); }   // coup joué sur le côté en avance
 }
 
 /* ---- replay : tout est dérivé de S.spins ---- */
@@ -400,6 +406,7 @@ const round2=x=>Math.round((x+Number.EPSILON)*100)/100;
 const fmt=x=>Number.isInteger(x)?String(x):x.toFixed(2);
 const eur=p=>(p*S.pieceEur).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const plus=x=>(x>0?"+":"")+round2(x);
+const plusEur=p=>(p>0?"+":p<0?"−":"")+eur(Math.abs(p));
 const colorOf=n=>n===0?"z":(RED.has(n)?"r":"n");
 function mt(msg){ if(EMIT) toast(msg); }
 
@@ -457,21 +464,42 @@ function setJview(v){ jview=v;
   $("jToggle").textContent = v==="chart"?"←":"→";
   if(v==="chart") drawChart();
 }
+function smoothPath(P){
+  if(P.length<2) return "";
+  if(P.length===2) return `M${P[0].x.toFixed(1)},${P[0].y.toFixed(1)} L${P[1].x.toFixed(1)},${P[1].y.toFixed(1)}`;
+  let d=`M${P[0].x.toFixed(1)},${P[0].y.toFixed(1)}`;
+  for(let i=0;i<P.length-1;i++){
+    const p0=P[i-1]||P[i], p1=P[i], p2=P[i+1], p3=P[i+2]||P[i+1];
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
 function drawChart(){
   const el=$("chart");
   let bal=S.capital; const pts=[bal*S.pieceEur];
   for(const e of S.log){ bal += (e.r==="G"? e.amt : -e.amt); pts.push(bal*S.pieceEur); }
   if(pts.length<2){ el.innerHTML='<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'; return; }
-  const W=300,H=150,pad=10;
+  const W=300,H=150,pad=12;
   const min=Math.min(...pts), max=Math.max(...pts), span=(max-min)||1;
-  const x=i=> pad + i*(W-2*pad)/(pts.length-1);
-  const y=v=> H-pad - (v-min)*(H-2*pad)/span;
-  const d=pts.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
-  const base=S.capitalEur, yb=y(base), up=pts[pts.length-1]>=base;
-  const col=up?"var(--win)":"var(--lose)";
+  const X=i=> pad + i*(W-2*pad)/(pts.length-1);
+  const Y=v=> H-pad - (v-min)*(H-2*pad)/span;
+  const P=pts.map((v,i)=>({x:X(i),y:Y(v)}));
+  const d=smoothPath(P);
+  const base=S.capitalEur, yb=Y(base), x0=X(0), x1=X(pts.length-1);
+  const area=d+` L${x1.toFixed(1)},${yb.toFixed(1)} L${x0.toFixed(1)},${yb.toFixed(1)} Z`;
+  const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
+      <defs>
+        <clipPath id="clipUp"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
+        <clipPath id="clipDn"><rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hDn}"/></clipPath>
+      </defs>
+      <path d="${area}" fill="var(--win)" fill-opacity="0.14" clip-path="url(#clipUp)"/>
+      <path d="${area}" fill="var(--lose)" fill-opacity="0.14" clip-path="url(#clipDn)"/>
       <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
-      <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      <path d="${d}" fill="none" stroke="var(--win)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#clipUp)"/>
+      <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#clipDn)"/>
     </svg>
     <div class="chart-meta"><span>min ${fmtEur2(min)}</span><span>départ ${fmtEur2(base)}</span><span>max ${fmtEur2(max)}</span></div>`;
 }
@@ -545,7 +573,8 @@ function render(){
     const det=$(id+"-det"), sideEl=$(id+"-side"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait");
     det.style.display="none"; sideEl.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
     if(C.flash==="won"){
-      det.style.display=""; waitEl.style.display=""; waitEl.textContent="✓ gagné"; waitEl.classList.add("won");
+      det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
+      const g=C.lastGain||0; waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
     } else if(C.sig.phase==="play"){
       det.style.display=""; sideEl.style.display=""; miseEl.style.display="";
       const sideName=CLABELS[ch][C.sig.side==="a"?0:1];
@@ -553,7 +582,7 @@ function render(){
       sideEl.className="mside "+(ch==="R/N"?(C.sig.side==="a"?"rouge":"noir"):"neutre");
       miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
     } else if(C.sig.phase==="await"){
-      det.style.display=""; waitEl.style.display=""; waitEl.textContent="⚑ attends la boule";
+      det.style.display=""; waitEl.style.display=""; waitEl.textContent="observation";
     }
   }
 
