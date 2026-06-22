@@ -43,6 +43,7 @@
   .brand .bname{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--ivory);letter-spacing:-.02em}
   .brand .bname .c{color:var(--gold)}
   .brand .tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage-dim)}
+  .brand .montbadge{font-family:var(--mono);font-size:10px;color:var(--gold);border:1px solid var(--gold-dim);border-radius:10px;padding:2px 7px;margin-left:4px}
 
   /* ===== CARTES COUPLES ===== */
   #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px;align-items:start}
@@ -57,49 +58,13 @@
   .mcell.play .mscore{color:var(--gold)}
   .mcell.won{border-color:var(--win);background:rgba(51,192,141,.07);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
   .mcell.won .mscore{color:var(--win)}
+  .mcell.ended{opacity:.4}
   .mdetail{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft)}
   .mside{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.02em;line-height:1.1}
   .mside.rouge{color:#ff7a6e} .mside.noir{color:#fff} .mside.neutre{color:var(--gold)}
   .mmise{font-family:var(--mono);font-size:15px;color:var(--gold);margin-top:5px}
   .mwait{font-size:10px;color:var(--gold);line-height:1.3}
   .mwait.won{color:var(--win);font-weight:600}
-  .cpl{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);margin-bottom:10px;transition:border-color .18s, box-shadow .18s, background .18s}
-  .cpl.bal{border-color:var(--gold);box-shadow:0 0 0 1px rgba(231,178,78,.22)}
-  .cpl.won{border-color:var(--win);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
-  .cpl-top{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
-  .cpl.bal .cpl-top{background:rgba(231,178,78,.05)}
-  .cpl.won .cpl-top{background:rgba(51,192,141,.06)}
-  .cpl-name{font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:-.01em}
-  .cpl-state{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-left:9px}
-  .cpl.won .cpl-state{color:var(--win)}
-  .cpl-score{font-family:var(--mono);font-size:21px;display:flex;align-items:baseline;gap:8px;color:var(--ivory)}
-  .cpl-score .dash{color:var(--sage-dim);font-size:16px}
-  .cpl-score b{font-weight:400}
-  .cpl.rn .cpl-score .a{color:#ff7b73}
-
-  .cpl-bot{display:grid;grid-template-columns:1.5fr 1fr}
-  .cpl-sig{display:flex;flex-direction:column}
-  .half{flex:1;display:flex;align-items:center;gap:9px;padding:9px 14px;min-height:39px;transition:background .15s}
-  .half-wait{display:flex;align-items:center;padding:9px 14px;min-height:60px;font-size:13px;font-weight:600;line-height:1.3;color:var(--gold)}
-  .half-wait.won{color:var(--win)}
-  .half .dot{width:9px;height:9px;border-radius:50%;flex:none;background:#34405f}
-  .cpl.rn .ha .dot{background:var(--rouge)}
-  .cpl.rn .hb .dot{background:#11192c;border:1px solid #38445f}
-  .half .nm{font-family:var(--body);font-weight:600;font-size:13px;color:var(--sage)}
-  .half .jb{margin-left:auto;font-size:11px;color:var(--gold);opacity:0;transition:opacity .15s}
-  .half.pending .dot{animation:pulse 1.15s infinite}
-  .half.pending .nm{color:var(--sage)}
-  .half.on{background:rgba(231,178,78,.12)}
-  .half.on .nm{color:var(--gold);font-weight:700}
-  .half.on .jb{opacity:1}
-  .cpl.rn .ha.on{background:rgba(224,71,63,.16)} .cpl.rn .ha.on .nm{color:#ff8c84}
-  .cpl.rn .hb.on{background:rgba(255,255,255,.07)} .cpl.rn .hb.on .nm{color:#fff}
-  .half.on .dot{box-shadow:0 0 0 3px rgba(231,178,78,.15)}
-  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
-  .cpl-mise{border-left:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;padding:9px 14px}
-  .cpl-mise .ph{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:4px}
-  .cpl-mise .m{font-family:var(--mono);font-size:20px;color:var(--gold);line-height:1;font-weight:500}
-  .cpl-mise .mu{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
 
   /* ===== SECTIONS ===== */
   section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:11px}
@@ -111,10 +76,6 @@
   .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}
   .num.z0{background:#1f9d63;color:#fff;border-color:transparent}
   .num:active{transform:scale(.9)}
-  .typewrap{display:flex;gap:8px;margin-top:11px}
-  .typewrap input{flex:1;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center;min-width:0}
-  .typewrap input::placeholder{color:var(--sage-dim)}
-  .typewrap button{padding:0 22px;border-radius:11px;background:var(--felt2);border:1px solid var(--line);color:var(--gold);font-size:14px;font-weight:600}
   .track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;min-height:28px;margin:18px 0 6px}
   .chip{height:28px;min-width:0;padding:0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
   .chip.r{background:var(--rouge);color:#fff}.chip.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}.chip.z{background:#1f9d63;border-color:transparent;color:#fff}
@@ -122,16 +83,6 @@
   .empty-note{grid-column:1/-1;text-align:center;align-self:center;color:var(--sage-dim);font-size:12.5px}
   .pad-actions{display:flex;gap:8px;margin-top:12px}
   .pad-actions button{flex:1;padding:10px;border-radius:9px;font-size:12px;background:transparent;border:1px solid var(--line);color:var(--sage)}
-
-  /* ===== LEDGER ===== */
-  .ledger{display:grid;grid-template-columns:1.5fr 1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:11px}
-  .ledger .cell{padding:13px 14px}
-  .ledger .cell+.cell{border-left:1px solid var(--line-soft)}
-  .ledger .lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:6px}
-  .ledger .val{font-family:var(--mono);font-size:23px;line-height:1;font-weight:500}
-  .ledger .val.small{font-size:19px}
-  .ledger .eur{font-family:var(--mono);font-size:10px;color:var(--sage-dim);margin-top:5px}
-  .pos{color:var(--win)} .neg{color:var(--lose)}
 
   .log{list-style:none;margin:0;padding:0;max-height:200px;overflow-y:auto}
   .jarrow{font-size:15px;color:var(--gold);padding:3px 11px;border:1px solid var(--line);border-radius:9px;background:var(--felt2);line-height:1}
@@ -161,6 +112,8 @@
   .field label{font-size:13px;color:var(--ivory)}
   .field .hint{font-size:11px;color:var(--sage-dim);display:block;margin-top:2px}
   .field input{width:96px;background:var(--felt2);border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--ivory);font-family:var(--mono);font-size:15px;text-align:right}
+  .set-mont-row{margin-bottom:14px}
+  .set-mont-row>label{font-size:13px;color:var(--ivory);display:block;margin-bottom:8px}
   .reset-all{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--lose);font-size:13px;margin-top:4px}
   .sheet-sync{margin:2px 0 14px;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--felt2)}
   .sheet-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);margin-bottom:9px}
@@ -170,16 +123,31 @@
   .sheet-help{font-size:10.5px;color:var(--sage-dim);line-height:1.45;margin-top:9px}
   .sheet-help a{color:var(--sage)}
 
+  /* ===== sélecteur de montante ===== */
+  .mont-pick{display:flex;gap:8px;margin-bottom:14px}
+  .mont-opt{flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;padding:12px 8px;border-radius:11px;border:1px solid var(--line);background:var(--felt2);color:var(--sage);font-size:14px;font-weight:600;transition:border-color .15s,background .15s,color .15s}
+  .mont-opt small{font-size:10px;font-weight:400;color:var(--sage-dim);letter-spacing:.02em}
+  .mont-opt.on{border-color:var(--gold);background:rgba(231,178,78,.1);color:var(--gold)}
+  .mont-opt.on small{color:var(--gold)}
+  .tp-row{display:flex;gap:10px;margin-bottom:14px}
+  .tp-row>div{flex:1}
+  .tp-row input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:11px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center}
+
   footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#1a1208;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* alerte +10% */
+  /* bannière fin de séance (TP / SL) */
   .banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(51,192,141,.12);border:1px solid var(--win)}
   .banner-txt{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--win)}
   .banner-act{display:flex;align-items:center;gap:8px;flex:none}
   .banner-act #goalSave{font-size:12px;font-weight:600;color:#06251a;background:var(--win);border-radius:9px;padding:7px 11px}
   .banner-act #goalDismiss{font-size:18px;color:var(--sage);padding:0 4px;line-height:1}
+  .banner.banner-sl{background:rgba(224,71,63,.12);border-color:var(--lose)}
+  .banner.banner-sl .banner-txt{color:var(--lose)}
+  .banner.banner-sl #goalSave{background:var(--lose);color:#2a0808}
+
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 
   /* sessions */
   .sess-actions{display:flex;gap:8px;margin-bottom:12px}
@@ -211,23 +179,22 @@
   .hstat .hv.pos{color:var(--win)} .hstat .hv.neg{color:var(--lose)}
   .hstat .hl{display:block;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
   .histsvg{width:100%;height:140px;display:block;border-radius:8px}
-  .log-empty{color:var(--sage-dim);font-size:13px}
 
   /* modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(6,10,20,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80}
-  .modal{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+  .modal-bg{position:fixed;inset:0;background:rgba(6,10,20,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80;overflow-y:auto}
+  .modal{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-height:calc(100vh - 36px);overflow-y:auto}
   .modal-title{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--ivory)}
   .modal-sub{font-size:12.5px;color:var(--sage);line-height:1.5;margin:8px 0 16px}
   .modal-lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);display:block;margin-bottom:7px}
   .modal input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--ivory);font-family:var(--mono);font-size:20px;text-align:center}
-  .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 16px}
-  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700}
+  .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
+  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700;margin-top:6px}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
 </style>
 </head>
 <body>
   <header>
-    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span></div>
+    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono" id="montBadge">Triple S</span></div>
     <div class="htop">
       <div class="hmoney">
         <div class="solde mono" id="solde">200,00 €</div>
@@ -244,16 +211,16 @@
     </div>
   </header>
 
-  <!-- ALERTE +10% -->
+  <!-- BANNIÈRE FIN DE SÉANCE (TP / SL) -->
   <div class="banner" id="goalBanner" style="display:none">
-    <div class="banner-txt" id="goalTxt">🎯 Objectif atteint : +10 pièces</div>
+    <div class="banner-txt" id="goalTxt">🎯 Take-profit atteint</div>
     <div class="banner-act">
-      <button id="goalSave">Enregistrer la session</button>
+      <button id="goalSave">Enregistrer la séance</button>
       <button id="goalDismiss" aria-label="fermer">×</button>
     </div>
   </div>
 
-  <!-- DERNIERS NUMÉROS (1 ligne, au-dessus de la grille) -->
+  <!-- DERNIERS NUMÉROS -->
   <div class="track" id="track"><span class="empty-note">Les numéros sortis apparaîtront ici</span></div>
 
   <!-- GRILLE -->
@@ -268,8 +235,6 @@
 
   <!-- 3 PETITES CASES (signal + détail) -->
   <div id="mini"></div>
-
-  <!-- LEDGER déplacé dans l'en-tête -->
 
   <!-- JOURNAL -->
   <section>
@@ -301,8 +266,17 @@
   <details class="set">
     <summary><span>Réglages</span><span style="color:var(--gold)">⚙</span></summary>
     <div class="set-body">
+      <div class="set-mont-row">
+        <label>Montante</label>
+        <div class="mont-pick" style="margin:0">
+          <button class="mont-opt set-mont" data-m="ts">Triple S<small>cycle +5</small></button>
+          <button class="mont-opt set-mont" data-m="cresus">Crésus<small>1-2-4-8 + paroli</small></button>
+        </div>
+      </div>
+      <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1"></div>
+      <div class="field"><label>Stop-loss<span class="hint">pièces · séance perdante</span></label><input type="number" id="inSL" inputmode="decimal" value="-20" step="1"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
-      <div class="field"><label>Mise de départ<span class="hint">en € · valeur d'1 pièce, base de la montante</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.05"></div>
+      <div class="field"><label>Mise de départ<span class="hint">en € · 1 € pour 200 € (solde ÷ 200)</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.05"></div>
       <div class="sheet-sync">
         <div class="sheet-h">Synchro Google Sheets</div>
         <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
@@ -324,13 +298,25 @@
   <!-- FENÊTRE D'OUVERTURE -->
   <div class="modal-bg" id="startModal">
     <div class="modal">
-      <h3 class="modal-title">Nouvelle session</h3>
-      <p class="modal-sub">Quel est ton solde de départ ? La mise de base suit un palier (≈ solde ÷ 250), par pas de 0,50 € tous les 125 € : 0,50 € sous 250 €, 1 € dès 250 €, 2 € dès 500 €, 3 € dès 750 €…</p>
+      <h3 class="modal-title">Nouvelle séance</h3>
+      <p class="modal-sub">Solde de départ et montante. La mise de base = solde ÷ 200 (1 € pour 200 €).</p>
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
-      <button class="modal-go" id="startNew">Démarrer la session</button>
-      <button class="modal-resume" id="startResume" style="display:none">Reprendre la session en cours</button>
+
+      <label class="modal-lab" style="margin-top:14px">Montante</label>
+      <div class="mont-pick" id="startMont">
+        <button class="mont-opt" data-m="ts">Triple S<small>cycle +5</small></button>
+        <button class="mont-opt" data-m="cresus">Crésus<small>1-2-4-8 + paroli</small></button>
+      </div>
+
+      <div class="tp-row">
+        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="10"></div>
+        <div><label class="modal-lab">Stop-loss (pièces)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-20"></div>
+      </div>
+
+      <button class="modal-go" id="startNew">Démarrer la séance</button>
+      <button class="modal-resume" id="startResume" style="display:none">Reprendre la séance en cours</button>
     </div>
   </div>
 
@@ -340,31 +326,34 @@
 "use strict";
 const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const M1=[1,2,4,8];
-const M2=[6,8,11,14,19,25,34,45,60]; // paroli "+2 min" : chaque clôture rapporte au moins +2 pièces
+const M2=[5,7,9,12,16,21,28,37,50]; // paroli d'origine (méthode Fijeac)
+const TS_TARGET=5;                  // Triple S : cycle +5 → on repart à 0
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
 const CID={"R/N":"RN","P/I":"PI","M/P":"MP"};
 const CCLASS={"R/N":"rn","P/I":"pi","M/P":"mp"};
-const STORE_KEY="cresus:cs:v6";
+const STORE_KEY="cresus:cs:v7";
 const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
 let jview="log";
 let timer={running:false, start:0, accum:0};
 let sessions=[]; let goalDismissed=false;
+let startMontSel="ts";
 const SESS_KEY="cresus:sessions:v1";
 let S={
   capitalEur:200, pieceEur:1, capital:200, sessionStart:Date.now(),
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
-  cpl:{}, log:[]
+  cpl:{}, log:[],
+  mont:"ts", tpFinal:10, sl:-20
 };
-function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
+function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,cumul:0,bet:1,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
-function baseMise(soldeEur){ return Math.max(0.5, Math.floor(soldeEur/125)*0.5); }
+function baseMise(soldeEur){ return Math.max(0.1, Math.round(soldeEur/200*100)/100); } // 1 € pour 200 €
 const Store={
   async get(k){
     if(window.storage){ try{ const r=await window.storage.get(k); return (r&&r.value!=null)?r.value:null; }catch(e){ return null; } }
@@ -375,8 +364,8 @@ const Store={
     try{ localStorage.setItem(k,v); }catch(e){}
   }
 };
-async function save(){ await Store.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart})); }
-async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); recalcCapital(); }catch(e){} } }
+async function save(){ await Store.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl})); }
+async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.sl=(o.sl!=null)?o.sl:-20; startMontSel=S.mont; recalcCapital(); }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
 async function saveSessions(){ await Store.set(SESS_KEY, JSON.stringify(sessions)); }
 const SHEET_KEY="cresus:sheet:v1";
@@ -397,7 +386,7 @@ function pushToSheet(s){ if(sheetUrl) sheetSend({row:sheetRow(s)}).catch(()=>{})
 function pushAllToSheet(){
   if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; }
   if(!sessions.length){ toast("Aucune session à envoyer"); return; }
-  const rows=sessions.slice().reverse().map(sheetRow); // de la plus ancienne à la plus récente
+  const rows=sessions.slice().reverse().map(sheetRow);
   toast("Envoi en cours…");
   sheetSend({all:rows})
     .then(()=>toast(rows.length+" session"+(rows.length>1?"s":"")+" resynchronisée"+(rows.length>1?"s":"")))
@@ -417,12 +406,35 @@ function countsUpto(ch,idx){ let a=0,b=0,c=0; for(let i=idx;i>=0&&c<12;i--){ con
 function balancedUpto(ch,idx){ const[a,b]=countsUpto(ch,idx); return a===6&&b===6; }
 const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
 
-/* ---- moteur par couple ---- */
-function stakeC(C){ if(C.phase==="m1")return M1[C.step]; if(C.phase==="m2"){const b=M2[C.tent];return C.coup==="A"?b:b*2;} return 0; }
-function closeC(C){ C.phase="m1"; C.step=0; C.tent=0; C.coup="A"; C.pMise=0; C.pBilan=0; }
+/* ---- moteur par couple : la mise dépend de la montante choisie (S.mont) ---- */
+function stakeC(C){
+  if(S.mont==="ts"){
+    const reste=TS_TARGET-C.cumul;
+    let b=Math.min(C.bet,reste);
+    if(b>10) b=Math.floor(Math.min(b,reste/2));
+    return Math.max(b,0);
+  }
+  if(C.phase==="m1")return M1[C.step];
+  if(C.phase==="m2"){const b=M2[C.tent];return C.coup==="A"?b:b*2;}
+  return 0;
+}
+function closeC(C){ C.phase="m1"; C.step=0; C.tent=0; C.coup="A"; C.pMise=0; C.pBilan=0; C.cumul=0; C.bet=1; }
 function nextTentC(C){ C.tent++; C.coup="A"; if(C.tent>=M2.length) C.phase="fini"; }
-function phaseLabel(C){ return C.phase==="m1"?"M1 · coup "+(C.step+1)+"/4":C.phase==="m2"?"M2 · t"+(C.tent+1)+(C.coup==="A"?" ·1er":" ·2e"):"—"; }
+function phaseLabel(C){
+  if(S.mont==="ts") return "Triple S · cumul "+(C.cumul>0?"+":"")+round2(C.cumul);
+  return C.phase==="m1"?"M1 · coup "+(C.step+1)+"/4":C.phase==="m2"?"M2 · t"+(C.tent+1)+(C.coup==="A"?" ·1er":" ·2e"):"—";
+}
 function advanceC(ch,C,result){
+  if(S.mont==="ts"){
+    const stake=stakeC(C); const ph=phaseLabel(C);
+    S.wagered+=stake; C.pMise+=stake;
+    if(result==="G"){ S.solde+=stake; C.pBilan+=stake; C.cumul+=stake; }
+    else { S.solde-=stake; C.pBilan-=stake; C.cumul-=stake; }
+    S.log.push({ch,r:result,amt:stake,ph});
+    if(C.cumul>=TS_TARGET-1e-9){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won"; }
+    C.bet = result==="G" ? stake+1 : stake+2;
+    return "lost";
+  }
   const stake=stakeC(C); const ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake;
   if(result==="G"){ S.solde+=stake; C.pBilan+=stake; } else { S.solde-=stake; C.pBilan-=stake; }
@@ -449,11 +461,14 @@ function resolveC(ch,C,result){
   else { setNextState(C); }
 }
 function zeroC(ch,C){
-  // Zéro pendant un coup joué = perte totale + palier suivant. Le zéro ne change pas le
-  // compte : on reste donc sur le côté en avance et on rejoue au nouveau palier.
+  // Zéro pendant un coup joué = perte totale + palier suivant. Le zéro ne change pas le compte.
   const stake=stakeC(C), ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
   S.log.push({ch,r:"Z",amt:stake,ph});
+  if(S.mont==="ts"){
+    C.cumul-=stake; C.bet=stake+2; mt(CLABELS[ch].join("/")+" · zéro");
+    setNextState(C); return;
+  }
   if(C.phase==="m1"){
     C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · zéro → massage 2"); }
     else mt(CLABELS[ch].join("/")+" · zéro, palier suivant");
@@ -468,10 +483,10 @@ function feedCouple(ch){
   const C=S.cpl[ch]; C.flash=null;
   const n=S.spins[CUR_I]; const isZero=(n===0); const prev=C.sig.phase;
   if(prev==="none"){ if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
-  if(isZero){ if(prev==="play") zeroC(ch,C); return; }   // zéro ignoré en phase d'attente/équilibre
-  const side=memb(n,ch); C.acc[side]++;                   // la boule met à jour le compte
-  if(prev==="await"){ C.sig.obs=n; setNextState(C); }     // boule d'observation : le côté sorti prend l'avance, on le joue
-  else { resolveC(ch,C, side===C.sig.side ? "G":"P"); }   // coup joué sur le côté en avance
+  if(isZero){ if(prev==="play") zeroC(ch,C); return; }
+  const side=memb(n,ch); C.acc[side]++;
+  if(prev==="await"){ C.sig.obs=n; setNextState(C); }
+  else { resolveC(ch,C, side===C.sig.side ? "G":"P"); }
 }
 
 /* ---- replay : tout est dérivé de S.spins ---- */
@@ -500,25 +515,6 @@ function buildMini(){
   $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch];
     return `<div class="mcell ${CCLASS[ch]}" id="m-${id}"><div class="mname">${CNAME[ch]}</div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mside" id="${id}-side"></div><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
   }).join("");
-}
-
-/* ---- construction des cartes ---- */
-function buildCards(){
-  $("cards").innerHTML=COUPLES.map(ch=>{ const [A,B]=CLABELS[ch], id=CID[ch];
-    return `<div class="cpl ${CCLASS[ch]}" id="c-${id}">
-      <div class="cpl-top">
-        <div><span class="cpl-name">${A} / ${B}</span><span class="cpl-state" id="${id}-st"></span></div>
-        <div class="cpl-score"><b class="a" id="${id}-a">0</b><span class="dash">–</span><b class="b" id="${id}-b">0</b></div>
-      </div>
-      <div class="cpl-bot">
-        <div class="cpl-sig">
-          <div class="half ha" id="${id}-ha"><span class="dot"></span><span class="nm">${A}</span><span class="jb">▶ jouer</span></div>
-          <div class="half hb" id="${id}-hb"><span class="dot"></span><span class="nm">${B}</span><span class="jb">▶ jouer</span></div>
-          <div class="half-wait" id="${id}-wait">⚑ Attends la prochaine boule</div>
-        </div>
-        <div class="cpl-mise"><div class="ph" id="${id}-ph"></div><div class="m mono" id="${id}-m"></div><div class="mu" id="${id}-mu"></div></div>
-      </div>
-    </div>`; }).join("");
 }
 
 /* ---- pavé ---- */
@@ -624,7 +620,7 @@ function saveCurrentSession(){
   for(const e of S.log){ bal+=(e.r==="G"?e.amt:-e.amt); curve.push(bal*S.pieceEur); if(e.r==="G")nG++; else nP++; }
   const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
     pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:Date.now()-(S.sessionStart||Date.now()),
-    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, curve:downsample(curve,140) };
+    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:S.mont, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
   saveSessions(); renderSessions(); goalDismissed=true; render();
@@ -719,11 +715,14 @@ function renderHistory(){
   el.innerHTML=grid+cumCurveSVG(cum)+
     `<div class="chart-meta"><span>${pos}/${n} positives</span><span>${tCoups} coups</span><span>${fmtDur(tDur)}</span></div>`;
 }
+function updateStartMontUI(){ document.querySelectorAll('#startMont .mont-opt').forEach(b=>b.classList.toggle('on',b.dataset.m===startMontSel)); }
+function updateSetMontUI(){ document.querySelectorAll('.set-mont').forEach(b=>b.classList.toggle('on',b.dataset.m===S.mont)); }
 function openStartModal(){
-  $("startSolde").value=S.capitalEur||200; updateStartMise();
+  $("startSolde").value=S.capitalEur||200; startMontSel=S.mont||"ts"; updateStartMontUI();
+  $("startTP").value=S.tpFinal; $("startSL").value=S.sl; updateStartMise();
   const has=S.spins&&S.spins.length>0;
   const rb=$("startResume"); rb.style.display=has?"":"none";
-  if(has) rb.textContent="Reprendre la session en cours ("+S.spins.length+" n°)";
+  if(has) rb.textContent="Reprendre la séance en cours ("+S.spins.length+" n°)";
   $("startModal").style.display="flex";
 }
 function closeStartModal(){ $("startModal").style.display="none"; }
@@ -733,6 +732,9 @@ function startNewSession(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v<=0){ toast("Indique un solde valide"); return; }
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
+  S.mont=startMontSel||"ts";
+  S.tpFinal=parseFloat($("startTP").value)||10;
+  S.sl=-Math.abs(parseFloat($("startSL").value)||20);
   S.spins=[]; S.log=[]; S.sessionStart=Date.now(); resetTimer(); goalDismissed=false;
   replay(false); save(); render(); closeStartModal();
 }
@@ -740,25 +742,29 @@ function startNewSession(){
 /* ---- rendu ---- */
 function render(){
   const last=S.spins.length-1;
+  const gainPieces=S.solde-S.capital;
+  const hitTP=gainPieces>=(S.tpFinal)-1e-9;
+  const hitSL=gainPieces<=(S.sl)+1e-9;
+  const ended=(hitTP||hitSL)&&!goalDismissed;
   for(const ch of COUPLES){
     const C=S.cpl[ch], id=CID[ch];
     const bal=balancedUpto(ch,last);
     const [a,b]= activeC(C) ? [C.acc.a,C.acc.b] : countsUpto(ch,last);
     const mc=$("m-"+id);
-    mc.className="mcell "+CCLASS[ch]+(C.flash==="won"?" won":(C.sig.phase==="await"?" await":(C.sig.phase==="play"?" play":(bal?" bal":""))));
+    mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(C.flash==="won"?" won":(C.sig.phase==="await"?" await":(C.sig.phase==="play"?" play":(bal?" bal":""))));
     $(id+"-msc").textContent=a+"–"+b;
     const det=$(id+"-det"), sideEl=$(id+"-side"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait");
     det.style.display="none"; sideEl.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
     if(C.flash==="won"){
       det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
       const g=C.lastGain||0; waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
-    } else if(C.sig.phase==="play"){
+    } else if(C.sig.phase==="play" && !ended){
       det.style.display=""; sideEl.style.display=""; miseEl.style.display="";
       const sideName=CLABELS[ch][C.sig.side==="a"?0:1];
       sideEl.textContent=sideName.toUpperCase();
       sideEl.className="mside "+(ch==="R/N"?(C.sig.side==="a"?"rouge":"noir"):"neutre");
       miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
-    } else if(C.sig.phase==="await"){
+    } else if(C.sig.phase==="await" && !ended){
       det.style.display=""; waitEl.style.display=""; waitEl.textContent="observation";
     }
   }
@@ -767,6 +773,7 @@ function render(){
   const pnl=round2(S.solde-S.capital);
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
   $("wagered").textContent="misé "+eur(S.wagered);
+  $("montBadge").textContent=S.mont==="ts"?"Triple S":"Crésus";
 
   const l12=S.spins.slice(-12).reverse(); $("count12").textContent=l12.length+"/12";
   const tr=$("track");
@@ -780,12 +787,16 @@ function render(){
         return `<li><span>${word} <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${eur(amt)}</span></li>`; }).join("");
 
   $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur;
+  $("inTP").value=S.tpFinal; $("inSL").value=S.sl;
+  updateSetMontUI();
   renderTimer();
-  // fin de session : +10 pièces gagnées
-  const gainPieces=S.solde-S.capital;
-  const reached=gainPieces>=10-1e-9;
-  $("goalBanner").style.display=(reached&&!goalDismissed)?"":"none";
-  if(reached) $("goalTxt").textContent="🎯 Objectif atteint · +"+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
+
+  // fin de séance : take-profit ou stop-loss
+  const banner=$("goalBanner");
+  banner.style.display=ended?"":"none";
+  banner.className="banner"+(hitSL?" banner-sl":"");
+  if(hitTP) $("goalTxt").textContent="🎯 Take-profit · +"+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
+  else if(hitSL) $("goalTxt").textContent="🛑 Stop-loss · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
   if(jview==="chart") drawChart();
 }
 
@@ -795,6 +806,8 @@ $("undo").addEventListener("click",undoSpin);
 $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0.01,parseFloat(e.target.value)||0.5); recalcCapital(); replay(false); render(); save(); });
+$("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||10; goalDismissed=false; render(); save(); });
+$("inSL").addEventListener("change",e=>{ S.sl=-Math.abs(parseFloat(e.target.value)||20); goalDismissed=false; render(); save(); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
 $("chronoBtn").addEventListener("click",toggleTimer);
 $("chronoReset").addEventListener("click",resetTimer);
@@ -811,6 +824,8 @@ $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
+document.querySelectorAll('#startMont .mont-opt').forEach(b=>b.addEventListener('click',()=>{ startMontSel=b.dataset.m; updateStartMontUI(); }));
+document.querySelectorAll('.set-mont').forEach(b=>b.addEventListener('click',()=>{ S.mont=b.dataset.m; updateSetMontUI(); replay(false); render(); save(); toast("Montante : "+(S.mont==="ts"?"Triple S":"Crésus")); }));
 $("sessionsList").addEventListener("click",e=>{
   const del=e.target.closest(".s-del");
   if(del){ const i=parseInt(del.dataset.i,10); sessions.splice(i,1); if(openSession===i)openSession=-1; else if(openSession>i)openSession--; saveSessions(); renderSessions(); return; }
