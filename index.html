@@ -276,7 +276,7 @@
       <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1"></div>
       <div class="field"><label>Stop-loss<span class="hint">pièces · séance perdante</span></label><input type="number" id="inSL" inputmode="decimal" value="-20" step="1"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
-      <div class="field"><label>Mise de départ<span class="hint">en € · 1 € pour 200 € (solde ÷ 200)</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.05"></div>
+      <div class="field"><label>Mise de départ<span class="hint">en € · 0,10 € par tranche de 20 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.1"></div>
       <div class="sheet-sync">
         <div class="sheet-h">Synchro Google Sheets</div>
         <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
@@ -299,7 +299,7 @@
   <div class="modal-bg" id="startModal">
     <div class="modal">
       <h3 class="modal-title">Nouvelle séance</h3>
-      <p class="modal-sub">Solde de départ et montante. La mise de base = solde ÷ 200 (1 € pour 200 €).</p>
+      <p class="modal-sub">Solde de départ et montante. Mise de base = 0,10 € par tranche de 20 € (0,10 € à 20 €, 0,20 € à 40 €, 0,30 € à 60 €…).</p>
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
@@ -353,7 +353,7 @@ function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
-function baseMise(soldeEur){ return Math.max(0.1, Math.round(soldeEur/200*100)/100); } // 1 € pour 200 €
+function baseMise(soldeEur){ return Math.max(0.1, Math.floor(soldeEur/20)/10); } // +0,10 € par tranche de 20 €
 const Store={
   async get(k){
     if(window.storage){ try{ const r=await window.storage.get(k); return (r&&r.value!=null)?r.value:null; }catch(e){ return null; } }
@@ -432,8 +432,8 @@ function advanceC(ch,C,result){
     else { S.solde-=stake; C.pBilan-=stake; C.cumul-=stake; }
     S.log.push({ch,r:result,amt:stake,ph});
     if(C.cumul>=TS_TARGET-1e-9){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won"; }
-    C.bet = result==="G" ? stake+1 : stake+2;
-    return "lost";
+    if(result==="G"){ C.bet=stake+1; return "wait"; }   // gain : +1 puis on attend un nouveau signal
+    C.bet=stake+2; return "lost";                        // perte : +2 et on enchaîne (à la Crésus)
   }
   const stake=stakeC(C); const ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake;
@@ -456,7 +456,7 @@ function setNextState(C){
 }
 function resolveC(ch,C,result){
   const ev=advanceC(ch,C,result);
-  if(ev==="won"||ev==="epuise"){ C.sig.phase="none"; C.sig.side=null;
+  if(ev==="won"||ev==="epuise"||ev==="wait"){ C.sig.phase="none"; C.sig.side=null;
     if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } }
   else { setNextState(C); }
 }
