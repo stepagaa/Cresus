@@ -190,32 +190,47 @@
   .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
   .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700;margin-top:6px}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
+  /* libellés majuscules + surbrillance du côté à jouer */
+  .mname{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+  .mname .w{transition:color .15s}
+  .mname .sep{color:var(--sage-dim)}
+  .mname .w.hi{font-weight:800}
+  .mname .w.hi.rouge{color:#ff7a6e}
+  .mname .w.hi.noir{color:#fff}
+  .mname .w.hi.neutre{color:var(--gold)}
+  .mcell{cursor:pointer}
+  .mhist-hint{margin-top:8px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim)}
+  .mcell.play .mhist-hint,.mcell.await .mhist-hint{color:var(--gold)}
+
+  /* solde + p&l dans l'encadré d'évolution */
+  .solde-box{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:13px;padding-bottom:13px;border-bottom:1px solid var(--line-soft)}
+  .solde-box .sb-lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:5px}
+  .solde-box .sb-solde{font-family:var(--mono);font-size:27px;line-height:1;color:var(--ivory);font-weight:500}
+  .solde-box .sb-pnl{font-family:var(--mono);font-size:18px;line-height:1}
+
+  /* historique par chance simple */
+  .hist-cur{background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:13px;color:var(--ivory);line-height:1.55;margin-bottom:9px}
+  .hist-cur b{color:var(--gold)}
+  .hist-sig{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--sage);margin-bottom:10px}
+  .hist-close{font-size:22px;color:var(--sage);padding:0 4px;line-height:1}
+
+  /* bannière fin de séance : empilée + bouton continuer */
+  .banner{flex-direction:column;align-items:stretch}
+  .banner-act{justify-content:flex-end;flex-wrap:wrap}
+  #goalContinue{font-size:12px;font-weight:600;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);border-radius:9px;padding:7px 11px}
 </style>
 </head>
 <body>
   <header>
     <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono" id="montBadge">Triple S</span></div>
-    <div class="htop">
-      <div class="hmoney">
-        <div class="solde mono" id="solde">200,00 €</div>
-        <div class="pnl mono" id="pnl">0,00 €</div>
-      </div>
-      <div class="hchrono">
-        <div class="chrono">
-          <button class="chrono-btn mono" id="chronoBtn">▶ 00:00</button>
-          <span class="chrono-rate mono" id="chronoRate">— €/h</span>
-          <button class="chrono-reset" id="chronoReset" aria-label="réinitialiser le chrono">⟲</button>
-        </div>
-        <div class="mise mono" id="wagered">misé 0,00 €</div>
-      </div>
-    </div>
   </header>
 
   <!-- BANNIÈRE FIN DE SÉANCE (TP / SL) -->
   <div class="banner" id="goalBanner" style="display:none">
     <div class="banner-txt" id="goalTxt">🎯 Take-profit atteint</div>
     <div class="banner-act">
-      <button id="goalSave">Enregistrer la séance</button>
+      <button id="goalSave">Enregistrer</button>
+      <button id="goalContinue">Continuer ▸</button>
       <button id="goalDismiss" aria-label="fermer">×</button>
     </div>
   </div>
@@ -236,9 +251,13 @@
   <!-- 3 PETITES CASES (signal + détail) -->
   <div id="mini"></div>
 
-  <!-- JOURNAL -->
+  <!-- JOURNAL / ÉVOLUTION DU SOLDE -->
   <section>
     <div class="sec-h"><h2 id="jtitle">Journal des coups</h2><button class="jarrow" id="jToggle" aria-label="afficher le graphique">→</button></div>
+    <div class="solde-box">
+      <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
+      <div class="sb-pnl mono" id="pnl">0,00 €</div>
+    </div>
     <div class="jwrap">
       <div class="jslider" id="jslider">
         <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
@@ -273,7 +292,7 @@
           <button class="mont-opt set-mont" data-m="cresus">Crésus<small>1-2-4-8 + paroli</small></button>
         </div>
       </div>
-      <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1"></div>
+      <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="5" step="1"></div>
       <div class="field"><label>Stop-loss<span class="hint">pièces · séance perdante</span></label><input type="number" id="inSL" inputmode="decimal" value="-20" step="1"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="field"><label>Mise de départ<span class="hint">en € · 0,10 € par tranche de 20 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.1"></div>
@@ -311,12 +330,23 @@
       </div>
 
       <div class="tp-row">
-        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="10"></div>
+        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="5"></div>
         <div><label class="modal-lab">Stop-loss (pièces)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-20"></div>
       </div>
 
       <button class="modal-go" id="startNew">Démarrer la séance</button>
       <button class="modal-resume" id="startResume" style="display:none">Reprendre la séance en cours</button>
+    </div>
+  </div>
+
+  <!-- HISTORIQUE PAR CHANCE SIMPLE -->
+  <div class="modal-bg" id="histModal" style="display:none">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="modal-title" id="histTitle">Historique</h3>
+        <button class="hist-close" id="histClose" aria-label="fermer">×</button>
+      </div>
+      <div id="histContent"></div>
     </div>
   </div>
 
@@ -338,7 +368,6 @@ const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
 let jview="log";
-let timer={running:false, start:0, accum:0};
 let sessions=[]; let goalDismissed=false;
 let startMontSel="ts";
 const SESS_KEY="cresus:sessions:v1";
@@ -347,7 +376,7 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  mont:"ts", tpFinal:10, sl:-20
+  mont:"ts", tpFinal:5, sl:-20, ctx:0
 };
 function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,cumul:0,bet:1,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
@@ -364,8 +393,8 @@ const Store={
     try{ localStorage.setItem(k,v); }catch(e){}
   }
 };
-async function save(){ await Store.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl})); }
-async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.sl=(o.sl!=null)?o.sl:-20; startMontSel=S.mont; recalcCapital(); }catch(e){} } }
+async function save(){ await Store.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx})); }
+async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.sl=(o.sl!=null)?o.sl:-20; S.ctx=o.ctx||0; startMontSel=S.mont; recalcCapital(); }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
 async function saveSessions(){ await Store.set(SESS_KEY, JSON.stringify(sessions)); }
 const SHEET_KEY="cresus:sheet:v1";
@@ -492,13 +521,13 @@ function feedCouple(ch){
 /* ---- replay : tout est dérivé de S.spins ---- */
 function replay(emitLast){
   S.solde=S.capital; S.wagered=0; S.log=[]; freshAll();
-  const N=S.spins.length;
-  for(let i=0;i<N;i++){ CUR_I=i; EMIT=!!emitLast&&(i===N-1); for(const ch of COUPLES) feedCouple(ch); }
+  const N=S.spins.length; const ctx=S.ctx||0;
+  for(let i=0;i<N;i++){ CUR_I=i; if(i<ctx) continue; EMIT=!!emitLast&&(i===N-1); for(const ch of COUPLES) feedCouple(ch); }
   EMIT=false; CUR_I=N-1;
 }
 
 /* ---- saisie ---- */
-function addSpin(n){ S.spins.push(n); if(S.spins.length>400) S.spins.shift(); replay(true); render(); save(); }
+function addSpin(n){ S.spins.push(n); if(S.spins.length>400){ S.spins.shift(); if(S.ctx>0)S.ctx--; } replay(true); render(); save(); }
 function addNumber(){ const v=$("numIn").value.trim(); if(v==="")return; const num=parseInt(v,10); if(isNaN(num)||num<0||num>36){ toast("Numéro 0–36"); return; } $("numIn").value=""; addSpin(num); }
 function undoSpin(){ S.spins.pop(); replay(false); render(); save(); }
 
@@ -512,8 +541,8 @@ const colorOf=n=>n===0?"z":(RED.has(n)?"r":"n");
 function mt(msg){ if(EMIT) toast(msg); }
 
 function buildMini(){
-  $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch];
-    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}"><div class="mname">${CNAME[ch]}</div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mside" id="${id}-side"></div><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
+  $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch]; const [A,B]=CLABELS[ch];
+    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div><div class="mhist-hint" id="${id}-hint">historique ▸</div></div>`;
   }).join("");
 }
 
@@ -522,22 +551,10 @@ function buildPad(){ const g=$("numGrid");
   const z=document.createElement("div"); z.className="num z0"; z.dataset.n="0"; z.textContent="0"; g.appendChild(z);
   for(let n=1;n<=36;n++){ const d=document.createElement("div"); d.className="num "+(RED.has(n)?"r":"n"); d.dataset.n=n; d.textContent=n; g.appendChild(d);} }
 
-/* ---- chronomètre & €/h ---- */
+/* ---- durées ---- */
 const fmtEur2=v=>v.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
-function timerMs(){ return timer.accum + (timer.running ? (Date.now()-timer.start) : 0); }
 function fmtDur(ms){ const s=Math.floor(ms/1000), hh=Math.floor(s/3600), mm=Math.floor((s%3600)/60), ss=s%60;
   return (hh>0?String(hh).padStart(2,"0")+":":"")+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0"); }
-function renderTimer(){
-  const ms=timerMs();
-  $("chronoBtn").textContent=(timer.running?"⏸ ":"▶ ")+fmtDur(ms);
-  $("chronoBtn").className="chrono-btn mono"+(timer.running?" running":"");
-  const h=ms/3600000, pnlEur=(S.solde-S.capital)*S.pieceEur;
-  $("chronoRate").textContent = h>0.0008
-    ? (pnlEur>=0?"+":"−")+Math.abs(pnlEur/h).toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1})+" €/h"
-    : "— €/h";
-}
-function toggleTimer(){ if(timer.running){ timer.accum=timerMs(); timer.running=false; } else { timer.start=Date.now(); timer.running=true; } renderTimer(); }
-function resetTimer(){ timer={running:false,start:0,accum:0}; renderTimer(); }
 
 /* ---- graphique du solde ---- */
 function setJview(v){ jview=v;
@@ -623,7 +640,7 @@ function saveCurrentSession(){
     coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:S.mont, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
-  saveSessions(); renderSessions(); goalDismissed=true; render();
+  saveSessions(); renderSessions(); render();
   pushToSheet(rec); toast("Session enregistrée");
 }
 function sparkSVG(curve, base){
@@ -733,10 +750,42 @@ function startNewSession(){
   if(v<=0){ toast("Indique un solde valide"); return; }
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
   S.mont=startMontSel||"ts";
-  S.tpFinal=parseFloat($("startTP").value)||10;
+  S.tpFinal=parseFloat($("startTP").value)||5;
   S.sl=-Math.abs(parseFloat($("startSL").value)||20);
-  S.spins=[]; S.log=[]; S.sessionStart=Date.now(); resetTimer(); goalDismissed=false;
+  S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render(); closeStartModal();
+}
+
+function continueSession(){
+  // garde les derniers numéros sortis comme contexte (pour le signal) et remet les compteurs à zéro
+  const keep=S.spins.slice(-16);
+  S.spins=keep; S.ctx=keep.length;
+  S.log=[]; S.sessionStart=Date.now(); goalDismissed=false;
+  replay(false); save(); render();
+  toast("Nouvelle séance — numéros conservés");
+}
+
+/* ---- historique d'une chance simple (où j'en suis sur la montante) ---- */
+function openHist(ch){
+  const C=S.cpl[ch];
+  $("histTitle").textContent=CNAME[ch].toUpperCase();
+  let cur;
+  if(S.mont==="ts"){
+    const reste=round2(TS_TARGET-C.cumul), nm=Math.max(stakeC(C),0);
+    cur=`<div class="hist-cur">Cycle Triple S — cumul <b>${(C.cumul>0?"+":"")+round2(C.cumul)}</b> / +5<br>reste <b>${reste}</b> à gagner · prochaine mise <b>${eur(nm)}</b></div>`;
+  } else {
+    cur=`<div class="hist-cur">Montante Crésus — <b>${phaseLabel(C)}</b><br>prochaine mise <b>${eur(stakeC(C))}</b></div>`;
+  }
+  const sig = C.sig.phase==="play" ? ("à jouer maintenant : "+CLABELS[ch][C.sig.side==="a"?0:1].toUpperCase())
+            : C.sig.phase==="await" ? "observation — on attend une boule"
+            : "en veille — on attend un signal 6-6";
+  const entries=S.log.filter(e=>e.ch===ch);
+  const rows = entries.length? entries.slice().reverse().map(e=>{
+    const w=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg";
+    return `<li><span>${w} <span class="lphase">· ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${eur(e.amt)}</span></li>`;
+  }).join("") : '<li class="log-empty">Aucun coup joué sur cette chance pour l\'instant.</li>';
+  $("histContent").innerHTML = cur + `<div class="hist-sig">${sig}</div>` + `<ul class="log" style="max-height:46vh">${rows}</ul>`;
+  $("histModal").style.display="flex";
 }
 
 /* ---- rendu ---- */
@@ -753,16 +802,16 @@ function render(){
     const mc=$("m-"+id);
     mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(C.flash==="won"?" won":(C.sig.phase==="await"?" await":(C.sig.phase==="play"?" play":(bal?" bal":""))));
     $(id+"-msc").textContent=a+"–"+b;
-    const det=$(id+"-det"), sideEl=$(id+"-side"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait");
-    det.style.display="none"; sideEl.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
+    const det=$(id+"-det"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait"), wa=$(id+"-wa"), wb=$(id+"-wb");
+    wa.className="w"; wb.className="w";
+    det.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
     if(C.flash==="won"){
       det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
       const g=C.lastGain||0; waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
     } else if(C.sig.phase==="play" && !ended){
-      det.style.display=""; sideEl.style.display=""; miseEl.style.display="";
-      const sideName=CLABELS[ch][C.sig.side==="a"?0:1];
-      sideEl.textContent=sideName.toUpperCase();
-      sideEl.className="mside "+(ch==="R/N"?(C.sig.side==="a"?"rouge":"noir"):"neutre");
+      det.style.display=""; miseEl.style.display="";
+      const cls = ch==="R/N" ? (C.sig.side==="a"?"rouge":"noir") : "neutre";
+      (C.sig.side==="a"?wa:wb).className="w hi "+cls;
       miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
     } else if(C.sig.phase==="await" && !ended){
       det.style.display=""; waitEl.style.display=""; waitEl.textContent="observation";
@@ -771,8 +820,7 @@ function render(){
 
   $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
-  const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
-  $("wagered").textContent="misé "+eur(S.wagered);
+  const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="sb-pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
   $("montBadge").textContent=S.mont==="ts"?"Triple S":"Crésus";
 
   const l12=S.spins.slice(-12).reverse(); $("count12").textContent=l12.length+"/12";
@@ -789,7 +837,6 @@ function render(){
   $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur;
   $("inTP").value=S.tpFinal; $("inSL").value=S.sl;
   updateSetMontUI();
-  renderTimer();
 
   // fin de séance : take-profit ou stop-loss
   const banner=$("goalBanner");
@@ -806,11 +853,13 @@ $("undo").addEventListener("click",undoSpin);
 $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0.01,parseFloat(e.target.value)||0.5); recalcCapital(); replay(false); render(); save(); });
-$("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||10; goalDismissed=false; render(); save(); });
+$("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||5; goalDismissed=false; render(); save(); });
 $("inSL").addEventListener("change",e=>{ S.sl=-Math.abs(parseFloat(e.target.value)||20); goalDismissed=false; render(); save(); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
-$("chronoBtn").addEventListener("click",toggleTimer);
-$("chronoReset").addEventListener("click",resetTimer);
+$("goalContinue").addEventListener("click",continueSession);
+$("mini").addEventListener("click",e=>{ const cell=e.target.closest("[data-ch]"); if(cell) openHist(cell.dataset.ch); });
+$("histClose").addEventListener("click",()=>{ $("histModal").style.display="none"; });
+$("histModal").addEventListener("click",e=>{ if(e.target===$("histModal")) $("histModal").style.display="none"; });
 $("jToggle").addEventListener("click",()=> setJview(jview==="chart"?"log":"chart"));
 $("goalSave").addEventListener("click",saveCurrentSession);
 $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
@@ -832,8 +881,6 @@ $("sessionsList").addEventListener("click",e=>{
   const row=e.target.closest(".s-row"); if(!row)return; const i=parseInt(row.dataset.i,10);
   openSession=(openSession===i?-1:i); renderSessions();
 });
-setInterval(()=>{ if(timer.running) renderTimer(); },1000);
-
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
