@@ -289,7 +289,8 @@
         <label>Montante</label>
         <div class="mont-pick" style="margin:0">
           <button class="mont-opt set-mont" data-m="ts">Triple S<small>cycle +5</small></button>
-          <button class="mont-opt set-mont" data-m="cresus">Crésus<small>1-2-4-8 + paroli</small></button>
+          <button class="mont-opt set-mont" data-m="m4">Martingale<small>1-3-6-13</small></button>
+          <button class="mont-opt set-mont" data-m="cresus">Crésus<small>+ parolis</small></button>
         </div>
       </div>
       <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="5" step="1"></div>
@@ -326,7 +327,8 @@
       <label class="modal-lab" style="margin-top:14px">Montante</label>
       <div class="mont-pick" id="startMont">
         <button class="mont-opt" data-m="ts">Triple S<small>cycle +5</small></button>
-        <button class="mont-opt" data-m="cresus">Crésus<small>1-2-4-8 + paroli</small></button>
+        <button class="mont-opt" data-m="m4">Martingale<small>1-3-6-13</small></button>
+        <button class="mont-opt" data-m="cresus">Crésus<small>+ parolis</small></button>
       </div>
 
       <div class="tp-row">
@@ -357,6 +359,7 @@
 const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const M1=[1,2,4,8];
 const M2=[5,7,9,12,16,21,28,37,50]; // paroli d'origine (méthode Fijeac)
+const M4=[1,3,6,13];                // martingale 4 coups : +1,+2,+2,+3 (perte max −23)
 const TS_TARGET=5;                  // Triple S : cycle +5 → on repart à 0
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
@@ -443,6 +446,7 @@ function stakeC(C){
     if(b>10) b=Math.floor(Math.min(b,reste/2));
     return Math.max(b,0);
   }
+  if(S.mont==="m4"){ return C.step<4 ? M4[C.step] : 0; }
   if(C.phase==="m1")return M1[C.step];
   if(C.phase==="m2"){const b=M2[C.tent];return C.coup==="A"?b:b*2;}
   return 0;
@@ -451,6 +455,7 @@ function closeC(C){ C.phase="m1"; C.step=0; C.tent=0; C.coup="A"; C.pMise=0; C.p
 function nextTentC(C){ C.tent++; C.coup="A"; if(C.tent>=M2.length) C.phase="fini"; }
 function phaseLabel(C){
   if(S.mont==="ts") return "Triple S · cumul "+(C.cumul>0?"+":"")+round2(C.cumul);
+  if(S.mont==="m4") return "Martingale · coup "+(C.step+1)+"/4";
   return C.phase==="m1"?"M1 · coup "+(C.step+1)+"/4":C.phase==="m2"?"M2 · t"+(C.tent+1)+(C.coup==="A"?" ·1er":" ·2e"):"—";
 }
 function advanceC(ch,C,result){
@@ -463,6 +468,16 @@ function advanceC(ch,C,result){
     if(C.cumul>=TS_TARGET-1e-9){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won"; }
     if(result==="G"){ C.bet=stake+1; return "wait"; }   // gain : +1 puis on attend un nouveau signal
     C.bet=stake+2; return "lost";                        // perte : +2 et on enchaîne (à la Crésus)
+  }
+  if(S.mont==="m4"){
+    const stake=stakeC(C); const ph=phaseLabel(C);
+    S.wagered+=stake; C.pMise+=stake;
+    if(result==="G"){ S.solde+=stake; C.pBilan+=stake; } else { S.solde-=stake; C.pBilan-=stake; }
+    S.log.push({ch,r:result,amt:stake,ph});
+    if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" gagné "+plusEur(b)); return "won"; }
+    C.step++;
+    if(C.step>=4){ const b=C.pBilan; closeC(C); S.brickLosses=(S.brickLosses||0)+1; mt(CLABELS[ch].join("/")+" brique perdue "+plusEur(b)); return "epuise"; }
+    return "lost";
   }
   const stake=stakeC(C); const ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake;
@@ -485,9 +500,21 @@ function setNextState(C){
 }
 function resolveC(ch,C,result){
   const ev=advanceC(ch,C,result);
-  if(ev==="won"||ev==="epuise"||ev==="wait"){ C.sig.phase="none"; C.sig.side=null;
-    if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } }
-  else { setNextState(C); }
+  const m4Stop = S.mont==="m4" && (S.brickLosses||0)>=1;   // une brique déjà perdue → on n'amorce plus de nouvelle montante
+  if(ev==="won"||ev==="wait"){
+    // clôture sur GAIN : si l'équilibre 6-6 existait déjà juste AVANT la boule gagnante,
+    // celle-ci tient lieu de boule d'observation → on remise dès la boule suivante.
+    if(!m4Stop && balancedUpto(ch,CUR_I-1)){
+      const side=memb(S.spins[CUR_I],ch);
+      C.acc={a:6+(side==="a"?1:0), b:6+(side==="b"?1:0)};
+      C.sig={phase:"play", side:side, obs:S.spins[CUR_I]};
+    } else if(!m4Stop && balancedUpto(ch,CUR_I)){
+      C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6};
+    } else { C.sig.phase="none"; C.sig.side=null; }
+  } else if(ev==="epuise"){
+    C.sig.phase="none"; C.sig.side=null;
+    if(!m4Stop && balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; }
+  } else { setNextState(C); }
 }
 function zeroC(ch,C){
   // Zéro pendant un coup joué = perte totale + palier suivant. Le zéro ne change pas le compte.
@@ -497,6 +524,12 @@ function zeroC(ch,C){
   if(S.mont==="ts"){
     C.cumul-=stake; C.bet=stake+2; mt(CLABELS[ch].join("/")+" · zéro");
     setNextState(C); return;
+  }
+  if(S.mont==="m4"){
+    C.step++;
+    if(C.step>=4){ closeC(C); C.sig.phase="none"; C.sig.side=null; S.brickLosses=(S.brickLosses||0)+1; mt(CLABELS[ch].join("/")+" · zéro, brique perdue"); }
+    else { mt(CLABELS[ch].join("/")+" · zéro, coup suivant"); setNextState(C); }
+    return;
   }
   if(C.phase==="m1"){
     C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · zéro → massage 2"); }
@@ -511,7 +544,7 @@ function zeroC(ch,C){
 function feedCouple(ch){
   const C=S.cpl[ch]; C.flash=null;
   const n=S.spins[CUR_I]; const isZero=(n===0); const prev=C.sig.phase;
-  if(prev==="none"){ if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
+  if(prev==="none"){ if(balancedUpto(ch,CUR_I) && !(S.mont==="m4" && (S.brickLosses||0)>=1)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
   if(isZero){ if(prev==="play") zeroC(ch,C); return; }
   const side=memb(n,ch); C.acc[side]++;
   if(prev==="await"){ C.sig.obs=n; setNextState(C); }
@@ -520,7 +553,7 @@ function feedCouple(ch){
 
 /* ---- replay : tout est dérivé de S.spins ---- */
 function replay(emitLast){
-  S.solde=S.capital; S.wagered=0; S.log=[]; freshAll();
+  S.solde=S.capital; S.wagered=0; S.log=[]; S.brickLosses=0; freshAll();
   const N=S.spins.length; const ctx=S.ctx||0;
   for(let i=0;i<N;i++){ CUR_I=i; if(i<ctx) continue; EMIT=!!emitLast&&(i===N-1); for(const ch of COUPLES) feedCouple(ch); }
   EMIT=false; CUR_I=N-1;
@@ -542,7 +575,7 @@ function mt(msg){ if(EMIT) toast(msg); }
 
 function buildMini(){
   $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch]; const [A,B]=CLABELS[ch];
-    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div><div class="mhist-hint" id="${id}-hint">historique ▸</div></div>`;
+    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
   }).join("");
 }
 
@@ -757,12 +790,14 @@ function startNewSession(){
 }
 
 function continueSession(){
-  // garde les derniers numéros sortis comme contexte (pour le signal) et remet les compteurs à zéro
+  // reporte le solde de fin de séance comme nouveau capital, garde les derniers numéros comme contexte
+  const finEur=Math.max(round2(S.solde*S.pieceEur), S.pieceEur);
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
+  S.capitalEur=finEur; recalcCapital();
   S.log=[]; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render();
-  toast("Nouvelle séance — numéros conservés");
+  toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
 }
 
 /* ---- historique d'une chance simple (où j'en suis sur la montante) ---- */
@@ -774,7 +809,8 @@ function openHist(ch){
     const reste=round2(TS_TARGET-C.cumul), nm=Math.max(stakeC(C),0);
     cur=`<div class="hist-cur">Cycle Triple S — cumul <b>${(C.cumul>0?"+":"")+round2(C.cumul)}</b> / +5<br>reste <b>${reste}</b> à gagner · prochaine mise <b>${eur(nm)}</b></div>`;
   } else {
-    cur=`<div class="hist-cur">Montante Crésus — <b>${phaseLabel(C)}</b><br>prochaine mise <b>${eur(stakeC(C))}</b></div>`;
+    const ml = S.mont==="m4" ? "Martingale 1-3-6-13" : "Montante Crésus";
+    cur=`<div class="hist-cur">${ml} — <b>${phaseLabel(C)}</b><br>prochaine mise <b>${eur(stakeC(C))}</b></div>`;
   }
   const sig = C.sig.phase==="play" ? ("à jouer maintenant : "+CLABELS[ch][C.sig.side==="a"?0:1].toUpperCase())
             : C.sig.phase==="await" ? "observation — on attend une boule"
@@ -793,7 +829,14 @@ function render(){
   const last=S.spins.length-1;
   const gainPieces=S.solde-S.capital;
   const hitTP=gainPieces>=(S.tpFinal)-1e-9;
-  const hitSL=gainPieces<=(S.sl)+1e-9;
+  let hitSL;
+  if(S.mont==="m4"){
+    // déclenché par une brique perdue, mais on attend qu'aucune montante ne soit en cours
+    const enCours=COUPLES.some(ch=>S.cpl[ch].sig.phase!=="none");
+    hitSL=(S.brickLosses||0)>=1 && !enCours;
+  } else {
+    hitSL=gainPieces<=(S.sl)+1e-9;
+  }
   const ended=(hitTP||hitSL)&&!goalDismissed;
   for(const ch of COUPLES){
     const C=S.cpl[ch], id=CID[ch];
@@ -821,7 +864,7 @@ function render(){
   $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="sb-pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
-  $("montBadge").textContent=S.mont==="ts"?"Triple S":"Crésus";
+  $("montBadge").textContent=S.mont==="ts"?"Triple S":S.mont==="m4"?"Martingale":"Crésus";
 
   const l12=S.spins.slice(-12).reverse(); $("count12").textContent=l12.length+"/12";
   const tr=$("track");
@@ -843,6 +886,7 @@ function render(){
   banner.style.display=ended?"":"none";
   banner.className="banner"+(hitSL?" banner-sl":"");
   if(hitTP) $("goalTxt").textContent="🎯 Take-profit · +"+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
+  else if(hitSL && S.mont==="m4"){ const nb=S.brickLosses||0; $("goalTxt").textContent="🛑 "+nb+" brique"+(nb>1?"s":"")+" perdue"+(nb>1?"s":"")+" (4 pertes d'affilée) · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")"; }
   else if(hitSL) $("goalTxt").textContent="🛑 Stop-loss · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
   if(jview==="chart") drawChart();
 }
@@ -873,8 +917,8 @@ $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
-document.querySelectorAll('#startMont .mont-opt').forEach(b=>b.addEventListener('click',()=>{ startMontSel=b.dataset.m; updateStartMontUI(); }));
-document.querySelectorAll('.set-mont').forEach(b=>b.addEventListener('click',()=>{ S.mont=b.dataset.m; updateSetMontUI(); replay(false); render(); save(); toast("Montante : "+(S.mont==="ts"?"Triple S":"Crésus")); }));
+document.querySelectorAll('#startMont .mont-opt').forEach(b=>b.addEventListener('click',()=>{ startMontSel=b.dataset.m; updateStartMontUI(); $("startSL").value = startMontSel==="m4" ? -23 : -20; }));
+document.querySelectorAll('.set-mont').forEach(b=>b.addEventListener('click',()=>{ S.mont=b.dataset.m; S.sl = S.mont==="m4" ? -23 : -20; updateSetMontUI(); replay(false); render(); save(); toast("Montante : "+(S.mont==="ts"?"Triple S":S.mont==="m4"?"Martingale 1-3-6-13":"Crésus")+" · SL "+S.sl); }));
 $("sessionsList").addEventListener("click",e=>{
   const del=e.target.closest(".s-del");
   if(del){ const i=parseInt(del.dataset.i,10); sessions.splice(i,1); if(openSession===i)openSession=-1; else if(openSession>i)openSession--; saveSessions(); renderSessions(); return; }
