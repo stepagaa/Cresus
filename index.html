@@ -10,19 +10,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --felt:#0a0f1e; --felt2:#121a31; --card:#0f1730; --card2:#16203f;
-    --line:#222c47; --line-soft:rgba(255,255,255,.05);
-    --gold:#e7b24e; --gold-dim:#39435f;
-    --rouge:#e0473f; --rouge-d:#b5322c; --noir:#0d1426; --noir-edge:#2c3650;
-    --ivory:#eaeef8; --sage:#8b93ad; --sage-dim:#586079;
-    --win:#33c08d; --lose:#e0473f;
+    --felt:#090d18; --felt2:#131c34; --card:#101831; --card2:#16203f;
+    --line:#26314f; --line-soft:rgba(255,255,255,.055);
+    --gold:#ecbb63; --gold-2:#f5d28c; --gold-dim:#3c466a; --gold-soft:rgba(236,187,99,.12);
+    --rouge:#e64b41; --rouge-2:#ff6a5e; --rouge-d:#b5322c; --noir:#0d1426; --noir-edge:#2c3650;
+    --ivory:#eef1fa; --sage:#8d96b2; --sage-dim:#586079;
+    --win:#3ccb95; --lose:#e64b41;
+    --shadow-card:0 1px 0 rgba(255,255,255,.03) inset,0 10px 28px -18px rgba(0,0,0,.75);
     --mono:"DM Mono",ui-monospace,monospace;
     --disp:"Bricolage Grotesque",system-ui,sans-serif;
     --body:"Inter",system-ui,sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--felt);color:var(--ivory);font-family:var(--body)}
-  body{max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top,0px),12px) 14px 44px;background:radial-gradient(130% 60% at 50% -18%, #16203f 0%, var(--felt) 62%);min-height:100vh}
+  body{max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top,0px),12px) 14px 44px;background:radial-gradient(120% 55% at 50% -15%, #1b2747 0%, var(--felt) 60%);min-height:100vh}
   h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:-.015em}
   .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
   button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
@@ -43,46 +44,53 @@
   .brand .bname{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--ivory);letter-spacing:-.02em}
   .brand .bname .c{color:var(--gold)}
   .brand .tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage-dim)}
-  .brand .montbadge{font-family:var(--mono);font-size:10px;color:var(--gold);border:1px solid var(--gold-dim);border-radius:10px;padding:2px 7px;margin-left:4px}
+  .brand .montbadge{font-family:var(--mono);font-size:10px;color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-dim);border-radius:20px;padding:3px 9px;margin-left:4px}
 
   /* ===== CARTES COUPLES ===== */
-  #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px;align-items:start}
-  .mcell{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:11px 8px;text-align:center;transition:border-color .18s,background .18s,box-shadow .18s}
-  .mcell .mname{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--sage);letter-spacing:.02em}
-  .mcell .mscore{font-family:var(--mono);font-size:20px;margin-top:6px;color:var(--ivory);line-height:1}
-  .mcell.bal{border-color:var(--gold);background:rgba(231,178,78,.06)}
+  #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:13px;align-items:stretch}
+  .mcell{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:13px 9px 12px;text-align:center;transition:transform .22s ease,border-color .2s,background .2s,box-shadow .2s;box-shadow:var(--shadow-card)}
+  .mcell .mname{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--sage);letter-spacing:.04em;line-height:1.15}
+  .mcell .mscore{font-family:var(--mono);font-size:21px;margin-top:8px;color:var(--ivory);line-height:1;font-weight:500}
+  .mcell.bal{border-color:rgba(236,187,99,.4);background:var(--gold-soft)}
   .mcell.bal .mscore{color:var(--gold)}
-  .mcell.await{border:1px dashed var(--gold);background:rgba(231,178,78,.04)}
+  .mcell.await{border-color:var(--gold);border-style:dashed;background:var(--gold-soft)}
   .mcell.await .mscore{color:var(--gold);animation:pulse 1.15s infinite}
-  .mcell.play{border-color:var(--gold);background:rgba(231,178,78,.14);box-shadow:0 0 0 1px var(--gold),0 8px 22px -10px rgba(231,178,78,.6)}
+  .mcell.play{border-color:var(--gold);background:linear-gradient(168deg,rgba(236,187,99,.18),rgba(236,187,99,.04));transform:translateY(-2px);animation:playpulse 2s ease-in-out infinite}
   .mcell.play .mscore{color:var(--gold)}
-  .mcell.won{border-color:var(--win);background:rgba(51,192,141,.07);box-shadow:0 0 0 1px rgba(51,192,141,.22)}
+  .mcell.play .mname{color:var(--ivory)}
+  .mcell.won{border-color:rgba(60,203,149,.5);background:linear-gradient(168deg,rgba(60,203,149,.12),rgba(60,203,149,.03));box-shadow:0 0 0 1px rgba(60,203,149,.28)}
   .mcell.won .mscore{color:var(--win)}
-  .mcell.ended{opacity:.4}
-  .mdetail{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft)}
+  .mcell.ended{opacity:.36;filter:saturate(.55)}
+  .mdetail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)}
   .mside{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.02em;line-height:1.1}
   .mside.rouge{color:#ff7a6e} .mside.noir{color:#fff} .mside.neutre{color:var(--gold)}
-  .mmise{font-family:var(--mono);font-size:15px;color:var(--gold);margin-top:5px}
-  .mwait{font-size:10px;color:var(--gold);line-height:1.3}
+  .mmise{font-family:var(--mono);font-size:18px;color:var(--gold);margin-top:9px;font-weight:500;letter-spacing:.01em}
+  .mwait{font-size:10px;color:var(--gold);line-height:1.35;margin-top:6px;letter-spacing:.02em}
   .mwait.won{color:var(--win);font-weight:600}
+  @keyframes playpulse{0%,100%{box-shadow:0 0 0 1px var(--gold),0 12px 30px -16px rgba(236,187,99,.5)}50%{box-shadow:0 0 0 1px var(--gold),0 16px 42px -12px rgba(236,187,99,.82)}}
+  @media (prefers-reduced-motion:reduce){
+    .mcell.play{animation:none;box-shadow:0 0 0 1px var(--gold),0 12px 30px -16px rgba(236,187,99,.55)}
+    .mcell.await .mscore{animation:none}
+  }
 
   /* ===== SECTIONS ===== */
-  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:11px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow-card)}
   .sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .sec-h h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--sage);font-weight:600}
 
   .num-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid transparent;transition:transform .08s}
-  .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}
-  .num.z0{background:#1f9d63;color:#fff;border-color:transparent}
-  .num:active{transform:scale(.9)}
+  .num{aspect-ratio:1;border-radius:11px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid transparent;transition:transform .1s,filter .1s;font-weight:500}
+  .num.r{background:linear-gradient(180deg,var(--rouge-2),var(--rouge))} .num.n{background:linear-gradient(180deg,#1a2540,var(--noir));color:#cfd6e6;border-color:var(--noir-edge)}
+  .num.z0{background:linear-gradient(180deg,#27b574,#1f9d63);color:#fff;border-color:transparent}
+  .num:active{transform:scale(.88);filter:brightness(1.12)}
   .track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;min-height:28px;margin:18px 0 6px}
-  .chip{height:28px;min-width:0;padding:0;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
-  .chip.r{background:var(--rouge);color:#fff}.chip.n{background:var(--noir);color:#cfd6e6;border-color:var(--noir-edge)}.chip.z{background:#1f9d63;border-color:transparent;color:#fff}
-  .chip.last{box-shadow:0 0 0 2px var(--gold)}
+  .chip{height:28px;min-width:0;padding:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
+  .chip.r{background:linear-gradient(180deg,var(--rouge-2),var(--rouge));color:#fff}.chip.n{background:linear-gradient(180deg,#1a2540,var(--noir));color:#cfd6e6;border-color:var(--noir-edge)}.chip.z{background:linear-gradient(180deg,#27b574,#1f9d63);border-color:transparent;color:#fff}
+  .chip.last{box-shadow:0 0 0 2px var(--gold),0 4px 12px -4px rgba(236,187,99,.55)}
   .empty-note{grid-column:1/-1;text-align:center;align-self:center;color:var(--sage-dim);font-size:12.5px}
   .pad-actions{display:flex;gap:8px;margin-top:12px}
-  .pad-actions button{flex:1;padding:10px;border-radius:9px;font-size:12px;background:transparent;border:1px solid var(--line);color:var(--sage)}
+  .pad-actions button{flex:1;padding:11px;border-radius:11px;font-size:12px;font-weight:500;background:var(--felt2);border:1px solid var(--line);color:var(--sage);transition:transform .12s,border-color .15s,color .15s}
+  .pad-actions button:active{transform:scale(.97);border-color:var(--gold-dim);color:var(--ivory)}
 
   .log{list-style:none;margin:0;padding:0;max-height:200px;overflow-y:auto}
   .jarrow{font-size:15px;color:var(--gold);padding:3px 11px;border:1px solid var(--line);border-radius:9px;background:var(--felt2);line-height:1}
@@ -190,14 +198,15 @@
   .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
   .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700;margin-top:6px}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
-  /* libellés majuscules + surbrillance du côté à jouer */
+  /* libellés majuscules + surbrillance du côté à jouer (pastille pleine) */
   .mname{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
-  .mname .w{transition:color .15s}
-  .mname .sep{color:var(--sage-dim)}
-  .mname .w.hi{font-weight:800}
-  .mname .w.hi.rouge{color:#ff7a6e}
-  .mname .w.hi.noir{color:#fff}
-  .mname .w.hi.neutre{color:var(--gold)}
+  .mname .w{transition:all .2s ease;border-radius:9px;display:inline-block}
+  .mname .sep{color:var(--sage-dim);opacity:.5}
+  .mname .w.hi{font-weight:800;font-size:13px;padding:5px 12px;border-radius:10px;transform:scale(1.12);letter-spacing:.03em}
+  .mname .w.hi.rouge{background:linear-gradient(180deg,var(--rouge-2),var(--rouge-d));color:#fff;box-shadow:0 7px 18px -6px rgba(230,75,65,.65)}
+  .mname .w.hi.noir{background:linear-gradient(180deg,#2c3858,#0e1730);color:#fff;border:1px solid #3a4660;box-shadow:0 7px 18px -6px rgba(0,0,0,.6)}
+  .mname .w.hi.neutre{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#1a1208;box-shadow:0 7px 18px -6px rgba(236,187,99,.6)}
+  .mcell.play .mname .w:not(.hi){opacity:.28}
   .mcell{cursor:pointer}
   .mhist-hint{margin-top:8px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim)}
   .mcell.play .mhist-hint,.mcell.await .mhist-hint{color:var(--gold)}
@@ -843,21 +852,29 @@ function render(){
     const bal=balancedUpto(ch,last);
     const [a,b]= activeC(C) ? [C.acc.a,C.acc.b] : countsUpto(ch,last);
     const mc=$("m-"+id);
-    mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(C.flash==="won"?" won":(C.sig.phase==="await"?" await":(C.sig.phase==="play"?" play":(bal?" bal":""))));
+    const won=C.flash==="won", g=C.lastGain||0;
+    const playNow=C.sig.phase==="play" && !ended;
+    const awaitNow=C.sig.phase==="await" && !ended;
+    // un nouveau signal jouable passe AVANT la confirmation de gain (sinon le vert le masque)
+    const cls = playNow?"play":awaitNow?"await":won?"won":bal?"bal":"";
+    mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(cls?" "+cls:"");
     $(id+"-msc").textContent=a+"–"+b;
     const det=$(id+"-det"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait"), wa=$(id+"-wa"), wb=$(id+"-wb");
     wa.className="w"; wb.className="w";
     det.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
-    if(C.flash==="won"){
-      det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
-      const g=C.lastGain||0; waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
-    } else if(C.sig.phase==="play" && !ended){
+    if(playNow){
       det.style.display=""; miseEl.style.display="";
-      const cls = ch==="R/N" ? (C.sig.side==="a"?"rouge":"noir") : "neutre";
-      (C.sig.side==="a"?wa:wb).className="w hi "+cls;
+      const c2 = ch==="R/N" ? (C.sig.side==="a"?"rouge":"noir") : "neutre";
+      (C.sig.side==="a"?wa:wb).className="w hi "+c2;
       miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
-    } else if(C.sig.phase==="await" && !ended){
-      det.style.display=""; waitEl.style.display=""; waitEl.textContent="observation";
+      if(won){ waitEl.style.display=""; waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g); }
+    } else if(awaitNow){
+      det.style.display=""; waitEl.style.display="";
+      if(won){ waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g)+" · observation"; }
+      else waitEl.textContent="observation";
+    } else if(won){
+      det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
+      waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
     }
   }
 
