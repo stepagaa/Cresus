@@ -53,8 +53,8 @@
   .mcell .mscore{font-family:var(--mono);font-size:21px;margin-top:8px;color:var(--ivory);line-height:1;font-weight:500}
   .mcell.bal{border-color:rgba(236,187,99,.4);background:var(--gold-soft)}
   .mcell.bal .mscore{color:var(--gold)}
-  .mcell.await{border-color:var(--gold);border-style:dashed;background:var(--gold-soft)}
-  .mcell.await .mscore{color:var(--gold);animation:pulse 1.15s infinite}
+  .mcell.await{border-color:var(--gold);border-style:dashed;background:var(--gold-soft);animation:awaitblink 1.15s ease-in-out infinite}
+  .mcell.await .mscore{color:var(--gold)}
   .mcell.play{border-color:var(--gold);background:linear-gradient(168deg,rgba(236,187,99,.18),rgba(236,187,99,.04));transform:translateY(-2px);animation:playpulse 2s ease-in-out infinite}
   .mcell.play .mscore{color:var(--gold)}
   .mcell.play .mname{color:var(--ivory)}
@@ -68,9 +68,10 @@
   .mwait{font-size:10px;color:var(--gold);line-height:1.35;margin-top:6px;letter-spacing:.02em}
   .mwait.won{color:var(--win);font-weight:600}
   @keyframes playpulse{0%,100%{box-shadow:0 0 0 1px var(--gold),0 12px 30px -16px rgba(236,187,99,.5)}50%{box-shadow:0 0 0 1px var(--gold),0 16px 42px -12px rgba(236,187,99,.82)}}
+  @keyframes awaitblink{0%,100%{border-color:rgba(236,187,99,.3)}50%{border-color:rgba(236,187,99,1)}}
   @media (prefers-reduced-motion:reduce){
     .mcell.play{animation:none;box-shadow:0 0 0 1px var(--gold),0 12px 30px -16px rgba(236,187,99,.55)}
-    .mcell.await .mscore{animation:none}
+    .mcell.await{animation:none}
   }
 
   /* ===== SECTIONS ===== */
@@ -206,7 +207,6 @@
   .mname .w.hi.rouge{background:linear-gradient(180deg,var(--rouge-2),var(--rouge-d));color:#fff;box-shadow:0 7px 18px -6px rgba(230,75,65,.65)}
   .mname .w.hi.noir{background:linear-gradient(180deg,#2c3858,#0e1730);color:#fff;border:1px solid #3a4660;box-shadow:0 7px 18px -6px rgba(0,0,0,.6)}
   .mname .w.hi.neutre{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#1a1208;box-shadow:0 7px 18px -6px rgba(236,187,99,.6)}
-  .mcell.play .mname .w:not(.hi){opacity:.28}
   .mcell{cursor:pointer}
   .mhist-hint{margin-top:8px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim)}
   .mcell.play .mhist-hint,.mcell.await .mhist-hint{color:var(--gold)}
@@ -249,7 +249,6 @@
 
   <!-- GRILLE -->
   <section>
-    <div class="sec-h"><h2>Numéro sorti</h2><span class="mono" id="count12" style="font-size:12px;color:var(--sage)">0/12</span></div>
     <div class="num-grid" id="numGrid"></div>
     <div class="pad-actions">
       <button id="undo">↶ Annuler le dernier</button>
@@ -859,19 +858,20 @@ function render(){
     const cls = playNow?"play":awaitNow?"await":won?"won":bal?"bal":"";
     mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(cls?" "+cls:"");
     $(id+"-msc").textContent=a+"–"+b;
-    const det=$(id+"-det"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait"), wa=$(id+"-wa"), wb=$(id+"-wb");
-    wa.className="w"; wb.className="w";
+    const det=$(id+"-det"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait"), wa=$(id+"-wa"), wb=$(id+"-wb"), sepEl=mc.querySelector(".sep");
+    wa.className="w"; wb.className="w"; wa.style.display=""; wb.style.display=""; if(sepEl)sepEl.style.display="";
     det.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
     if(playNow){
       det.style.display=""; miseEl.style.display="";
       const c2 = ch==="R/N" ? (C.sig.side==="a"?"rouge":"noir") : "neutre";
-      (C.sig.side==="a"?wa:wb).className="w hi "+c2;
+      const act = C.sig.side==="a"?wa:wb, oth = C.sig.side==="a"?wb:wa;
+      act.className="w hi "+c2;
+      oth.style.display="none"; if(sepEl)sepEl.style.display="none";
       miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
       if(won){ waitEl.style.display=""; waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g); }
     } else if(awaitNow){
-      det.style.display=""; waitEl.style.display="";
-      if(won){ waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g)+" · observation"; }
-      else waitEl.textContent="observation";
+      if(won){ det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g); }
+      // sinon : aucun texte, juste le contour pointillé clignotant
     } else if(won){
       det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
       waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
@@ -883,7 +883,7 @@ function render(){
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="sb-pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
   $("montBadge").textContent=S.mont==="ts"?"Triple S":S.mont==="m4"?"Martingale":"Crésus";
 
-  const l12=S.spins.slice(-12).reverse(); $("count12").textContent=l12.length+"/12";
+  const l12=S.spins.slice(-12).reverse();
   const tr=$("track");
   tr.innerHTML=S.spins.length===0?'<span class="empty-note">Les numéros sortis apparaîtront ici</span>'
     :l12.map((n,i)=>`<div class="chip ${colorOf(n)}${i===0?' last':''}">${n}</div>`).join("");
