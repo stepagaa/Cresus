@@ -134,6 +134,8 @@
   .sheet-btns{display:flex;gap:8px;margin-top:9px}
   .sheet-b{flex:1;padding:10px;border-radius:9px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);font-size:12px;font-weight:600}
   .sheet-help{font-size:10.5px;color:var(--sage-dim);line-height:1.45;margin-top:9px}
+  .sync-pill{float:right;font-size:10px;letter-spacing:0;text-transform:none;font-weight:600;padding:1px 0}
+  .sync-pill.off{color:var(--sage-dim)} .sync-pill.ok{color:var(--win)} .sync-pill.pending{color:var(--gold)} .sync-pill.offline{color:var(--lose)}
   .sheet-help a{color:var(--sage)}
 
   /* ===== sélecteur de montante ===== */
@@ -310,13 +312,13 @@
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="field"><label>Mise de départ<span class="hint">en € · 0,10 € par tranche de 20 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.1"></div>
       <div class="sheet-sync">
-        <div class="sheet-h">Synchro Google Sheets</div>
+        <div class="sheet-h">Sauvegarde Google Sheets <span id="syncStatus" class="sync-pill off">● non configuré</span></div>
         <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
         <div class="sheet-btns">
-          <button id="sheetTest" class="sheet-b">Tester</button>
-          <button id="sheetSyncAll" class="sheet-b">Envoyer tout l'historique</button>
+          <button id="sheetTest" class="sheet-b">↓ Recharger du cloud</button>
+          <button id="sheetSyncAll" class="sheet-b">↑ Forcer l'envoi</button>
         </div>
-        <p class="sheet-help">Colle l'URL de ton script Google (déploiement « application web »). Chaque session enregistrée y est ensuite ajoutée automatiquement. Laisse vide pour ne rien envoyer.</p>
+        <p class="sheet-help">Le Google Sheet devient ta base principale : solde, piste, réglages et historique y sont sauvegardés et rechargés automatiquement à l'ouverture, sur tous tes appareils. Déploie le script en « application web », accès « Tout le monde ». Le stockage local sert juste de secours hors-ligne. Laisse vide pour rester en local uniquement.</p>
       </div>
       <button class="reset-all" id="resetAll">Tout réinitialiser (solde, piste, journal)</button>
     </div>
@@ -408,41 +410,70 @@ const Store={
     try{ localStorage.setItem(k,v); }catch(e){}
   }
 };
-async function save(){ await Store.set(STORE_KEY, JSON.stringify({capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx})); }
-async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.sl=(o.sl!=null)?o.sl:-20; S.ctx=o.ctx||0; startMontSel=S.mont; recalcCapital(); }catch(e){} } }
+let lastTs=0;            // horodatage du dernier changement local
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx}; }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.sl=(o.sl!=null)?o.sl:-20; S.ctx=o.ctx||0; startMontSel=S.mont; recalcCapital(); }
+async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
+async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
-async function saveSessions(){ await Store.set(SESS_KEY, JSON.stringify(sessions)); }
+async function saveSessions(){ lastTs=Date.now(); await Store.set(SESS_KEY, JSON.stringify(sessions)); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 const SHEET_KEY="cresus:sheet:v1";
-let sheetUrl="";
+const DEFAULT_SHEET_URL="https://script.google.com/macros/s/AKfycbxBW9npMYqDsL6T8y3HMiEPaoihm0v8r1WOvXcsd66E0Qh_gAvlvegg5oFj1Kb-BswHew/exec";
+let sheetUrl=DEFAULT_SHEET_URL;
 async function loadSheetUrl(){ const v=await Store.get(SHEET_KEY); if(v) sheetUrl=v; }
-async function saveSheetUrl(v){ sheetUrl=(v||"").trim(); await Store.set(SHEET_KEY, sheetUrl); }
-function sheetRow(s){
-  const d=new Date(s.date), date=d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-  return [date, round2(s.debut), round2(s.fin), round2(s.gain), Math.round((s.pct||0)*10)/10,
-    fmtDur(s.duree||0), s.coups, s.wins!=null?s.wins:"", s.losses!=null?s.losses:"",
-    s.wagered!=null?round2(s.wagered):"", s.base];
+async function saveSheetUrl(v){ const u=(v||"").trim(); const changed=u!==sheetUrl; sheetUrl=u; await Store.set(SHEET_KEY, sheetUrl); updateSyncUI(); if(sheetUrl && changed) cloudSyncNow(false); }
+/* ---- Google Sheets : base principale (lecture + écriture de l'état complet) ---- */
+let syncState="off", lastSyncAt=0, cloudTimer=null;
+function cloudState(){ return { ts:lastTs, state:stateBlob(), sessions }; }
+function setSync(st){ syncState=st; if(st==="ok") lastSyncAt=Date.now(); updateSyncUI(); }
+function updateSyncUI(){
+  const el=$("syncStatus"); if(!el) return;
+  if(!sheetUrl){ el.textContent="● non configuré"; el.className="sync-pill off"; return; }
+  if(syncState==="pending"){ el.textContent="● synchro…"; el.className="sync-pill pending"; return; }
+  if(syncState==="offline"){ el.textContent="● hors-ligne"; el.className="sync-pill offline"; return; }
+  const t=lastSyncAt?" · "+new Date(lastSyncAt).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
+  el.textContent="● cloud ✓"+t; el.className="sync-pill ok";
 }
-function sheetSend(payload){
-  if(!sheetUrl) return Promise.reject(new Error("no-url"));
-  return fetch(sheetUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+function scheduleCloud(){ if(!sheetUrl) return; setSync("pending"); clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,1200); }
+async function cloudPush(){
+  if(!sheetUrl) return false;
+  const body=JSON.stringify({action:"save", data:cloudState()});
+  try{
+    const r=await fetch(sheetUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body});
+    if(!r.ok) throw 0; await r.json().catch(()=>({})); setSync("ok"); return true;
+  }catch(e){
+    try{ await fetch(sheetUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body}); setSync("ok"); return true; }
+    catch(e2){ setSync("offline"); return false; }
+  }
 }
-function pushToSheet(s){ if(sheetUrl) sheetSend({row:sheetRow(s)}).catch(()=>{}); }
-function pushAllToSheet(){
-  if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; }
-  if(!sessions.length){ toast("Aucune session à envoyer"); return; }
-  const rows=sessions.slice().reverse().map(sheetRow);
-  toast("Envoi en cours…");
-  sheetSend({all:rows})
-    .then(()=>toast(rows.length+" session"+(rows.length>1?"s":"")+" resynchronisée"+(rows.length>1?"s":"")))
-    .catch(()=>toast("Bloqué ici — ouvre l'appli hors de Claude"));
+async function cloudPull(){
+  if(!sheetUrl) return null;
+  try{
+    const r=await fetch(sheetUrl+(sheetUrl.includes("?")?"&":"?")+"action=load&t="+Date.now());
+    const j=await r.json();
+    return (j&&j.ok)?(j.data||null):null;
+  }catch(e){ return null; }
 }
-function testSheet(){
-  if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; }
-  toast("Test en cours…");
-  sheetSend({test:true})
-    .then(()=>toast("Requête partie — vérifie ton Google Sheet"))
-    .catch(()=>toast("Bloqué ici — ouvre l'appli hors de Claude"));
+async function cloudSyncNow(silent){
+  if(!sheetUrl){ setSync("off"); return; }
+  setSync("pending");
+  const data=await cloudPull();
+  if(data===null){ setSync("offline"); if(!silent) toast("Cloud injoignable — ouvre l'appli hors de Claude"); return; }
+  const cTs=data.ts||0;
+  if(cTs>(lastTs||0) && data.state){
+    hydrateState(data.state);
+    if(Array.isArray(data.sessions)) sessions=data.sessions;
+    lastTs=cTs;
+    await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs}));
+    await Store.set(SESS_KEY, JSON.stringify(sessions));
+    replay(false); renderSessions(); render();
+    setSync("ok"); if(!silent) toast("Rechargé depuis le cloud");
+  } else {
+    const ok=await cloudPush();
+    if(!silent) toast(ok?"Cloud à jour":"Cloud injoignable");
+  }
 }
+async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; } setSync("pending"); const ok=await cloudPush(); toast(ok?"Envoyé au cloud":"Cloud injoignable — ouvre hors de Claude"); }
 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
@@ -684,7 +715,7 @@ function saveCurrentSession(){
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
   saveSessions(); renderSessions(); render();
-  pushToSheet(rec); toast("Session enregistrée");
+  toast("Session enregistrée");
 }
 function sparkSVG(curve, base){
   if(!curve||curve.length<2) return '<div class="chart-empty" style="padding:6px 0">Courbe non disponible pour cette session.</div>';
@@ -925,8 +956,8 @@ $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); })
 $("saveSessionBtn").addEventListener("click",saveCurrentSession);
 $("exportBtn").addEventListener("click",exportSessions);
 $("sheetUrl").addEventListener("change",e=>saveSheetUrl(e.target.value));
-$("sheetTest").addEventListener("click",testSheet);
-$("sheetSyncAll").addEventListener("click",pushAllToSheet);
+$("sheetTest").addEventListener("click",()=>cloudSyncNow(false));
+$("sheetSyncAll").addEventListener("click",cloudForce);
 $("newSessionBtn").addEventListener("click",openStartModal);
 $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
@@ -943,7 +974,7 @@ $("sessionsList").addEventListener("click",e=>{
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
-(async function(){ buildMini(); buildPad(); await load(); await loadSessions(); await loadSheetUrl(); if($("sheetUrl")) $("sheetUrl").value=sheetUrl; recalcCapital(); replay(false); renderSessions(); render(); openStartModal(); })();
+(async function(){ buildMini(); buildPad(); await load(); await loadSessions(); await loadSheetUrl(); if($("sheetUrl")) $("sheetUrl").value=sheetUrl; recalcCapital(); replay(false); renderSessions(); render(); updateSyncUI(); if(sheetUrl) await cloudSyncNow(true); openStartModal(); })();
 </script>
 </body>
 </html>
