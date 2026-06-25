@@ -50,7 +50,8 @@
   #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:13px;align-items:stretch}
   .mcell{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:13px 9px 12px;text-align:center;transition:transform .22s ease,border-color .2s,background .2s,box-shadow .2s;box-shadow:var(--shadow-card)}
   .mcell .mname{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--sage);letter-spacing:.04em;line-height:1.15}
-  .mcell .mscore{font-family:var(--mono);font-size:21px;margin-top:8px;color:var(--ivory);line-height:1;font-weight:500}
+  .mcell .mscore{font-family:var(--mono);font-size:21px;margin-top:8px;color:var(--ivory);line-height:1;font-weight:500;min-height:23px;display:flex;align-items:center;justify-content:center}
+  .mcell .mscore.note{font-size:15px}
   .mcell.bal{border-color:rgba(236,187,99,.4);background:var(--gold-soft)}
   .mcell.bal .mscore{color:var(--gold)}
   .mcell.await{border-color:var(--gold);border-style:dashed;background:var(--gold-soft);animation:awaitblink 1.15s ease-in-out infinite}
@@ -111,6 +112,9 @@
   .log li:last-child{border-bottom:none}
   .log .lphase{font-size:10px;color:var(--sage-dim)}
   .log .lamt{font-family:var(--mono)}
+  .log .lword{font-weight:600}
+  .log li.pos .lword,.log li.pos .lamt{color:var(--win)}
+  .log li.neg .lword,.log li.neg .lamt{color:var(--lose)}
   .log-empty{color:var(--sage-dim);font-size:13px}
 
   details.set{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 15px;margin-bottom:11px}
@@ -200,7 +204,7 @@
   .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700;margin-top:6px}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
   /* libellés majuscules + surbrillance du côté à jouer (pastille pleine) */
-  .mname{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+  .mname{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;min-height:28px}
   .mname .w{transition:all .2s ease;border-radius:9px;display:inline-block}
   .mname .sep{color:var(--sage-dim);opacity:.5}
   .mname .w.hi{font-weight:800;font-size:13px;padding:5px 12px;border-radius:10px;transform:scale(1.12);letter-spacing:.03em}
@@ -261,15 +265,15 @@
 
   <!-- JOURNAL / ÉVOLUTION DU SOLDE -->
   <section>
-    <div class="sec-h"><h2 id="jtitle">Journal des coups</h2><button class="jarrow" id="jToggle" aria-label="afficher le graphique">→</button></div>
+    <div class="sec-h"><h2 id="jtitle">Évolution du solde</h2><button class="jarrow" id="jToggle" aria-label="afficher le journal des coups">→</button></div>
     <div class="solde-box">
       <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
       <div class="sb-pnl mono" id="pnl">0,00 €</div>
     </div>
     <div class="jwrap">
       <div class="jslider" id="jslider">
-        <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
         <div class="jslide"><div class="chart" id="chart"></div></div>
+        <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
       </div>
     </div>
   </section>
@@ -378,7 +382,7 @@ const STORE_KEY="cresus:cs:v7";
 const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
-let jview="log";
+let jview="chart";
 let sessions=[]; let goalDismissed=false;
 let startMontSel="ts";
 const SESS_KEY="cresus:sessions:v1";
@@ -510,14 +514,12 @@ function resolveC(ch,C,result){
   const ev=advanceC(ch,C,result);
   const m4Stop = S.mont==="m4" && (S.brickLosses||0)>=1;   // une brique déjà perdue → on n'amorce plus de nouvelle montante
   if(ev==="won"||ev==="wait"){
-    // clôture sur GAIN : si l'équilibre 6-6 existait déjà juste AVANT la boule gagnante,
-    // celle-ci tient lieu de boule d'observation → on remise dès la boule suivante.
-    if(!m4Stop && balancedUpto(ch,CUR_I-1)){
+    // clôture sur GAIN : dès qu'un équilibre 6-6 est présent (juste avant OU avec la boule gagnante),
+    // la boule gagnante tient lieu d'observation → on joue son côté dès la boule suivante (aucune attente).
+    if(!m4Stop && (balancedUpto(ch,CUR_I-1) || balancedUpto(ch,CUR_I))){
       const side=memb(S.spins[CUR_I],ch);
       C.acc={a:6+(side==="a"?1:0), b:6+(side==="b"?1:0)};
       C.sig={phase:"play", side:side, obs:S.spins[CUR_I]};
-    } else if(!m4Stop && balancedUpto(ch,CUR_I)){
-      C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6};
     } else { C.sig.phase="none"; C.sig.side=null; }
   } else if(ev==="epuise"){
     C.sig.phase="none"; C.sig.side=null;
@@ -583,7 +585,7 @@ function mt(msg){ if(EMIT) toast(msg); }
 
 function buildMini(){
   $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch]; const [A,B]=CLABELS[ch];
-    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mdetail" id="${id}-det"><div class="mmise mono" id="${id}-mise"></div><div class="mwait" id="${id}-wait"></div></div></div>`;
+    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div></div>`;
   }).join("");
 }
 
@@ -599,9 +601,9 @@ function fmtDur(ms){ const s=Math.floor(ms/1000), hh=Math.floor(s/3600), mm=Math
 
 /* ---- graphique du solde ---- */
 function setJview(v){ jview=v;
-  $("jslider").style.transform = v==="chart"?"translateX(-100%)":"translateX(0)";
+  $("jslider").style.transform = v==="chart"?"translateX(0)":"translateX(-100%)";
   $("jtitle").textContent = v==="chart"?"Évolution du solde":"Journal des coups";
-  $("jToggle").textContent = v==="chart"?"←":"→";
+  $("jToggle").textContent = v==="chart"?"→":"←";
   if(v==="chart") drawChart();
 }
 function smoothPath(P){
@@ -857,25 +859,21 @@ function render(){
     // un nouveau signal jouable passe AVANT la confirmation de gain (sinon le vert le masque)
     const cls = playNow?"play":awaitNow?"await":won?"won":bal?"bal":"";
     mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(cls?" "+cls:"");
-    $(id+"-msc").textContent=a+"–"+b;
-    const det=$(id+"-det"), miseEl=$(id+"-mise"), waitEl=$(id+"-wait"), wa=$(id+"-wa"), wb=$(id+"-wb"), sepEl=mc.querySelector(".sep");
+    const wa=$(id+"-wa"), wb=$(id+"-wb"), sepEl=mc.querySelector(".sep"), mscEl=$(id+"-msc");
     wa.className="w"; wb.className="w"; wa.style.display=""; wb.style.display=""; if(sepEl)sepEl.style.display="";
-    det.style.display="none"; miseEl.style.display="none"; waitEl.style.display="none"; waitEl.className="mwait";
+    mscEl.className="mscore mono";
+    let scoreTxt=a+"–"+b;
     if(playNow){
-      det.style.display=""; miseEl.style.display="";
       const c2 = ch==="R/N" ? (C.sig.side==="a"?"rouge":"noir") : "neutre";
       const act = C.sig.side==="a"?wa:wb, oth = C.sig.side==="a"?wb:wa;
       act.className="w hi "+c2;
       oth.style.display="none"; if(sepEl)sepEl.style.display="none";
-      miseEl.textContent=(C.phase==="fini"?"—":eur(stakeC(C)));
-      if(won){ waitEl.style.display=""; waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g); }
-    } else if(awaitNow){
-      if(won){ det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won"); waitEl.textContent="✓ "+plusEur(g); }
-      // sinon : aucun texte, juste le contour pointillé clignotant
+      scoreTxt=(C.phase==="fini"?"—":eur(stakeC(C)));   // montant à jouer à la place de l'équilibre 7/6
     } else if(won){
-      det.style.display=""; waitEl.style.display=""; waitEl.classList.add("won");
-      waitEl.textContent="✓ "+(g>0?"gagné":"clôturé")+" "+plusEur(g);
+      mscEl.className="mscore mono note";
+      scoreTxt="✓ "+plusEur(g);
     }
+    mscEl.textContent=scoreTxt;
   }
 
   $("solde").textContent=eur(S.solde);
@@ -891,8 +889,8 @@ function render(){
   const lg=$("log"); const items=S.log.slice(-80).reverse();
   lg.innerHTML=items.length===0?'<li class="log-empty">Aucun coup joué pour l\'instant.</li>'
     :items.map(e=>{ const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.amt;
-        const cpl=CNAME[e.ch];
-        return `<li><span>${word} <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt ${cls}">${e.r==="G"?"+":"−"}${eur(amt)}</span></li>`; }).join("");
+        const cpl=CNAME[e.ch]; const sign=e.r==="G"?"+":"−";
+        return `<li class="${cls}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
 
   $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur;
   $("inTP").value=S.tpFinal; $("inSL").value=S.sl;
