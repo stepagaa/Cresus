@@ -49,7 +49,7 @@
   /* ===== CARTES COUPLES ===== */
   #mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:13px;align-items:stretch}
   .mcell{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:13px 9px 12px;text-align:center;transition:transform .22s ease,border-color .2s,background .2s,box-shadow .2s;box-shadow:var(--shadow-card)}
-  .mcell .mname{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--sage);letter-spacing:.04em;line-height:1.15}
+  .mcell .mname{font-family:var(--disp);font-weight:700;font-size:11.5px;color:var(--sage);letter-spacing:.02em;line-height:1.15}
   .mcell .mscore{font-family:var(--mono);font-size:21px;margin-top:8px;color:var(--ivory);line-height:1;font-weight:500;min-height:23px;display:flex;align-items:center;justify-content:center}
   .mcell .mscore.note{font-size:15px}
   .mcell.bal{border-color:rgba(236,187,99,.4);background:var(--gold-soft)}
@@ -100,10 +100,16 @@
   .jslider{display:flex;transition:transform .32s ease}
   .jslide{min-width:100%}
   .chart{padding-top:2px}
+  .chart-plot{position:relative}
   .chartsvg{width:100%;height:150px;display:block;border-radius:8px}
+  .cpt-dot{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px var(--card)}
+  .cpt-dot.up{background:var(--win)} .cpt-dot.dn{background:var(--lose)}
+  .cpt-lab{position:absolute;font-family:var(--mono);font-size:11px;font-weight:600;white-space:nowrap;padding:1px 6px;border-radius:7px;pointer-events:none}
+  .cpt-lab.high{transform:translate(-50%,-120%);color:var(--win);background:rgba(60,203,149,.15)}
+  .cpt-lab.low{transform:translate(-50%,20%);color:var(--lose);background:rgba(230,75,65,.15)}
   .chart-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--sage);margin-top:9px}
   .chart-empty{color:var(--sage-dim);font-size:13px;padding:14px 0}
-  .chart-stats{display:flex;gap:7px;margin-bottom:11px}
+  .chart-stats{display:flex;gap:7px;margin-top:12px}
   .cstat{flex:1;background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 6px;text-align:center}
   .cstat .cs-v{display:block;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ivory);line-height:1.1}
   .cstat .cs-v.win{color:var(--win)} .cstat .cs-v.lose{color:var(--lose)}
@@ -115,6 +121,24 @@
   .log .lword{font-weight:600}
   .log li.pos .lword,.log li.pos .lamt{color:var(--win)}
   .log li.neg .lword,.log li.neg .lamt{color:var(--lose)}
+  .log li[data-li]{cursor:pointer}
+  .log li[data-li]:active{background:var(--felt2)}
+  .cp-grid{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+  .cp-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 13px;background:var(--card)}
+  .cp-k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--sage-dim)}
+  .cp-v{font-size:13px;color:var(--ivory);font-weight:600;text-align:right}
+  .cp-v.pos{color:var(--win)} .cp-v.neg{color:var(--lose)}
+  .cp-side{display:inline-block;padding:3px 11px;border-radius:9px;font-size:12px;font-weight:800;letter-spacing:.02em}
+  .cp-side.rouge{background:linear-gradient(180deg,var(--rouge-2),var(--rouge-d));color:#fff}
+  .cp-side.noir{background:linear-gradient(180deg,#2c3858,#0e1730);color:#fff;border:1px solid #3a4660}
+  .cp-side.neutre{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#1a1208}
+  .rl-strip{display:flex;justify-content:center;align-items:center;gap:6px;margin:2px 0 0}
+  .rl-cell{width:18%;max-width:48px;aspect-ratio:.85;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;font-weight:600;color:#fff;opacity:.5;transform:scale(.9)}
+  .rl-cell.r{background:linear-gradient(180deg,var(--rouge-2),var(--rouge))}
+  .rl-cell.n{background:linear-gradient(180deg,#1a2540,var(--noir));border:1px solid var(--noir-edge);color:#cfd6e6}
+  .rl-cell.z{background:linear-gradient(180deg,#27b574,#1f9d63)}
+  .rl-cell.cur{opacity:1;transform:scale(1.1);box-shadow:0 0 0 2px var(--gold),0 8px 20px -6px rgba(236,187,99,.55)}
+  .rl-cap{text-align:center;font-size:10.5px;color:var(--sage-dim);margin-top:9px}
   .log-empty{color:var(--sage-dim);font-size:13px}
 
   details.set{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 15px;margin-bottom:11px}
@@ -206,7 +230,7 @@
   .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#1a1208;font-size:15px;font-weight:700;margin-top:6px}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
   /* libellés majuscules + surbrillance du côté à jouer (pastille pleine) */
-  .mname{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;min-height:28px}
+  .mname{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:nowrap;white-space:nowrap;min-height:28px}
   .mname .w{transition:all .2s ease;border-radius:9px;display:inline-block}
   .mname .sep{color:var(--sage-dim);opacity:.5}
   .mname .w.hi{font-weight:800;font-size:13px;padding:5px 12px;border-radius:10px;transform:scale(1.12);letter-spacing:.03em}
@@ -218,7 +242,7 @@
   .mcell.play .mhist-hint,.mcell.await .mhist-hint{color:var(--gold)}
 
   /* solde + p&l dans l'encadré d'évolution */
-  .solde-box{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:13px;padding-bottom:13px;border-bottom:1px solid var(--line-soft)}
+  .solde-box{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--line-soft)}
   .solde-box .sb-lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:5px}
   .solde-box .sb-solde{font-family:var(--mono);font-size:27px;line-height:1;color:var(--ivory);font-weight:500}
   .solde-box .sb-pnl{font-family:var(--mono);font-size:18px;line-height:1}
@@ -268,15 +292,15 @@
   <!-- JOURNAL / ÉVOLUTION DU SOLDE -->
   <section>
     <div class="sec-h"><h2 id="jtitle">Évolution du solde</h2><button class="jarrow" id="jToggle" aria-label="afficher le journal des coups">→</button></div>
-    <div class="solde-box">
-      <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
-      <div class="sb-pnl mono" id="pnl">0,00 €</div>
-    </div>
     <div class="jwrap">
       <div class="jslider" id="jslider">
         <div class="jslide"><div class="chart" id="chart"></div></div>
         <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
       </div>
+    </div>
+    <div class="solde-box">
+      <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
+      <div class="sb-pnl mono" id="pnl">0,00 €</div>
     </div>
   </section>
 
@@ -366,6 +390,17 @@
     </div>
   </div>
 
+  <!-- DÉTAIL D'UN COUP -->
+  <div class="modal-bg" id="coupModal" style="display:none">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="modal-title" id="coupTitle">Détail du coup</h3>
+        <button class="hist-close" id="coupClose" aria-label="fermer">×</button>
+      </div>
+      <div id="coupContent"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
 <script>
@@ -378,6 +413,7 @@ const TS_TARGET=5;                  // Triple S : cycle +5 → on repart à 0
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
+const WHEEL=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
 const CID={"R/N":"RN","P/I":"PI","M/P":"MP"};
 const CCLASS={"R/N":"rn","P/I":"pi","M/P":"mp"};
 const STORE_KEY="cresus:cs:v7";
@@ -507,7 +543,7 @@ function advanceC(ch,C,result){
     S.wagered+=stake; C.pMise+=stake;
     if(result==="G"){ S.solde+=stake; C.pBilan+=stake; C.cumul+=stake; }
     else { S.solde-=stake; C.pBilan-=stake; C.cumul-=stake; }
-    S.log.push({ch,r:result,amt:stake,ph});
+    S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
     if(C.cumul>=TS_TARGET-1e-9){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won"; }
     if(result==="G"){ C.bet=stake+1; return "wait"; }   // gain : +1 puis on attend un nouveau signal
     C.bet=stake+2; return "lost";                        // perte : +2 et on enchaîne (à la Crésus)
@@ -516,7 +552,7 @@ function advanceC(ch,C,result){
     const stake=stakeC(C); const ph=phaseLabel(C);
     S.wagered+=stake; C.pMise+=stake;
     if(result==="G"){ S.solde+=stake; C.pBilan+=stake; } else { S.solde-=stake; C.pBilan-=stake; }
-    S.log.push({ch,r:result,amt:stake,ph});
+    S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
     if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" gagné "+plusEur(b)); return "won"; }
     C.step++;
     if(C.step>=4){ const b=C.pBilan; closeC(C); S.brickLosses=(S.brickLosses||0)+1; mt(CLABELS[ch].join("/")+" brique perdue "+plusEur(b)); return "epuise"; }
@@ -525,7 +561,7 @@ function advanceC(ch,C,result){
   const stake=stakeC(C); const ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake;
   if(result==="G"){ S.solde+=stake; C.pBilan+=stake; } else { S.solde-=stake; C.pBilan-=stake; }
-  S.log.push({ch,r:result,amt:stake,ph});
+  S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
   if(C.phase==="m1"){
     if(result==="G"){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" gagné "+plusEur(b)); return "won"; }
     C.step++; if(C.step>=M1.length){ C.phase="m2"; C.tent=0; C.coup="A"; mt(CLABELS[ch].join("/")+" · massage 2"); }
@@ -561,7 +597,7 @@ function zeroC(ch,C){
   // Zéro pendant un coup joué = perte totale + palier suivant. Le zéro ne change pas le compte.
   const stake=stakeC(C), ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
-  S.log.push({ch,r:"Z",amt:stake,ph});
+  S.log.push({ch,r:"Z",amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
   if(S.mont==="ts"){
     C.cumul-=stake; C.bet=stake+2; mt(CLABELS[ch].join("/")+" · zéro");
     setNextState(C); return;
@@ -585,7 +621,18 @@ function zeroC(ch,C){
 function feedCouple(ch){
   const C=S.cpl[ch]; C.flash=null;
   const n=S.spins[CUR_I]; const isZero=(n===0); const prev=C.sig.phase;
-  if(prev==="none"){ if(balancedUpto(ch,CUR_I) && !(S.mont==="m4" && (S.brickLosses||0)>=1)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; } return; }
+  if(prev==="none"){
+    if(S.mont==="m4" && (S.brickLosses||0)>=1) return;            // martingale stoppée : plus de nouveau signal
+    if(balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; return; }
+    // 6-6 sur la boule précédente (frontière de contexte / reprise) :
+    // la fenêtre vient de glisser → la boule courante tient lieu d'observation → on joue son côté.
+    if(CUR_I>0 && !isZero && balancedUpto(ch,CUR_I-1)){
+      const side=memb(n,ch);
+      C.acc={a:6+(side==="a"?1:0), b:6+(side==="b"?1:0)};
+      C.sig={phase:"play",side:side,obs:n};
+    }
+    return;
+  }
   if(isZero){ if(prev==="play") zeroC(ch,C); return; }
   const side=memb(n,ch); C.acc[side]++;
   if(prev==="await"){ C.sig.obs=n; setNextState(C); }
@@ -660,8 +707,8 @@ function drawChart(){
     </div>`;
   let bal=S.capital; const pts=[bal*S.pieceEur];
   for(const e of S.log){ bal += (e.r==="G"? e.amt : -e.amt); pts.push(bal*S.pieceEur); }
-  if(pts.length<2){ el.innerHTML=stats+'<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'; return; }
-  const W=300,H=150,pad=12;
+  if(pts.length<2){ el.innerHTML='<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'+stats; return; }
+  const W=300,H=150,pad=20;
   const min=Math.min(...pts), max=Math.max(...pts), span=(max-min)||1;
   const X=i=> pad + i*(W-2*pad)/(pts.length-1);
   const Y=v=> H-pad - (v-min)*(H-2*pad)/span;
@@ -670,7 +717,16 @@ function drawChart(){
   const base=S.capitalEur, yb=Y(base), x0=X(0), x1=X(pts.length-1);
   const area=d+` L${x1.toFixed(1)},${yb.toFixed(1)} L${x0.toFixed(1)},${yb.toFixed(1)} Z`;
   const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
-  el.innerHTML=stats+`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
+  // points extrêmes + delta vs solde de départ
+  let minI=0,maxI=0; pts.forEach((v,i)=>{ if(v<pts[minI])minI=i; if(v>pts[maxI])maxI=i; });
+  const dMax=pts[maxI]-base, dMin=pts[minI]-base;
+  const xPct=i=>(X(i)/W*100), yPct=i=>(Y(pts[i])/H*100), cl=x=>Math.max(9,Math.min(91,x));
+  let over="";
+  if(dMax>1e-9){ over+=`<div class="cpt-dot up" style="left:${xPct(maxI).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%"></div>`
+    +`<div class="cpt-lab high" style="left:${cl(xPct(maxI)).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%">${plusEur(dMax)}</div>`; }
+  if(dMin<-1e-9){ over+=`<div class="cpt-dot dn" style="left:${xPct(minI).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%"></div>`
+    +`<div class="cpt-lab low" style="left:${cl(xPct(minI)).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%">${plusEur(dMin)}</div>`; }
+  el.innerHTML=`<div class="chart-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
       <defs>
         <clipPath id="clipUp"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
         <clipPath id="clipDn"><rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hDn}"/></clipPath>
@@ -680,8 +736,7 @@ function drawChart(){
       <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
       <path d="${d}" fill="none" stroke="var(--win)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#clipUp)"/>
       <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#clipDn)"/>
-    </svg>
-    <div class="chart-meta"><span>min ${fmtEur2(min)}</span><span>départ ${fmtEur2(base)}</span><span>max ${fmtEur2(max)}</span></div>`;
+    </svg>${over}</div>`+stats;
 }
 
 function exportSessions(){
@@ -791,7 +846,8 @@ function renderHistory(){
     tw+=s.wagered||0; tWins+=s.wins||0; tLoss+=s.losses||0; tCoups+=s.coups||0; tDur+=s.duree||0;
     if((s.gain||0)>best)best=s.gain||0; if((s.gain||0)<worst)worst=s.gain||0; if((s.gain||0)>=0)pos++;
   }
-  const n=chrono.length, avg=tg/n, rate=(tWins+tLoss)?Math.round(tWins/(tWins+tLoss)*100):null;
+  let sWon=0; for(const s of chrono){ if((s.gain||0)>0) sWon++; }
+  const n=chrono.length, avg=tg/n, rate=n?Math.round(sWon/n*100):null;
   cnt.textContent=n+" session"+(n>1?"s":"");
   const sg=v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
   const cls=v=>v>=0?"pos":"neg";
@@ -865,6 +921,36 @@ function openHist(ch){
   $("histModal").style.display="flex";
 }
 
+function openCoup(idx){
+  const e=S.log[idx]; if(!e) return;
+  const [A,B]=CLABELS[e.ch];
+  const sideLabel = e.side==="a"?A : e.side==="b"?B : "—";
+  const sideCls = e.ch==="R/N" ? (e.side==="a"?"rouge":"noir") : "neutre";
+  const isW=e.r==="G", isZ=e.r==="Z";
+  const resWord = isW?"Gagné" : isZ?"Zéro (perte)" : "Perdu";
+  const resCls = isW?"pos":"neg";
+  const n = (e.n!=null) ? e.n : null;
+  let strip="";
+  if(n!=null){
+    const i=WHEEL.indexOf(n);
+    if(i>=0){
+      const cells=[];
+      for(let k=-2;k<=2;k++){ const m=WHEEL[(i+k+WHEEL.length)%WHEEL.length]; const c=m===0?"z":(RED.has(m)?"r":"n"); cells.push(`<div class="rl-cell ${c}${k===0?' cur':''}">${m}</div>`); }
+      strip=`<div class="rl-strip">${cells.join("")}</div><div class="rl-cap">Numéro sorti (au centre) et ses voisins sur le cylindre</div>`;
+    }
+  }
+  $("coupContent").innerHTML=`
+    <div class="cp-grid">
+      <div class="cp-row"><span class="cp-k">Chance simple</span><span class="cp-v">${CNAME[e.ch]}</span></div>
+      <div class="cp-row"><span class="cp-k">Côté misé</span><span class="cp-v"><span class="cp-side ${sideCls}">${sideLabel.toUpperCase()}</span></span></div>
+      <div class="cp-row"><span class="cp-k">Mise</span><span class="cp-v mono">${eur(e.amt)}</span></div>
+      <div class="cp-row"><span class="cp-k">Phase / montante</span><span class="cp-v">${e.ph||"—"}</span></div>
+      <div class="cp-row"><span class="cp-k">Résultat</span><span class="cp-v ${resCls}">${resWord} ${isW?"+":"−"}${eur(e.amt)}</span></div>
+    </div>${strip}`;
+  $("coupTitle").textContent="Détail du coup";
+  $("coupModal").style.display="flex";
+}
+
 /* ---- rendu ---- */
 function render(){
   const last=S.spins.length-1;
@@ -917,11 +1003,12 @@ function render(){
   tr.innerHTML=S.spins.length===0?'<span class="empty-note">Les numéros sortis apparaîtront ici</span>'
     :l12.map((n,i)=>`<div class="chip ${colorOf(n)}${i===0?' last':''}">${n}</div>`).join("");
 
-  const lg=$("log"); const items=S.log.slice(-80).reverse();
+  const lg=$("log"); const _start=Math.max(0,S.log.length-80);
+  const items=S.log.slice(_start).map((e,i)=>({e,idx:_start+i})).reverse();
   lg.innerHTML=items.length===0?'<li class="log-empty">Aucun coup joué pour l\'instant.</li>'
-    :items.map(e=>{ const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.amt;
+    :items.map(it=>{ const e=it.e; const word=e.r==="G"?"Gagné":e.r==="P"?"Perdu":"Zéro"; const cls=e.r==="G"?"pos":"neg"; const amt=e.amt;
         const cpl=CNAME[e.ch]; const sign=e.r==="G"?"+":"−";
-        return `<li class="${cls}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
+        return `<li class="${cls}" data-li="${it.idx}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
 
   $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur;
   $("inTP").value=S.tpFinal; $("inSL").value=S.sl;
@@ -950,6 +1037,9 @@ $("goalContinue").addEventListener("click",continueSession);
 $("mini").addEventListener("click",e=>{ const cell=e.target.closest("[data-ch]"); if(cell) openHist(cell.dataset.ch); });
 $("histClose").addEventListener("click",()=>{ $("histModal").style.display="none"; });
 $("histModal").addEventListener("click",e=>{ if(e.target===$("histModal")) $("histModal").style.display="none"; });
+$("log").addEventListener("click",e=>{ const li=e.target.closest("li[data-li]"); if(li) openCoup(+li.dataset.li); });
+$("coupClose").addEventListener("click",()=>{ $("coupModal").style.display="none"; });
+$("coupModal").addEventListener("click",e=>{ if(e.target===$("coupModal")) $("coupModal").style.display="none"; });
 $("jToggle").addEventListener("click",()=> setJview(jview==="chart"?"log":"chart"));
 $("goalSave").addEventListener("click",saveCurrentSession);
 $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
