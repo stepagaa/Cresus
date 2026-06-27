@@ -257,6 +257,7 @@
   .banner{flex-direction:column;align-items:stretch}
   .banner-act{justify-content:flex-end;flex-wrap:wrap}
   #goalContinue{font-size:12px;font-weight:600;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);border-radius:9px;padding:7px 11px}
+  #goalRecover{font-size:12px;font-weight:600;color:#1a1208;background:var(--gold);border-radius:9px;padding:7px 11px}
 </style>
 </head>
 <body>
@@ -269,6 +270,7 @@
     <div class="banner-txt" id="goalTxt">🎯 Take-profit atteint</div>
     <div class="banner-act">
       <button id="goalSave">Enregistrer</button>
+      <button id="goalRecover" style="display:none">Rattraper ▸</button>
       <button id="goalContinue">Continuer ▸</button>
       <button id="goalDismiss" aria-label="fermer">×</button>
     </div>
@@ -429,7 +431,7 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  mont:"ts", tpFinal:5, sl:-20, ctx:0
+  mont:"ts", tpFinal:5, sl:-20, ctx:0, recoverTargetEur:0, tpNormal:5
 };
 function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,cumul:0,bet:1,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
@@ -447,8 +449,8 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.sl=(o.sl!=null)?o.sl:-20; S.ctx=o.ctx||0; startMontSel=S.mont; recalcCapital(); }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal}; }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.sl=(o.sl!=null)?o.sl:-20; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; startMontSel=S.mont; recalcCapital(); }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -721,11 +723,12 @@ function drawChart(){
   let minI=0,maxI=0; pts.forEach((v,i)=>{ if(v<pts[minI])minI=i; if(v>pts[maxI])maxI=i; });
   const dMax=pts[maxI]-base, dMin=pts[minI]-base;
   const xPct=i=>(X(i)/W*100), yPct=i=>(Y(pts[i])/H*100), cl=x=>Math.max(9,Math.min(91,x));
+  const eurDelta=v=>(v>0?"+":v<0?"−":"")+fmtEur2(Math.abs(v));
   let over="";
   if(dMax>1e-9){ over+=`<div class="cpt-dot up" style="left:${xPct(maxI).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%"></div>`
-    +`<div class="cpt-lab high" style="left:${cl(xPct(maxI)).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%">${plusEur(dMax)}</div>`; }
+    +`<div class="cpt-lab high" style="left:${cl(xPct(maxI)).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%">${eurDelta(dMax)}</div>`; }
   if(dMin<-1e-9){ over+=`<div class="cpt-dot dn" style="left:${xPct(minI).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%"></div>`
-    +`<div class="cpt-lab low" style="left:${cl(xPct(minI)).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%">${plusEur(dMin)}</div>`; }
+    +`<div class="cpt-lab low" style="left:${cl(xPct(minI)).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%">${eurDelta(dMin)}</div>`; }
   el.innerHTML=`<div class="chart-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
       <defs>
         <clipPath id="clipUp"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
@@ -882,6 +885,7 @@ function startNewSession(){
   S.mont=startMontSel||"ts";
   S.tpFinal=parseFloat($("startTP").value)||5;
   S.sl=-Math.abs(parseFloat($("startSL").value)||20);
+  S.recoverTargetEur=0; S.tpNormal=S.tpFinal;
   S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render(); closeStartModal();
 }
@@ -889,12 +893,38 @@ function startNewSession(){
 function continueSession(){
   // reporte le solde de fin de séance comme nouveau capital, garde les derniers numéros comme contexte
   const finEur=Math.max(round2(S.solde*S.pieceEur), S.pieceEur);
+  if(S.recoverTargetEur){                      // fin de la chaîne de rattrapage : retour mise/objectif normaux
+    S.pieceEur = baseMise(finEur);
+    S.tpFinal  = S.tpNormal || 5;
+    S.recoverTargetEur = 0;
+  }
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
   S.capitalEur=finEur; recalcCapital();
   S.log=[]; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
+}
+
+function recoverSession(){
+  // Enregistre la séance perdue, puis règle la mise pour que +10 pièces couvrent
+  // AU MINIMUM la perte CUMULÉE depuis le début de la chaîne de rattrapage.
+  // Mise = perte cumulée ÷ 10, arrondie au palier de 0,10 € supérieur. Ex. 2,20 € → 0,30 €.
+  saveCurrentSession();                        // la séance perdante reste dans l'historique
+  if(!S.recoverTargetEur){                     // 1re perte de la chaîne : on mémorise le niveau à reprendre
+    S.recoverTargetEur = S.capitalEur;
+    S.tpNormal = S.tpFinal;
+  }
+  const soldeEur = round2(S.solde * S.pieceEur);
+  const lossEur  = round2(S.recoverTargetEur - soldeEur);   // perte cumulée vs l'ancrage
+  if(lossEur <= 0){ S.recoverTargetEur=0; toast("Plus rien à rattraper"); return; }
+  const newPiece = Math.max(0.10, round2(Math.ceil(lossEur - 1e-9) * 0.10));
+  S.capitalEur = Math.max(soldeEur, newPiece); S.pieceEur = newPiece; recalcCapital();
+  S.tpFinal = 10;                              // objectif : +10 pièces = perte cumulée rattrapée
+  const keep = S.spins.slice(-16); S.spins = keep; S.ctx = keep.length;
+  S.log = []; S.sessionStart = Date.now(); goalDismissed = false;
+  replay(false); save(); render();
+  toast("Rattrapage · perte cumulée "+fmtEur2(lossEur)+" · mise "+fmtEur2(newPiece)+" · +10 pièces = "+fmtEur2(10*newPiece));
 }
 
 /* ---- historique d'une chance simple (où j'en suis sur la montante) ---- */
@@ -1021,6 +1051,16 @@ function render(){
   if(hitTP) $("goalTxt").textContent="🎯 Take-profit · +"+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
   else if(hitSL && S.mont==="m4"){ const nb=S.brickLosses||0; $("goalTxt").textContent="🛑 "+nb+" brique"+(nb>1?"s":"")+" perdue"+(nb>1?"s":"")+" (4 pertes d'affilée) · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")"; }
   else if(hitSL) $("goalTxt").textContent="🛑 Stop-loss · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
+  // "Rattraper" : visible seulement sur séance perdante, libellé = mise de rattrapage à venir
+  if(ended && hitSL){
+    const recovBase = S.recoverTargetEur || S.capitalEur;          // ancrage existant, ou niveau de départ
+    const cumLoss   = round2(recovBase - S.solde*S.pieceEur);
+    const mp = Math.max(0.10, round2(Math.ceil(Math.max(cumLoss,0)-1e-9)*0.10));
+    $("goalRecover").style.display="";
+    $("goalRecover").textContent="Rattraper ▸ mise "+fmtEur2(mp);
+  } else {
+    $("goalRecover").style.display="none";
+  }
   if(jview==="chart") drawChart();
 }
 
@@ -1034,6 +1074,7 @@ $("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||5
 $("inSL").addEventListener("change",e=>{ S.sl=-Math.abs(parseFloat(e.target.value)||20); goalDismissed=false; render(); save(); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
 $("goalContinue").addEventListener("click",continueSession);
+$("goalRecover").addEventListener("click",recoverSession);
 $("mini").addEventListener("click",e=>{ const cell=e.target.closest("[data-ch]"); if(cell) openHist(cell.dataset.ch); });
 $("histClose").addEventListener("click",()=>{ $("histModal").style.display="none"; });
 $("histModal").addEventListener("click",e=>{ if(e.target===$("histModal")) $("histModal").style.display="none"; });
