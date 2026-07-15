@@ -163,7 +163,7 @@
   .sheet-help a{color:var(--sage)}
 
   /* ===== sélecteur de montante ===== */
-  .mont-pick{display:flex;gap:8px;margin-bottom:14px}
+  .mont-pick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
   .mont-opt{flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;padding:12px 8px;border-radius:11px;border:1px solid var(--line);background:var(--felt2);color:var(--sage);font-size:14px;font-weight:600;transition:border-color .15s,background .15s,color .15s}
   .mont-opt small{font-size:10px;font-weight:400;color:var(--sage-dim);letter-spacing:.02em}
   .mont-opt.on{border-color:var(--gold);background:rgba(231,178,78,.1);color:var(--gold)}
@@ -331,12 +331,13 @@
           <button class="mont-opt set-mont" data-m="ts">Triple S<small>cycle +5</small></button>
           <button class="mont-opt set-mont" data-m="m4">Martingale<small>1-3-6-13</small></button>
           <button class="mont-opt set-mont" data-m="cresus">Crésus<small>+ parolis</small></button>
+          <button class="mont-opt set-mont" data-m="og">Oscar<small>grind +1</small></button>
         </div>
       </div>
-      <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="5" step="1"></div>
-      <div class="field"><label>Stop-loss<span class="hint">pièces · séance perdante</span></label><input type="number" id="inSL" inputmode="decimal" value="-20" step="1"></div>
+      <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="4" step="1"></div>
+      <div class="field"><label>Stop-loss<span class="hint">35 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-70" step="1" readonly></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
-      <div class="field"><label>Mise de départ<span class="hint">en € · 0,10 € par tranche de 20 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.1"></div>
+      <div class="field"><label>Mise de départ<span class="hint">en € · solde ÷ 200, palier 0,50 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.5"></div>
       <div class="sheet-sync">
         <div class="sheet-h">Sauvegarde Google Sheets <span id="syncStatus" class="sync-pill off">● non configuré</span></div>
         <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
@@ -359,7 +360,7 @@
   <div class="modal-bg" id="startModal">
     <div class="modal">
       <h3 class="modal-title">Nouvelle séance</h3>
-      <p class="modal-sub">Solde de départ et montante. Mise de base = 0,10 € par tranche de 20 € (0,10 € à 20 €, 0,20 € à 40 €, 0,30 € à 60 €…).</p>
+      <p class="modal-sub">Solde de départ et montante. Mise de base = solde ÷ 200, arrondie au palier de 0,50 € (1,00 € à 200 €, 1,50 € à 300 €…). Stop-loss = 35 % du solde.</p>
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
@@ -369,11 +370,12 @@
         <button class="mont-opt" data-m="ts">Triple S<small>cycle +5</small></button>
         <button class="mont-opt" data-m="m4">Martingale<small>1-3-6-13</small></button>
         <button class="mont-opt" data-m="cresus">Crésus<small>+ parolis</small></button>
+        <button class="mont-opt" data-m="og">Oscar<small>grind +1</small></button>
       </div>
 
       <div class="tp-row">
-        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="5"></div>
-        <div><label class="modal-lab">Stop-loss (pièces)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-20"></div>
+        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="4"></div>
+        <div><label class="modal-lab">Stop-loss (auto)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-70" readonly></div>
       </div>
 
       <button class="modal-go" id="startNew">Démarrer la séance</button>
@@ -412,6 +414,9 @@ const M1=[1,2,4,8];
 const M2=[5,7,9,12,16,21,28,37,50]; // paroli d'origine (méthode Fijeac)
 const M4=[1,3,6,13];                // martingale 4 coups : +1,+2,+2,+3 (perte max −23)
 const TS_TARGET=5;                  // Triple S : cycle +5 → on repart à 0
+const OG_TARGET=1;                  // Oscar's Grind : cycle +1 → on repart à 0
+const MONT_NAME={ts:"Triple S",m4:"Martingale",cresus:"Crésus",og:"Oscar"};
+const MONT_LONG={ts:"Triple S",m4:"Martingale 1-3-6-13",cresus:"Crésus",og:"Oscar's Grind"};
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -431,13 +436,14 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  mont:"ts", tpFinal:5, sl:-20, ctx:0, recoverTargetEur:0, tpNormal:5
+  mont:"ts", tpFinal:4, sl:-20, ctx:0, recoverTargetEur:0, tpNormal:4
 };
 function freshCouple(){ return {phase:"m1",step:0,tent:0,coup:"A",pMise:0,pBilan:0,cumul:0,bet:1,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 
-function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; }
-function baseMise(soldeEur){ return Math.max(0.1, Math.floor(soldeEur/20)/10); } // +0,10 € par tranche de 20 €
+const SL_PCT=0.35;                                                     // stop-loss = 35 % du solde
+function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; S.sl = -round2(S.capital*SL_PCT); }
+function baseMise(soldeEur){ return Math.max(0.5, round2(Math.floor((soldeEur/200)/0.5)*0.5)); } // solde ÷ 200, palier de 0,50 €
 const Store={
   async get(k){
     if(window.storage){ try{ const r=await window.storage.get(k); return (r&&r.value!=null)?r.value:null; }catch(e){ return null; } }
@@ -450,7 +456,7 @@ const Store={
 };
 let lastTs=0;            // horodatage du dernier changement local
 function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,mont:S.mont,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.sl=(o.sl!=null)?o.sl:-20; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; startMontSel=S.mont; recalcCapital(); }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.mont=o.mont||"ts"; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:4; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; startMontSel=S.mont; recalcCapital(); }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -527,6 +533,10 @@ function stakeC(C){
     if(b>10) b=Math.floor(Math.min(b,reste/2));
     return Math.max(b,0);
   }
+  if(S.mont==="og"){
+    // Oscar's Grind : on ne mise jamais plus que ce qu'il faut pour boucler le cycle à +1
+    return Math.max(1, Math.min(C.bet, OG_TARGET-C.cumul));
+  }
   if(S.mont==="m4"){ return C.step<4 ? M4[C.step] : 0; }
   if(C.phase==="m1")return M1[C.step];
   if(C.phase==="m2"){const b=M2[C.tent];return C.coup==="A"?b:b*2;}
@@ -536,6 +546,7 @@ function closeC(C){ C.phase="m1"; C.step=0; C.tent=0; C.coup="A"; C.pMise=0; C.p
 function nextTentC(C){ C.tent++; C.coup="A"; if(C.tent>=M2.length) C.phase="fini"; }
 function phaseLabel(C){
   if(S.mont==="ts") return "Triple S · cumul "+(C.cumul>0?"+":"")+round2(C.cumul);
+  if(S.mont==="og") return "Oscar · cumul "+(C.cumul>0?"+":"")+round2(C.cumul)+" / +1";
   if(S.mont==="m4") return "Martingale · coup "+(C.step+1)+"/4";
   return C.phase==="m1"?"M1 · coup "+(C.step+1)+"/4":C.phase==="m2"?"M2 · t"+(C.tent+1)+(C.coup==="A"?" ·1er":" ·2e"):"—";
 }
@@ -549,6 +560,16 @@ function advanceC(ch,C,result){
     if(C.cumul>=TS_TARGET-1e-9){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won"; }
     if(result==="G"){ C.bet=stake+1; return "wait"; }   // gain : +1 puis on attend un nouveau signal
     C.bet=stake+2; return "lost";                        // perte : +2 et on enchaîne (à la Crésus)
+  }
+  if(S.mont==="og"){
+    const stake=stakeC(C); const ph=phaseLabel(C);
+    S.wagered+=stake; C.pMise+=stake;
+    if(result==="G"){ S.solde+=stake; C.pBilan+=stake; C.cumul+=stake; }
+    else { S.solde-=stake; C.pBilan-=stake; C.cumul-=stake; }
+    S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
+    if(C.cumul>=OG_TARGET-1e-9){ const b=C.pBilan; closeC(C); C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won"; }
+    if(result==="G"){ C.bet=stake+1; return "wait"; }   // gain : mise +1, puis on attend une nouvelle détection 6-6
+    return "obs";                                        // perte : mise inchangée, on observe une boule avant de rejouer
   }
   if(S.mont==="m4"){
     const stake=stakeC(C); const ph=phaseLabel(C);
@@ -593,6 +614,9 @@ function resolveC(ch,C,result){
   } else if(ev==="epuise"){
     C.sig.phase="none"; C.sig.side=null;
     if(!m4Stop && balancedUpto(ch,CUR_I)){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; }
+  } else if(ev==="obs"){
+    // Oscar : après une perte, une boule d'observation est obligatoire avant de rejouer
+    C.sig={phase:"await", side:null, obs:null};
   } else { setNextState(C); }
 }
 function zeroC(ch,C){
@@ -603,6 +627,10 @@ function zeroC(ch,C){
   if(S.mont==="ts"){
     C.cumul-=stake; C.bet=stake+2; mt(CLABELS[ch].join("/")+" · zéro");
     setNextState(C); return;
+  }
+  if(S.mont==="og"){
+    C.cumul-=stake; mt(CLABELS[ch].join("/")+" · zéro");   // perte : mise inchangée
+    setNextState(C); return;   // le zéro ne change pas le compte : le déséquilibre 7-6 tient → on rejoue directement
   }
   if(S.mont==="m4"){
     C.step++;
@@ -877,14 +905,18 @@ function openStartModal(){
 }
 function closeStartModal(){ $("startModal").style.display="none"; }
 function updateStartMise(){ const v=Math.max(0,parseFloat($("startSolde").value)||0);
-  $("startMise").textContent="Mise de base : "+(v>0?baseMise(v).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—"); }
+  if(v>0){
+    const p=baseMise(v), nbP=v/p, sl=-round2(nbP*SL_PCT);
+    $("startMise").textContent="Mise de base : "+fmtEur2(p)+" · "+Math.round(nbP)+" pièces · SL "+Math.round(sl)+" ("+fmtEur2(Math.abs(sl)*p)+")";
+    $("startSL").value=Math.round(sl);
+  } else { $("startMise").textContent="Mise de base : —"; $("startSL").value=""; }
+}
 function startNewSession(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v<=0){ toast("Indique un solde valide"); return; }
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
   S.mont=startMontSel||"ts";
-  S.tpFinal=parseFloat($("startTP").value)||5;
-  S.sl=-Math.abs(parseFloat($("startSL").value)||20);
+  S.tpFinal=parseFloat($("startTP").value)||4;
   S.recoverTargetEur=0; S.tpNormal=S.tpFinal;
   S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render(); closeStartModal();
@@ -935,6 +967,9 @@ function openHist(ch){
   if(S.mont==="ts"){
     const reste=round2(TS_TARGET-C.cumul), nm=Math.max(stakeC(C),0);
     cur=`<div class="hist-cur">Cycle Triple S — cumul <b>${(C.cumul>0?"+":"")+round2(C.cumul)}</b> / +5<br>reste <b>${reste}</b> à gagner · prochaine mise <b>${eur(nm)}</b></div>`;
+  } else if(S.mont==="og"){
+    const reste=round2(OG_TARGET-C.cumul), nm=Math.max(stakeC(C),0);
+    cur=`<div class="hist-cur">Cycle Oscar's Grind — cumul <b>${(C.cumul>0?"+":"")+round2(C.cumul)}</b> / +1<br>reste <b>${reste}</b> à gagner · prochaine mise <b>${eur(nm)}</b></div>`;
   } else {
     const ml = S.mont==="m4" ? "Martingale 1-3-6-13" : "Montante Crésus";
     cur=`<div class="hist-cur">${ml} — <b>${phaseLabel(C)}</b><br>prochaine mise <b>${eur(stakeC(C))}</b></div>`;
@@ -1026,7 +1061,7 @@ function render(){
   $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="sb-pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
-  $("montBadge").textContent=S.mont==="ts"?"Triple S":S.mont==="m4"?"Martingale":"Crésus";
+  $("montBadge").textContent=MONT_NAME[S.mont]||"Triple S";
 
   const l12=S.spins.slice(-12).reverse();
   const tr=$("track");
@@ -1070,8 +1105,7 @@ $("undo").addEventListener("click",undoSpin);
 $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(0.01,parseFloat(e.target.value)||0.5); recalcCapital(); replay(false); render(); save(); });
-$("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||5; goalDismissed=false; render(); save(); });
-$("inSL").addEventListener("change",e=>{ S.sl=-Math.abs(parseFloat(e.target.value)||20); goalDismissed=false; render(); save(); });
+$("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||4; S.tpNormal=S.tpFinal; goalDismissed=false; render(); save(); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
 $("goalContinue").addEventListener("click",continueSession);
 $("goalRecover").addEventListener("click",recoverSession);
@@ -1094,8 +1128,8 @@ $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
-document.querySelectorAll('#startMont .mont-opt').forEach(b=>b.addEventListener('click',()=>{ startMontSel=b.dataset.m; updateStartMontUI(); $("startSL").value = startMontSel==="m4" ? -23 : -20; }));
-document.querySelectorAll('.set-mont').forEach(b=>b.addEventListener('click',()=>{ S.mont=b.dataset.m; S.sl = S.mont==="m4" ? -23 : -20; updateSetMontUI(); replay(false); render(); save(); toast("Montante : "+(S.mont==="ts"?"Triple S":S.mont==="m4"?"Martingale 1-3-6-13":"Crésus")+" · SL "+S.sl); }));
+document.querySelectorAll('#startMont .mont-opt').forEach(b=>b.addEventListener('click',()=>{ startMontSel=b.dataset.m; updateStartMontUI(); }));
+document.querySelectorAll('.set-mont').forEach(b=>b.addEventListener('click',()=>{ S.mont=b.dataset.m; updateSetMontUI(); replay(false); render(); save(); toast("Montante : "+(MONT_LONG[S.mont]||S.mont)); }));
 $("sessionsList").addEventListener("click",e=>{
   const del=e.target.closest(".s-del");
   if(del){ const i=parseInt(del.dataset.i,10); sessions.splice(i,1); if(openSession===i)openSession=-1; else if(openSession>i)openSession--; saveSessions(); renderSessions(); return; }
