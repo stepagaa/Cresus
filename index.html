@@ -224,6 +224,19 @@
   .slist .s-gain{font-family:var(--mono);font-size:14px;font-weight:500}
   .slist .s-del{font-size:13px;color:var(--sage-dim);padding:2px 6px}
   .slist li.s-row{cursor:pointer}
+  /* lignes de jour : agrégat misé / P&L, dépliables sur les séances du jour */
+  .slist li.d-row{cursor:pointer}
+  .slist li.d-row.open{background:rgba(255,255,255,.03)}
+  .d-main{display:flex;flex-direction:column;gap:2px}
+  .d-date{font-size:12.5px;color:var(--ivory);font-weight:600}
+  .d-meta{font-size:10.5px;color:var(--sage-dim);font-family:var(--mono)}
+  .d-gain{font-family:var(--mono);font-size:14px;font-weight:500}
+  .d-gain.pos{color:var(--win)} .d-gain.neg{color:var(--lose)}
+  .d-caret{font-size:9px;color:var(--sage-dim);margin-right:2px;display:inline-block;transition:transform .15s}
+  .slist li.d-row.open .d-caret{transform:rotate(90deg);color:var(--ivory)}
+  /* séances imbriquées sous leur jour */
+  .slist li.s-sub{padding-left:14px;border-left:2px solid var(--line)}
+  .slist li.s-sub .s-date{color:var(--sage)}
   .slist li.s-row.open{background:var(--felt2)}
   .slist .s-caret{font-size:10px;color:var(--sage-dim);margin-left:2px;transition:transform .15s}
   .slist li.s-row.open .s-caret{transform:rotate(90deg);color:var(--ivory)}
@@ -304,7 +317,15 @@
   .sb-stat .v.win{color:var(--win)} .sb-stat .v.lose{color:var(--lose)}
   .solde-box .sb-lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:5px}
   .solde-box .sb-solde{font-family:var(--mono);font-size:27px;line-height:1;color:var(--ivory);font-weight:500}
-  .solde-box .sb-pnl{font-family:var(--mono);font-size:18px;line-height:1}
+  .solde-box .sb-pnl{font-family:var(--mono);font-size:18px;line-height:1;color:var(--sage)}
+  .solde-box .sb-pnl.pos{color:var(--win)}
+  .solde-box .sb-pnl.neg{color:var(--lose)}
+  /* rythme de la séance : durée écoulée et P&L ramené à l'heure */
+  .sb-rate{font-family:var(--mono);font-size:11px;color:var(--sage-dim);
+    display:flex;align-items:baseline;gap:5px;margin-top:8px;
+    padding-top:7px;border-top:1px solid var(--line-soft)}
+  .sb-rate .sb-sep{opacity:.5}
+  #sessRate.pos{color:var(--win)} #sessRate.neg{color:var(--lose)}
 
   /* historique par chance simple */
   .hist-cur{background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:13px;color:var(--ivory);line-height:1.55;margin-bottom:9px}
@@ -359,6 +380,7 @@
     #leftcol .mb-lab{margin-bottom:6px}
     #leftcol .sb-solde{font-size:17px}
     #leftcol .sb-pnl{font-size:13px}
+    #leftcol .sb-rate{font-size:9.5px;gap:4px;margin-top:6px;padding-top:5px}
     #leftcol .sb-lab{font-size:8.5px;margin-bottom:1px}
 
     /* Le tapis occupe toute la hauteur restante : rangées en fr plutôt qu'en px,
@@ -515,6 +537,7 @@
           <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
           <div class="sb-pnl mono" id="pnl">0,00 €</div>
         </div>
+        <div class="sb-rate mono"><span id="sessDur">00:00</span><span class="sb-sep">·</span><span id="sessRate">—</span></div>
       </div>
     </div>
   </div>
@@ -687,6 +710,17 @@ function grabSlot(C){
   const i=free[0]; S.slots[i].busy=true; C.slot=i; return i;
 }
 function freeSlot(C){ if(C.slot!=null){ S.slots[C.slot].busy=false; C.slot=null; } }
+// Attribution en 2e passe : on attend que TOUTES les chances aient résolu leur coup avant de
+// distribuer les montantes. Une montante libérée par un gain sur ce même coup redevient donc
+// disponible pour une chance qui passe en 7-6 maintenant — au lieu d'en ouvrir une neuve.
+// (Sans cette passe séparée, le résultat dépendrait de l'ordre R/N → P/I → M/P.)
+function assignSlots(){
+  for(const ch of COUPLES){
+    const C=S.cpl[ch];
+    if(C.sig.phase!=="play" || C.slot!=null) continue;
+    if(grabSlot(C)==null) C.sig={phase:"none",side:null,obs:null};   // pool épuisé → signal abandonné
+  }
+}
 
 const SL_PCT=0.25;                                                     // stop-loss = 25 % du solde
 const TP_PCT=0.05;                                                     // take-profit = 5 % du solde, arrondi au supérieur
@@ -828,10 +862,9 @@ function resolveC(ch,C,result){
     // sur GAIN : si un 6-6 est déjà présent (juste avant OU avec la boule gagnante),
     // celle-ci tient lieu d'observation → on rejoue son côté dès la boule suivante.
     if(balancedUpto(ch,CUR_I-1) || balancedUpto(ch,CUR_I)){
-      if(grabSlot(C)==null){ C.sig.phase="none"; C.sig.side=null; return; }   // pool épuisé
       const side=memb(S.spins[CUR_I],ch);
       C.acc={a:6+(side==="a"?1:0), b:6+(side==="b"?1:0)};
-      C.sig={phase:"play", side:side, obs:S.spins[CUR_I]};
+      C.sig={phase:"play", side:side, obs:S.spins[CUR_I]};       // montante attribuée par assignSlots()
     } else { C.sig.phase="none"; C.sig.side=null; }
   } else {
     // "obs" : après une perte, une boule d'observation est obligatoire avant de rejouer
@@ -859,11 +892,12 @@ function feedCouple(ch){
     // la fenêtre vient de glisser → la boule courante tient lieu d'observation → on joue son côté.
     const sigPrev = (CUR_I>0 && !isZero && balancedUpto(ch,CUR_I-1));
     if(!sigNow && !sigPrev) return;
-    if(grabSlot(C)==null) return;                                // pool épuisé → signal ignoré
+    // 6-6 : on arme seulement l'observation. AUCUNE montante n'est réservée ici — elle le sera
+    // au déséquilibre 7-6, quand les coups en cours sur les autres chances seront résolus.
     if(sigNow){ C.sig={phase:"await",side:null,obs:null}; C.acc={a:6,b:6}; return; }
     const side=memb(n,ch);
     C.acc={a:6+(side==="a"?1:0), b:6+(side==="b"?1:0)};
-    C.sig={phase:"play",side:side,obs:n};
+    C.sig={phase:"play",side:side,obs:n};                        // montante attribuée par assignSlots()
     return;
   }
   if(isZero){ if(prev==="play") zeroC(ch,C); return; }
@@ -882,6 +916,7 @@ function replay(emitLast){
     for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
     balancePending();
     for(const ch of COUPLES) feedCouple(ch);
+    assignSlots();          // 2e passe : les gains de ce coup ont déjà rendu leur montante
   }
   EMIT=false; CUR_I=N-1;
 }
@@ -991,7 +1026,7 @@ function exportSessions(){
 }
 
 /* ---- sessions & fenêtre d'ouverture ---- */
-let openSession=-1;
+let openSession=-1, openDay="";
 function downsample(arr,max){ if(arr.length<=max) return arr; const out=[],step=(arr.length-1)/(max-1); for(let i=0;i<max;i++) out.push(arr[Math.round(i*step)]); out[out.length-1]=arr[arr.length-1]; return out; }
 function saveCurrentSession(){
   const finEur=S.solde*S.pieceEur, gainEur=finEur-S.capitalEur;
@@ -1024,21 +1059,38 @@ function sparkSVG(curve, base){
     <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#sclipD)"/>
   </svg>`;
 }
+function dayKey(ts){ const d=new Date(ts);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function dayLabel(ts){
+  const k=dayKey(ts), now=Date.now();
+  if(k===dayKey(now)) return "Aujourd'hui";
+  if(k===dayKey(now-86400000)) return "Hier";
+  return new Date(ts).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"short"});
+}
 function renderSessions(){
   const el=$("sessionsList");
   if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; openSession=-1; renderHistFilter(); renderHistory(); return; }
   const num2=v=>(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  el.innerHTML=sessions.map((s,i)=>{
-    const d=new Date(s.date);
-    const ds=d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-    const g=(s.gain>=0?"+":"−")+Math.abs(s.gain).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
-    const pct=(s.gain>=0?"+":"−")+Math.abs(s.pct).toFixed(1)+"%";
+  // à l'euro près, une journée nulle ne doit être ni verte ni signée
+  const sg=v=>(Math.abs(v)<0.005?"":(v>0?"+":"−"))+num2(Math.abs(v))+" €";
+  const cls=v=>Math.abs(v)<0.005?"":(v>0?"pos":"neg");
+
+  // regroupement par jour — sessions est déjà trié du plus récent au plus ancien
+  const days=[], map={};
+  sessions.forEach((s,i)=>{ const k=dayKey(s.date);
+    if(!map[k]){ map[k]={key:k,date:s.date,idx:[]}; days.push(map[k]); }
+    map[k].idx.push(i); });
+
+  const sessionRow=i=>{
+    const s=sessions[i], d=new Date(s.date);
+    const hs=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const g=sg(s.gain), pct=(s.gain>=0?"+":"−")+Math.abs(s.pct).toFixed(1)+"%";
     const open=i===openSession;
-    let row=`<li class="s-row${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${ds}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
+    let row=`<li class="s-row s-sub${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${hs}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
     if(open){
       const w=s.wins, l=s.losses, tot=(w!=null&&l!=null)?w+l:null, rate=tot?Math.round(w/tot*100):null;
       const wagered=s.wagered!=null?num2(s.wagered)+" €":"—";
-      row+=`<li class="s-detail-row"><div class="sd-stats">
+      row+=`<li class="s-detail-row s-sub"><div class="sd-stats">
         <div class="sd-stat"><span class="sd-v win">${w!=null?w:"—"}</span><span class="sd-l">gains</span></div>
         <div class="sd-stat"><span class="sd-v lose">${l!=null?l:"—"}</span><span class="sd-l">pertes</span></div>
         <div class="sd-stat"><span class="sd-v">${rate!=null?rate+" %":"—"}</span><span class="sd-l">réussite</span></div>
@@ -1046,9 +1098,24 @@ function renderSessions(){
       </div>${sparkSVG(s.curve,s.debut)}</li>`;
     }
     return row;
+  };
+
+  el.innerHTML=days.map(d=>{
+    const list=d.idx.map(i=>sessions[i]);
+    const gain=list.reduce((a,s)=>a+(s.gain||0),0);
+    const wag =list.reduce((a,s)=>a+(s.wagered||0),0);
+    const dur =list.reduce((a,s)=>a+(s.duree||0),0);
+    // % du jour : rapporté au solde de départ de la PREMIÈRE séance du jour
+    // (les séances s'enchaînent, additionner les débuts n'aurait aucun sens)
+    const first=list[list.length-1], pct=first&&first.debut? gain/first.debut*100 : 0;
+    const open=d.key===openDay, n=list.length;
+    let row=`<li class="d-row${open?' open':''}" data-d="${d.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${dayLabel(d.date)}</span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
+    if(open) row+=d.idx.map(sessionRow).join("");
+    return row;
   }).join("");
   renderHistFilter(); renderHistory();
 }
+
 function cumCurveSVG(vals){
   if(vals.length<2) return "";
   const W=300,H=140,pad=12;
@@ -1339,6 +1406,7 @@ function render(){
   } else {
     $("goalRecover").style.display="none";
   }
+  updateRate();
   if(jview==="chart" && $("soldeModal").style.display==="flex") drawChart();
 }
 
@@ -1425,9 +1493,25 @@ $("sessionsList").addEventListener("click",e=>{
     });
     return;
   }
-  const row=e.target.closest(".s-row"); if(!row)return; const i=parseInt(row.dataset.i,10);
-  openSession=(openSession===i?-1:i); renderSessions();
+  const row=e.target.closest(".s-row");
+  if(row){ const i=parseInt(row.dataset.i,10); openSession=(openSession===i?-1:i); renderSessions(); return; }
+  const day=e.target.closest(".d-row");
+  if(day){ const k=day.dataset.d; openDay=(openDay===k?"":k); openSession=-1; renderSessions(); }
 });
+// P&L ramené à l'heure. Sous une minute de jeu le ratio n'a aucun sens (1 € en 5 s = 720 €/h),
+// on l'affiche donc seulement passé ce seuil. Rafraîchi à la seconde, indépendamment de render().
+function updateRate(){
+  const d=$("sessDur"), r=$("sessRate"); if(!d||!r) return;
+  const ms=Date.now()-(S.sessionStart||Date.now());
+  d.textContent=fmtDur(ms);
+  const h=ms/3600000;
+  if(h<1/60){ r.textContent="—"; r.className=""; return; }
+  const rate=(S.solde-S.capital)*S.pieceEur/h;
+  r.textContent=(rate>0?"+":rate<0?"−":"")+fmtEur2(Math.abs(rate))+"/h";
+  r.className=rate>0.005?"pos":rate<-0.005?"neg":"";
+}
+setInterval(updateRate,1000);
+
 let toastT;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 
