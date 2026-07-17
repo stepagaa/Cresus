@@ -254,14 +254,25 @@
   #goalRecover{font-size:12px;font-weight:600;color:#1a1208;background:var(--gold);border-radius:9px;padding:7px 11px}
 
   /* ===== FORMAT PAYSAGE — 1/2 : mise en page =====
-     Dès que l'écran est couché et assez large, le pavé passe en disposition
-     « tapis » : 0 à gauche sur 3 rangées, puis 1-36 en 3 rangées de 12.
-     S'applique aussi aux tablettes et aux fenêtres larges. */
+     Le pavé prend la disposition du tapis : le 0 à gauche sur les 3 rangées,
+     puis 12 colonnes de 3 numéros — haut 1·4·7…34, milieu 2·5·8…35, bas 3·6·9…36.
+     L'ordre du HTML ne change pas : on fixe seulement la rangée de chaque numéro,
+     et la grille remplit chaque rangée de gauche à droite.
+     min-width:0 / minmax(0,1fr) sont indispensables : sans eux, la taille minimale
+     automatique des cellules (transmise par aspect-ratio) fait déborder la grille
+     et écrase la colonne du 0. */
   @media (orientation:landscape) and (min-width:600px){
     body{max-width:960px}
-    .num-grid{grid-template-columns:repeat(13,1fr);gap:4px}
-    .num{border-radius:8px;font-size:14px}
-    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto}
+    .num-grid{
+      grid-template-columns:repeat(13,minmax(0,1fr));
+      grid-template-rows:repeat(3,auto);
+      gap:4px;
+    }
+    .num{min-width:0;min-height:0;border-radius:8px;font-size:13px}
+    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto;font-size:15px}
+    .num:nth-child(3n+2){grid-row:1}   /* 1, 4, 7 … 34  → rangée du haut */
+    .num:nth-child(3n+3){grid-row:2}   /* 2, 5, 8 … 35  → rangée du milieu */
+    .num:nth-child(3n+4){grid-row:3}   /* 3, 6, 9 … 36  → rangée du bas */
   }
 
   /* ===== FORMAT PAYSAGE — 2/2 : compactage vertical =====
