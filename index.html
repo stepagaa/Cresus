@@ -258,18 +258,27 @@
      puis 12 colonnes de 3 numéros — haut 1·4·7…34, milieu 2·5·8…35, bas 3·6·9…36.
      L'ordre du HTML ne change pas : on fixe seulement la rangée de chaque numéro,
      et la grille remplit chaque rangée de gauche à droite.
-     min-width:0 / minmax(0,1fr) sont indispensables : sans eux, la taille minimale
-     automatique des cellules (transmise par aspect-ratio) fait déborder la grille
-     et écrase la colonne du 0. */
+     · env(safe-area-inset-left/right) : le viewport est en « cover », donc la page
+       passe sous la Dynamic Island. On réserve sa largeur des DEUX côtés, pour que
+       le pavé reste dégagé quel que soit le sens de rotation.
+     · min-width:0 / minmax(0,1fr) : sans eux, la taille minimale automatique des
+       cellules (transmise par aspect-ratio) fait déborder la grille et écrase le 0.
+     · aspect-ratio:1.2 : en paysage la hauteur est la ressource rare. Des cases
+       légèrement plus larges que hautes (comme sur un vrai tapis) libèrent ~30px
+       tout en gardant 47px de haut, au-dessus du minimum tactile de 44px. */
   @media (orientation:landscape) and (min-width:600px){
-    body{max-width:960px}
+    body{
+      max-width:960px;
+      padding-left:max(env(safe-area-inset-left,0px),12px);
+      padding-right:max(env(safe-area-inset-right,0px),12px);
+    }
     .num-grid{
       grid-template-columns:repeat(13,minmax(0,1fr));
       grid-template-rows:repeat(3,auto);
       gap:4px;
     }
-    .num{min-width:0;min-height:0;border-radius:8px;font-size:13px}
-    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto;font-size:15px}
+    .num{min-width:0;min-height:0;border-radius:8px;font-size:17px;aspect-ratio:1.2}
+    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto;font-size:19px}
     .num:nth-child(3n+2){grid-row:1}   /* 1, 4, 7 … 34  → rangée du haut */
     .num:nth-child(3n+3){grid-row:2}   /* 2, 5, 8 … 35  → rangée du milieu */
     .num:nth-child(3n+4){grid-row:3}   /* 3, 6, 9 … 36  → rangée du bas */
@@ -279,26 +288,29 @@
      Uniquement quand la hauteur est faible (téléphone couché), pour garder
      piste + cartes de signal + pavé visibles ensemble sans défilement. */
   @media (orientation:landscape) and (max-height:560px){
-    body{padding:max(env(safe-area-inset-top,0px),6px) 12px 24px}
-    header{padding:6px 2px 6px;gap:6px}
-    .brand .bname{font-size:15px}
+    /* longhand : surtout pas de raccourci `padding`, qui écraserait
+       les marges latérales de safe-area définies au-dessus */
+    body{padding-top:max(env(safe-area-inset-top,0px),6px);padding-bottom:max(env(safe-area-inset-bottom,0px),10px)}
+    header{padding:4px 2px 4px;gap:5px}
+    .brand .bname{font-size:14px}
     .brand .tag{display:none}
+    .brand .montbadge{font-size:9.5px;padding:2px 8px}
 
-    .track{margin:8px 0 4px;gap:3px}
-    .chip{height:20px;font-size:11px;border-radius:6px}
+    .track{margin:6px 0 4px;gap:3px}
+    .chip{height:19px;font-size:10.5px;border-radius:6px}
 
-    section{padding:9px;margin-bottom:8px;border-radius:14px}
+    section{padding:8px;margin-bottom:7px;border-radius:14px}
     .sec-h{margin-bottom:8px}
 
-    .pad-actions{margin-top:8px;gap:6px}
-    .pad-actions button{padding:8px;font-size:11px;border-radius:9px}
+    .pad-actions{margin-top:6px;gap:6px}
+    .pad-actions button{padding:7px;font-size:10.5px;border-radius:9px}
 
-    #mini{gap:8px;margin-bottom:7px}
-    .mcell{padding:8px 6px 7px;border-radius:13px}
-    .mname{min-height:20px;gap:3px}
+    #mini{gap:8px;margin-bottom:6px}
+    .mcell{padding:7px 5px 6px;border-radius:12px}
+    .mname{min-height:19px;gap:3px}
     .mcell .mname{font-size:10.5px}
     .mname .w.hi{font-size:12px;padding:4px 9px}
-    .mcell .mscore{font-size:16px;margin-top:5px;min-height:17px}
+    .mcell .mscore{font-size:16px;margin-top:4px;min-height:17px}
     .mcell .mscore.note{font-size:13px}
 
     .solde-box{margin-top:9px;padding-top:9px}
