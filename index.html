@@ -212,6 +212,10 @@
   .hstat .hv.pos{color:var(--win)} .hstat .hv.neg{color:var(--lose)}
   .hstat .hl{display:block;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
   .histsvg{width:100%;height:140px;display:block;border-radius:8px}
+  .hfilter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+  .hfilter button{font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:var(--felt2);color:var(--sage);transition:border-color .15s,background .15s,color .15s}
+  .hfilter button.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold)}
+  .hfilter button small{font-family:var(--mono);font-size:9.5px;opacity:.65;margin-left:3px}
 
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(6,10,20,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80;overflow-y:auto}
@@ -313,6 +317,8 @@
     .mcell .mscore{font-size:16px;margin-top:4px;min-height:17px}
     .mcell .mscore.note{font-size:13px}
 
+    .hfilter{margin-bottom:8px;gap:5px}
+    .hfilter button{font-size:10px;padding:4px 9px}
     .solde-box{margin-top:9px;padding-top:9px}
     .solde-box .sb-solde{font-size:21px}
     .solde-box .sb-pnl{font-size:15px}
@@ -388,6 +394,7 @@
   <!-- SUIVI LONGUE DURÉE -->
   <section id="histSection">
     <div class="sec-h"><h2>Suivi longue durée</h2><span class="hist-count" id="histCount"></span></div>
+    <div class="hfilter" id="histFilter" style="display:none"></div>
     <div id="histBody"><div class="chart-empty">Aucune session enregistrée — ton suivi cumulé apparaîtra ici.</div></div>
   </section>
 
@@ -474,6 +481,10 @@
 "use strict";
 const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const OG_TARGET=1;                  // Oscar's Grind : cycle +1 → on repart à 0
+const CUR_MONT="og";                // montante de l'app (les sessions sont étiquetées avec)
+// libellés pour l'historique : les anciennes montantes n'existent plus dans l'app,
+// mais des sessions enregistrées avant leur retrait peuvent encore les référencer
+const MONT_LABEL={og:"Oscar",ts:"Triple S",m4:"Martingale",cresus:"Crésus"};
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -492,7 +503,7 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  tpFinal:5, sl:-70, ctx:0, recoverTargetEur:0, tpNormal:5, ogSlots:3
+  tpFinal:5, sl:-70, ctx:0, recoverTargetEur:0, tpNormal:5, ogSlots:3, histFilter:CUR_MONT
 };
 const OG_SLOTS_MAX=3;   // Oscar : pool de montantes, détachées des chances (nombre réglable : S.ogSlots)
 function freshCouple(){ return {pMise:0,pBilan:0,slot:null,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
@@ -523,8 +534,8 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal,ogSlots:S.ogSlots}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; recalcCapital(); }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal,ogSlots:S.ogSlots,histFilter:S.histFilter}; }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT; recalcCapital(); }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -806,7 +817,7 @@ function saveCurrentSession(){
   for(const e of S.log){ bal+=(e.r==="G"?e.amt:-e.amt); curve.push(bal*S.pieceEur); if(e.r==="G")nG++; else nP++; }
   const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
     pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:Date.now()-(S.sessionStart||Date.now()),
-    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, curve:downsample(curve,140) };
+    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:CUR_MONT, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
   saveSessions(); renderSessions(); render();
@@ -833,7 +844,7 @@ function sparkSVG(curve, base){
 }
 function renderSessions(){
   const el=$("sessionsList");
-  if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; openSession=-1; renderHistory(); return; }
+  if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; openSession=-1; renderHistFilter(); renderHistory(); return; }
   const num2=v=>(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
   el.innerHTML=sessions.map((s,i)=>{
     const d=new Date(s.date);
@@ -854,7 +865,7 @@ function renderSessions(){
     }
     return row;
   }).join("");
-  renderHistory();
+  renderHistFilter(); renderHistory();
 }
 function cumCurveSVG(vals){
   if(vals.length<2) return "";
@@ -875,10 +886,34 @@ function cumCurveSVG(vals){
     <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#hclipD)"/>
   </svg>`;
 }
+/* ---- filtre du suivi longue durée, par montante ---- */
+const montKey=s=>s.mont||"?";
+const montLabel=m=>MONT_LABEL[m]||"Sans montante";
+function histSessions(){
+  return S.histFilter==="all" ? sessions : sessions.filter(s=>montKey(s)===S.histFilter);
+}
+function renderHistFilter(){
+  const el=$("histFilter");
+  const present=[...new Set(sessions.map(montKey))];
+  // inutile d'afficher un filtre s'il n'y a qu'une seule montante dans l'historique
+  if(sessions.length===0 || present.length<2){
+    el.style.display="none"; el.innerHTML="";
+    if(present.length===1 && present[0]!==S.histFilter) S.histFilter=present[0];  // évite un écran vide
+    return;
+  }
+  // montante actuelle en tête, puis les anciennes
+  present.sort((a,b)=> a===CUR_MONT?-1 : b===CUR_MONT?1 : montLabel(a).localeCompare(montLabel(b)));
+  const n=m=>sessions.filter(s=>montKey(s)===m).length;
+  el.style.display="";
+  el.innerHTML=present.map(m=>`<button data-f="${m}" class="${S.histFilter===m?"on":""}">${montLabel(m)}<small>${n(m)}</small></button>`).join("")
+    +`<button data-f="all" class="${S.histFilter==="all"?"on":""}">Toutes<small>${sessions.length}</small></button>`;
+}
 function renderHistory(){
   const el=$("histBody"), cnt=$("histCount");
   if(!sessions.length){ el.innerHTML='<div class="chart-empty">Aucune session enregistrée — ton suivi cumulé apparaîtra ici.</div>'; cnt.textContent=""; return; }
-  const chrono=sessions.slice().reverse();
+  const sel=histSessions();
+  if(!sel.length){ el.innerHTML='<div class="chart-empty">Aucune session pour cette montante.</div>'; cnt.textContent="0 session"; return; }
+  const chrono=sel.slice().reverse();
   let tg=0,tw=0,tWins=0,tLoss=0,tCoups=0,tDur=0,best=-Infinity,worst=Infinity,pos=0;
   const cum=[0];
   for(const s of chrono){
@@ -888,7 +923,7 @@ function renderHistory(){
   }
   let sWon=0; for(const s of chrono){ if((s.gain||0)>0) sWon++; }
   const n=chrono.length, avg=tg/n, rate=n?Math.round(sWon/n*100):null;
-  cnt.textContent=n+" session"+(n>1?"s":"");
+  cnt.textContent=n+" session"+(n>1?"s":"")+(S.histFilter==="all"?"":" · "+montLabel(S.histFilter));
   const sg=v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
   const cls=v=>v>=0?"pos":"neg";
   const grid=`<div class="hgrid">
@@ -1126,6 +1161,10 @@ $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
+$("histFilter").addEventListener("click",e=>{
+  const b=e.target.closest("[data-f]"); if(!b) return;
+  S.histFilter=b.dataset.f; save(); renderHistFilter(); renderHistory();
+});
 $("sessionsList").addEventListener("click",e=>{
   const del=e.target.closest(".s-del");
   if(del){ const i=parseInt(del.dataset.i,10); sessions.splice(i,1); if(openSession===i)openSession=-1; else if(openSession>i)openSession--; saveSessions(); renderSessions(); return; }
