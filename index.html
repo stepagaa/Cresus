@@ -414,8 +414,8 @@
   <details class="set">
     <summary><span>Réglages</span><span style="color:var(--gold)">⚙</span></summary>
     <div class="set-body">
-      <div class="field"><label>Take-profit<span class="hint">pièces · séance gagnante</span></label><input type="number" id="inTP" inputmode="decimal" value="5" step="1"></div>
-      <div class="field"><label>Stop-loss<span class="hint">35 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-70" step="1" readonly></div>
+      <div class="field"><label>Take-profit<span class="hint">3 % du solde · arrondi sup. · modifiable</span></label><input type="number" id="inTP" inputmode="decimal" value="6" step="1"></div>
+      <div class="field"><label>Stop-loss<span class="hint">30 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-60" step="1" readonly></div>
       <div class="field"><label>Montantes<span class="hint">pool Oscar partagé · 1 à 3</span></label><input type="number" id="inSlots" inputmode="decimal" value="3" step="1" min="1" max="3"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="field"><label>Mise de départ<span class="hint">en € · solde ÷ 200, palier 0,50 €, min 1 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.5"></div>
@@ -441,14 +441,14 @@
   <div class="modal-bg" id="startModal">
     <div class="modal">
       <h3 class="modal-title">Nouvelle séance</h3>
-      <p class="modal-sub">Solde de départ et montante. Mise de base = solde ÷ 200, arrondie au palier de 0,50 €, minimum 1 € (1,00 € à 200 €, 1,50 € à 300 €…). Stop-loss = 35 % du solde.</p>
+      <p class="modal-sub">Solde de départ et montante. Mise de base = solde ÷ 200, arrondie au palier de 0,50 €, minimum 1 € (1,00 € à 200 €, 1,50 € à 300 €…). Take-profit ≈ 3 % du solde (arrondi supérieur, modifiable) · Stop-loss = 30 % du solde (auto).</p>
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
 
       <div class="tp-row">
-        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="5"></div>
-        <div><label class="modal-lab">Stop-loss (auto)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-70" readonly></div>
+        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="6"></div>
+        <div><label class="modal-lab">Stop-loss (auto)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-60" readonly></div>
       </div>
 
       <button class="modal-go" id="startNew">Démarrer la séance</button>
@@ -506,7 +506,7 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  tpFinal:5, sl:-70, ctx:0, recoverTargetEur:0, tpNormal:5, ogSlots:3, histFilter:CUR_MONT
+  tpFinal:6, sl:-60, ctx:0, recoverTargetEur:0, tpNormal:6, ogSlots:3, histFilter:CUR_MONT
 };
 const OG_SLOTS_MAX=3;   // Oscar : pool de montantes, détachées des chances (nombre réglable : S.ogSlots)
 function freshCouple(){ return {pMise:0,pBilan:0,slot:null,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
@@ -523,8 +523,10 @@ function grabSlot(C){
 }
 function freeSlot(C){ if(C.slot!=null){ S.slots[C.slot].busy=false; C.slot=null; } }
 
-const SL_PCT=0.35;                                                     // stop-loss = 35 % du solde
+const SL_PCT=0.30;                                                     // stop-loss = 30 % du solde
+const TP_PCT=0.03;                                                     // take-profit = 3 % du solde, arrondi au supérieur
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; S.sl = -round2(S.capital*SL_PCT); }
+function autoTP(){ return Math.max(1, Math.ceil(S.capital*TP_PCT - 1e-9)); }  // arrondi sup., en pièces entières (palier = 1 pièce = mise de base)
 function baseMise(soldeEur){ return Math.max(1, round2(Math.floor((soldeEur/200)/0.5)*0.5)); } // solde ÷ 200, palier de 0,50 €, minimum 1 €
 const Store={
   async get(k){
@@ -538,7 +540,7 @@ const Store={
 };
 let lastTs=0;            // horodatage du dernier changement local
 function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal,ogSlots:S.ogSlots,histFilter:S.histFilter}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.tpFinal=(o.tpFinal!=null)?o.tpFinal:5; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT; recalcCapital(); }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.tpFinal=(o.tpFinal!=null)?o.tpFinal:6; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT; recalcCapital(); }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -955,16 +957,17 @@ function openStartModal(){
 function closeStartModal(){ $("startModal").style.display="none"; }
 function updateStartMise(){ const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v>0){
-    const p=baseMise(v), nbP=v/p, sl=-round2(nbP*SL_PCT);
-    $("startMise").textContent="Mise de base : "+fmtEur2(p)+" · "+Math.round(nbP)+" pièces · SL "+Math.round(sl)+" ("+fmtEur2(Math.abs(sl)*p)+")";
+    const p=baseMise(v), nbP=v/p, sl=-round2(nbP*SL_PCT), tp=Math.max(1,Math.ceil(nbP*TP_PCT - 1e-9));
+    $("startMise").textContent="Mise de base : "+fmtEur2(p)+" · "+Math.round(nbP)+" pièces · TP +"+tp+" ("+fmtEur2(tp*p)+") · SL "+Math.round(sl)+" ("+fmtEur2(Math.abs(sl)*p)+")";
     $("startSL").value=Math.round(sl);
-  } else { $("startMise").textContent="Mise de base : —"; $("startSL").value=""; }
+    $("startTP").value=tp;
+  } else { $("startMise").textContent="Mise de base : —"; $("startSL").value=""; $("startTP").value=""; }
 }
 function startNewSession(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v<=0){ toast("Indique un solde valide"); return; }
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
-  S.tpFinal=parseFloat($("startTP").value)||5;
+  S.tpFinal=parseFloat($("startTP").value)||autoTP();
   S.recoverTargetEur=0; S.tpNormal=S.tpFinal;
   S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render(); closeStartModal();
@@ -973,14 +976,16 @@ function startNewSession(){
 function continueSession(){
   // reporte le solde de fin de séance comme nouveau capital, garde les derniers numéros comme contexte
   const finEur=Math.max(round2(S.solde*S.pieceEur), S.pieceEur);
-  if(S.recoverTargetEur){                      // fin de la chaîne de rattrapage : retour mise/objectif normaux
+  const endingRecovery = !!S.recoverTargetEur;
+  if(endingRecovery){                          // fin de la chaîne de rattrapage : retour mise normale
     S.pieceEur = baseMise(finEur);
-    S.tpFinal  = S.tpNormal || 5;
     S.recoverTargetEur = 0;
   }
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
   S.capitalEur=finEur; recalcCapital();
+  S.tpFinal = endingRecovery ? (S.tpNormal || autoTP()) : autoTP();   // TP auto = 3 % du nouveau solde, arrondi sup.
+  S.tpNormal = S.tpFinal;
   S.log=[]; S.sessionStart=Date.now(); goalDismissed=false;
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
@@ -1142,9 +1147,9 @@ function render(){
 $("numGrid").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(parseInt(t.dataset.n,10)); });
 $("undo").addEventListener("click",undoSpin);
 $("clearTrack").addEventListener("click",()=>{ S.spins=[]; replay(false); render(); save(); });
-$("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); replay(false); render(); save(); });
-$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); replay(false); render(); save(); });
-$("inTP").addEventListener("change",e=>{ S.tpFinal=parseFloat(e.target.value)||5; S.tpNormal=S.tpFinal; goalDismissed=false; render(); save(); });
+$("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
+$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
+$("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.target.value)||autoTP()); S.tpNormal=S.tpFinal; goalDismissed=false; render(); save(); });
 $("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
 $("resetAll").addEventListener("click",()=>{ if(!confirm("Tout remettre à zéro ?"))return; S.spins=[]; replay(false); render(); save(); toast("Réinitialisé"); });
 $("goalContinue").addEventListener("click",continueSession);
