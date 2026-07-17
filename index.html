@@ -253,13 +253,22 @@
   #goalContinue{font-size:12px;font-weight:600;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);border-radius:9px;padding:7px 11px}
   #goalRecover{font-size:12px;font-weight:600;color:#1a1208;background:var(--gold);border-radius:9px;padding:7px 11px}
 
-  /* ===== FORMAT PAYSAGE (téléphone couché) =====
-     Le pavé passe en disposition « tapis » : 0 à gauche sur 3 rangées, puis 1-36
-     en 3 rangées de 12. On compacte le vertical pour garder piste + cartes de
-     signal + pavé visibles sans défilement. Les tablettes (hauteur > 560px)
-     gardent la mise en page normale. */
+  /* ===== FORMAT PAYSAGE — 1/2 : mise en page =====
+     Dès que l'écran est couché et assez large, le pavé passe en disposition
+     « tapis » : 0 à gauche sur 3 rangées, puis 1-36 en 3 rangées de 12.
+     S'applique aussi aux tablettes et aux fenêtres larges. */
+  @media (orientation:landscape) and (min-width:600px){
+    body{max-width:960px}
+    .num-grid{grid-template-columns:repeat(13,1fr);gap:4px}
+    .num{border-radius:8px;font-size:14px}
+    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto}
+  }
+
+  /* ===== FORMAT PAYSAGE — 2/2 : compactage vertical =====
+     Uniquement quand la hauteur est faible (téléphone couché), pour garder
+     piste + cartes de signal + pavé visibles ensemble sans défilement. */
   @media (orientation:landscape) and (max-height:560px){
-    body{max-width:960px;padding:max(env(safe-area-inset-top,0px),6px) 12px 24px}
+    body{padding:max(env(safe-area-inset-top,0px),6px) 12px 24px}
     header{padding:6px 2px 6px;gap:6px}
     .brand .bname{font-size:15px}
     .brand .tag{display:none}
@@ -270,9 +279,6 @@
     section{padding:9px;margin-bottom:8px;border-radius:14px}
     .sec-h{margin-bottom:8px}
 
-    .num-grid{grid-template-columns:repeat(13,1fr);gap:4px}
-    .num{border-radius:8px;font-size:14px}
-    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto}
     .pad-actions{margin-top:8px;gap:6px}
     .pad-actions button{padding:8px;font-size:11px;border-radius:9px}
 
