@@ -279,7 +279,24 @@
     background:var(--card);border:1px solid var(--line);border-radius:16px;
     padding:12px 14px;box-shadow:var(--shadow-card)}
   .sb-top{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
-  .sb-stats{display:flex;gap:7px}
+  .solde-box{cursor:pointer;transition:border-color .15s}
+  .solde-box:active{border-color:var(--gold-dim)}
+  .sb-stats{display:flex;gap:7px;margin-top:14px}
+
+  /* carte « où en est chaque montante du pool Oscar » */
+  .mont-box{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:10px 12px;box-shadow:var(--shadow-card)}
+  .mb-lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:8px}
+  .mb-list{display:flex;flex-direction:column;gap:5px}
+  .mb-row{display:flex;align-items:center;justify-content:space-between;gap:5px;
+    font-family:var(--mono);font-size:11px;color:var(--sage-dim)}
+  .mb-row.on{color:var(--ivory)}
+  .mb-k{font-weight:500;flex:none}
+  .mb-c{font-size:8.5px;letter-spacing:.05em;border:1px solid var(--line);border-radius:5px;
+    padding:1px 4px;color:var(--sage-dim);flex:none}
+  .mb-row.on .mb-c{border-color:var(--sage-dim);color:var(--ivory)}
+  .mb-v{font-variant-numeric:tabular-nums;flex:none}
+  .mb-row.neg .mb-v{color:var(--lose)}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -315,13 +332,17 @@
        + 12u + 12 filets de 2px, soit 12.75u + 24px. Chaque carte de gauche fait
        exactement 4 rangées (4u + ses 3 filets internes), donc les 3 cartes couvrent
        les 12 rangées du tapis : les bords se répondent au lieu de flotter. */
-    #padrow{display:flex;align-items:stretch;gap:8px;margin-bottom:12px;--u:calc((100dvh - 194px)/12.75)}
+    /* Grille légèrement réduite (-40px) ; la colonne de gauche fait exactement la
+       hauteur de la grille : 3 détections + montantes + solde, alignées haut et bas. */
+    #padrow{display:flex;align-items:stretch;gap:8px;margin-bottom:12px}
     #padrow>section{order:2;flex:1 1 auto;min-width:0;padding:7px;border-radius:14px;margin-bottom:0}
     /* hauteur calée sur le contenu du pavé (7 + grille + 6 + boutons + 7 = 100dvh - 99)
        pour qu'aucune des deux colonnes ne tire l'autre vers le bas */
+    /* 8px = bordure (1) + padding (7) de la section du pavé : la 1re carte démarre
+       ainsi exactement au haut de la grille, et le bloc fait sa hauteur pile. */
     #padrow>#leftcol{order:1;flex:0 0 31%;min-width:0;gap:8px;margin-bottom:0;
-      padding:10px 0 0;height:calc(100dvh - 99px)}
-    #leftcol #mini{flex:none;grid-template-columns:1fr;grid-template-rows:repeat(3,calc(var(--u)*3 + 8px));gap:8px}
+      padding:8px 0 0;height:calc(100dvh - 178px)}
+    #leftcol #mini{flex:1;min-height:0;grid-template-columns:1fr;grid-template-rows:repeat(3,1fr);gap:8px}
     .mcell{padding:10px 8px;border-radius:12px;display:flex;flex-direction:column;justify-content:center}
     .mcell .mname{font-size:12.5px}
     .mname{min-height:22px;gap:4px}
@@ -332,12 +353,10 @@
     .mstrip{margin-top:11px;gap:2px}
     .mdot{height:8px}
     /* colonne étroite : solde et P&L l'un sous l'autre plutôt que côte à côte */
-    #leftcol .solde-box{flex:1 1 auto;min-height:0;justify-content:space-evenly;
-      gap:8px;padding:9px 10px;border-radius:12px}
+    #leftcol .solde-box{flex:none;padding:8px 10px;border-radius:12px}
     #leftcol .sb-top{flex-direction:column;align-items:flex-start;gap:2px}  /* trop étroit pour 2 montants côte à côte */
-    #leftcol .sb-stats{flex-direction:column;gap:5px}          /* colonne étroite : en liste */
-    #leftcol .sb-stat{flex-direction:row;justify-content:space-between;align-items:baseline;padding:5px 8px}
-    #leftcol .sb-stat .k{order:1} #leftcol .sb-stat .v{order:2;font-size:12.5px}
+    #leftcol .mont-box{flex:none;padding:8px 10px;border-radius:12px}
+    #leftcol .mb-lab{margin-bottom:6px}
     #leftcol .sb-solde{font-size:17px}
     #leftcol .sb-pnl{font-size:13px}
     #leftcol .sb-lab{font-size:8.5px;margin-bottom:1px}
@@ -349,8 +368,8 @@
       grid-template-columns:repeat(3,minmax(0,1fr));
       grid-template-rows:0.75fr repeat(12,1fr);
       gap:4px;
-      height:calc(100dvh - 146px);
-      min-height:380px;
+      height:calc(100dvh - 186px);
+      min-height:340px;
     }
     .num{aspect-ratio:auto;min-width:0;min-height:0;height:auto;border-radius:9px;font-size:clamp(13px,2.4dvh,19px)}
     .num.z0{grid-column:1/-1;height:auto}
@@ -487,26 +506,18 @@
     <!-- COLONNE GAUCHE : détections + solde -->
     <div id="leftcol">
       <div id="mini"></div>
-      <div class="solde-box">
+      <div class="mont-box">
+        <div class="mb-lab">Montantes</div>
+        <div class="mb-list" id="mbList"></div>
+      </div>
+      <div class="solde-box" id="soldeBox" role="button" tabindex="0">
         <div class="sb-top">
           <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
           <div class="sb-pnl mono" id="pnl">0,00 €</div>
         </div>
-        <div class="sb-stats" id="sbStats"></div>
       </div>
     </div>
   </div>
-
-  <!-- JOURNAL / ÉVOLUTION DU SOLDE -->
-  <section>
-    <div class="sec-h"><h2 id="jtitle">Évolution du solde</h2><button class="jarrow" id="jToggle" aria-label="afficher le journal des coups">→</button></div>
-    <div class="jwrap">
-      <div class="jslider" id="jslider">
-        <div class="jslide"><div class="chart" id="chart"></div></div>
-        <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
-      </div>
-    </div>
-  </section>
 
   <!-- SUIVI LONGUE DURÉE -->
   <section id="histSection">
@@ -567,6 +578,26 @@
 
       <button class="modal-go" id="startNew">Démarrer la séance</button>
       <button class="modal-resume" id="startResume" style="display:none">Reprendre la séance en cours</button>
+    </div>
+  </div>
+
+  <!-- ÉVOLUTION DU SOLDE (ouverte depuis la case solde) -->
+  <div class="modal-bg" id="soldeModal" style="display:none">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 class="modal-title" id="jtitle">Évolution du solde</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="jarrow" id="jToggle" aria-label="afficher le journal des coups">→</button>
+          <button class="hist-close" id="soldeClose" aria-label="fermer">×</button>
+        </div>
+      </div>
+      <div class="jwrap">
+        <div class="jslider" id="jslider">
+          <div class="jslide"><div class="chart" id="chart"></div></div>
+          <div class="jslide"><ul class="log" id="log"><li class="log-empty">Aucun coup joué pour l'instant.</li></ul></div>
+        </div>
+      </div>
+      <div class="sb-stats" id="sbStats"></div>
     </div>
   </div>
 
@@ -1265,6 +1296,16 @@ function render(){
     +`<div class="sb-stat"><span class="v lose">${nP}</span><span class="k">pertes</span></div>`
     +`<div class="sb-stat"><span class="v">${eur(S.wagered)}</span><span class="k">misé</span></div>`;
 
+  // état du pool : quelle chance occupe quelle montante, cumul et palier visé
+  const holder={}; for(const ch of COUPLES){ const k=S.cpl[ch].slot; if(k!=null) holder[k]=CID[ch]; }
+  $("mbList").innerHTML=S.slots.map((sl,i)=>{
+    const t=slotTarget(sl), on=sl.busy, cum=round2(sl.cumul);
+    return `<div class="mb-row${on?" on":""}${cum<0?" neg":""}">`
+      +`<span class="mb-k">M${i+1}</span>`
+      +`<span class="mb-c">${on?holder[i]||"··":"libre"}</span>`
+      +`<span class="mb-v">${(cum>0?"+":"")+cum}/+${t}</span></div>`;
+  }).join("");
+
   $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="sb-pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
@@ -1298,7 +1339,7 @@ function render(){
   } else {
     $("goalRecover").style.display="none";
   }
-  if(jview==="chart") drawChart();
+  if(jview==="chart" && $("soldeModal").style.display==="flex") drawChart();
 }
 
 /* ---- confirmation maison : confirm() natif est bloqué dans l'iframe (renvoie false) ---- */
@@ -1345,6 +1386,9 @@ $("log").addEventListener("click",e=>{ const li=e.target.closest("li[data-li]");
 $("coupClose").addEventListener("click",()=>{ $("coupModal").style.display="none"; });
 $("coupModal").addEventListener("click",e=>{ if(e.target===$("coupModal")) $("coupModal").style.display="none"; });
 $("jToggle").addEventListener("click",()=> setJview(jview==="chart"?"log":"chart"));
+$("soldeBox").addEventListener("click",()=>{ $("soldeModal").style.display="flex"; drawChart(); });
+$("soldeClose").addEventListener("click",()=>{ $("soldeModal").style.display="none"; });
+$("soldeModal").addEventListener("click",e=>{ if(e.target===$("soldeModal")) $("soldeModal").style.display="none"; });
 $("goalSave").addEventListener("click",saveCurrentSession);
 $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
 $("saveSessionBtn").addEventListener("click",saveCurrentSession);
