@@ -252,6 +252,62 @@
   .banner-act{justify-content:flex-end;flex-wrap:wrap}
   #goalContinue{font-size:12px;font-weight:600;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);border-radius:9px;padding:7px 11px}
   #goalRecover{font-size:12px;font-weight:600;color:#1a1208;background:var(--gold);border-radius:9px;padding:7px 11px}
+
+  /* ===== FORMAT PAYSAGE (téléphone couché) =====
+     Le pavé passe en disposition « tapis » : 0 à gauche sur 3 rangées, puis 1-36
+     en 3 rangées de 12. On compacte le vertical pour garder piste + cartes de
+     signal + pavé visibles sans défilement. Les tablettes (hauteur > 560px)
+     gardent la mise en page normale. */
+  @media (orientation:landscape) and (max-height:560px){
+    body{max-width:960px;padding:max(env(safe-area-inset-top,0px),6px) 12px 24px}
+    header{padding:6px 2px 6px;gap:6px}
+    .brand .bname{font-size:15px}
+    .brand .tag{display:none}
+
+    .track{margin:8px 0 4px;gap:3px}
+    .chip{height:20px;font-size:11px;border-radius:6px}
+
+    section{padding:9px;margin-bottom:8px;border-radius:14px}
+    .sec-h{margin-bottom:8px}
+
+    .num-grid{grid-template-columns:repeat(13,1fr);gap:4px}
+    .num{border-radius:8px;font-size:14px}
+    .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto}
+    .pad-actions{margin-top:8px;gap:6px}
+    .pad-actions button{padding:8px;font-size:11px;border-radius:9px}
+
+    #mini{gap:8px;margin-bottom:7px}
+    .mcell{padding:8px 6px 7px;border-radius:13px}
+    .mname{min-height:20px;gap:3px}
+    .mcell .mname{font-size:10.5px}
+    .mname .w.hi{font-size:12px;padding:4px 9px}
+    .mcell .mscore{font-size:16px;margin-top:5px;min-height:17px}
+    .mcell .mscore.note{font-size:13px}
+
+    .solde-box{margin-top:9px;padding-top:9px}
+    .solde-box .sb-solde{font-size:21px}
+    .solde-box .sb-pnl{font-size:15px}
+    .chartsvg{height:120px}
+    .histsvg{height:110px}
+    .log{max-height:150px}
+    .slist{max-height:170px}
+
+    .banner{margin-top:8px;padding:8px 12px}
+    .banner-txt{font-size:12.5px}
+
+    /* fenêtres : l'écran est bas, on les rend défilables et compactes */
+    .modal-bg{padding:8px}
+    .modal{max-height:calc(100vh - 16px);padding:14px;border-radius:14px}
+    .modal-title{font-size:17px}
+    .modal-sub{font-size:11.5px;margin:6px 0 11px}
+    .modal input{padding:9px;font-size:16px}
+    .modal-go{padding:11px;font-size:14px;margin-top:4px}
+    .modal-resume{padding:9px;margin-top:7px}
+    .tp-row{margin-bottom:10px}
+    .rl-cell{max-width:38px;font-size:13px}
+    footer{padding-top:6px;line-height:1.5}
+  }
+
 </style>
 </head>
 <body>
