@@ -18,7 +18,7 @@
     --gold:#fafafa; --gold-2:#ffffff; --gold-dim:#3f3f46; --gold-soft:rgba(250,250,250,.06);
     --rouge:#9b3a32; --rouge-2:#9b3a32; --rouge-d:#7a2c26; --noir:#1a1a1d; --noir-edge:#2f2f34;
     --zero:#1c5545; --zero-2:#1c5545;
-    --ivory:#fafafa; --sage:#a1a1aa; --sage-dim:#52525b;
+    --ivory:#fafafa; --sage:#a1a1aa; --sage-dim:#71717a;
     --win:#10b981; --lose:#ef4444;
     --shadow-card:0 1px 2px rgba(0,0,0,.35);
     --mono:"DM Mono",ui-monospace,monospace;
@@ -70,6 +70,9 @@
     box-shadow:0 0 0 3px rgba(250,250,250,.10)}
   .mcell.play .mscore{color:var(--ivory);font-size:20px;font-weight:600}
   .mcell.play .mname{color:var(--ivory)}
+  /* mise élevée (cycle qui s'emballe) : bordure ambrée d'avertissement */
+  .mcell.play.hot{border-color:#f5a524;box-shadow:0 0 0 3px rgba(245,165,36,.14)}
+  .mcell.play.hot .mscore{color:#f5a524}
   .mcell.won{border-color:rgba(16,185,129,.55);background:rgba(16,185,129,.07)}
   .mcell.won .mscore{color:var(--win)}
   .mcell.ended{opacity:.36;filter:saturate(.55)}
@@ -197,8 +200,11 @@
   .tp-row input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:11px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center}
 
   footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#09090b;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#09090b;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:90;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
+  .toast.with-undo{pointer-events:auto}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.with-undo{display:flex;align-items:center;gap:12px;padding:9px 9px 9px 18px}
+  .toast.with-undo #toastUndo{background:#09090b;color:var(--gold);border:none;border-radius:22px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit}
 
   /* bannière fin de séance (TP / SL) */
   .banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(51,192,141,.12);border:1px solid var(--win)}
@@ -748,10 +754,17 @@ function assignSlots(){
     const detenteur=COUPLES.find(ch=>S.cpl[ch].slot===i);
     if(!detenteur || jouent.includes(detenteur)) dispo.push(i);
   }
-  dispo.sort(slotPriority);
-  for(const ch of jouent) freeSlot(S.cpl[ch]);
+  dispo.sort(slotPriority);   // montantes : la plus éloignée de son objectif en tête
+  // Signaux : la chance allée LE PLUS LOIN dans le déséquilibre passe en premier. « Plus loin » =
+  // la profondeur atteinte, 6-6→7-6→7-7→8-7→8-8… soit le total des deux compteurs (acc.a+acc.b).
+  // On apparie ainsi le signal le plus abîmé avec la montante la plus abîmée.
+  const profond=jouent.slice().sort((x,y)=>{
+    const C=S.cpl, dx=C[x].acc.a+C[x].acc.b, dy=C[y].acc.a+C[y].acc.b;
+    return dy-dx;
+  });
+  for(const ch of profond) freeSlot(S.cpl[ch]);
   let k=0;
-  for(const ch of jouent){
+  for(const ch of profond){
     const C=S.cpl[ch];
     if(k>=dispo.length){ C.sig={phase:"none",side:null,obs:null}; continue; }  // pool épuisé
     const i=dispo[k++]; S.slots[i].busy=true; C.slot=i;
@@ -852,21 +865,36 @@ function stakeC(C){
   // mise plafonnée par le palier du cycle ET par ce qu'il reste à faire pour le TP de séance
   const sl = C.slot!=null ? S.slots[C.slot] : null; if(!sl) return 1;
   const pnl = S.solde-S.capital;
-  return Math.max(1, Math.min(sl.bet, slotTarget(sl)-sl.cumul, S.tpFinal-pnl));
+  const capTP = S.tpFinal-pnl;                     // plafond de séance, appliqué en dernier
+  const reste = slotTarget(sl)-sl.cumul;          // R : ce qu'il reste à gagner pour boucler le cycle
+  // SCINDAGE : raisonné sur le CYCLE SEUL (sans le plafond de séance, qui fausserait la comparaison).
+  // Si boucler d'un coup (miser R) laisserait ensuite une mise ridicule — R > 2·bet — on coupe en
+  // deux et on joue la PLUS GROSSE moitié d'abord (R=15 → 8 puis 7). Un gain ramène R à floor(R/2),
+  // soldé au coup suivant. Une perte : bet inchangé, retour Oscar classique. Le TP plafonne à la fin.
+  let m;
+  // SCINDAGE — on coupe l'effort en deux quand jouer la mise Oscar pleine bouclerait presque, mais
+  // laisserait un résidu ridicule : reste compris entre bet (exclu) et 2·bet (exclu). On joue alors
+  // la PLUS GROSSE moitié d'abord (reste 15 → 8 puis 7). Hors de cette fenêtre, Oscar normal :
+  //   reste ≤ bet  → on mise le reste, ça boucle pile ;
+  //   reste ≥ 2·bet → un second coup plein a du sens, pas besoin de scinder.
+  if(sl.bet < reste && reste < 2*sl.bet) m = Math.ceil(reste/2);
+  else                                   m = Math.min(sl.bet, reste);
+  return Math.max(1, Math.min(m, capTP));
 }
-// Deux (ou trois) montantes sur le même coup : on égalise les mises pour ne pas exposer
-// 7 pièces d'un côté et 1 de l'autre. Le total engagé est conservé, l'écart tombe à 1 pièce max.
-// ARBITRAGE ASSUMÉ — l'équilibrage ne peut que remonter les PETITES mises (la plus grosse
-// n'augmente jamais). Si la montante concernée vient de perdre, sa mise monte donc malgré la
-// règle « après une perte la mise ne monte jamais ». Mesuré : ~1 % des coups. C'est voulu :
-// l'équilibrage prime. Ne pas « corriger » sans revoir la décision.
+// ⚠️ DÉSACTIVÉE (choix : chaque montante joue sa vraie mise Oscar, le cycle le plus profond mise
+// le plus). Conservée sans être appelée, au cas où l'on voudrait revenir à des mises lissées.
+// Elle égalisait les mises d'un même coup : total conservé, écart ramené à 1 pièce max.
 function balancePending(){
   const act=COUPLES.filter(ch=>S.cpl[ch].pending>0);
   if(act.length<2) return;
   const total=act.reduce((s,ch)=>s+S.cpl[ch].pending,0);
   const base=Math.max(1,Math.floor(total/act.length));
   let rem=total-base*act.length;
-  const order=act.slice().sort((x,y)=>S.cpl[y].pending-S.cpl[x].pending);  // le reste va aux plus engagées
+  // Le reste va en priorité à la chance allée LE PLUS LOIN dans les pertes : sa montante a le
+  // plus-bas (low) le plus négatif — plusieurs pertes consécutives l'y ont menée. On concentre
+  // ainsi la plus grosse mise sur le cycle le plus abîmé. Départage : la mise déjà la plus haute.
+  const lowOf=ch=>{ const k=S.cpl[ch].slot; return k!=null?S.slots[k].low:0; };
+  const order=act.slice().sort((x,y)=> (lowOf(x)-lowOf(y)) || (S.cpl[y].pending-S.cpl[x].pending));
   for(const ch of act) S.cpl[ch].pending=base;
   for(let i=0;i<rem;i++) S.cpl[order[i%order.length]].pending++;
   const cap=Math.max(1,S.tpFinal-(S.solde-S.capital));                     // plafond de séance
@@ -961,15 +989,14 @@ function replay(emitLast){
     // les paris sont posés AVANT la boule : on fige les mises pour que la résolution
     // d'une chance ne modifie pas la mise déjà engagée d'une autre (plafond TP)
     for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
-    balancePending();
     for(const ch of COUPLES) feedCouple(ch);
     assignSlots();          // 2e passe : les gains de ce coup ont déjà rendu leur montante
   }
   EMIT=false; CUR_I=N-1;
-  // Mises du PROCHAIN coup. Sans ça les cartes affichent la mise brute de chaque montante,
-  // alors que le coup sera joué avec les mises équilibrées : 1 et 4 à l'écran pour 2 et 3 réels.
+  // Mises du PROCHAIN coup, calculées APRÈS l'attribution : chaque chance porte alors sa montante
+  // définitive, donc la mise affichée est celle qui sera réellement engagée. Plus d'équilibrage :
+  // chaque montante joue sa vraie mise Oscar (le cycle le plus profond mise le plus).
   for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
-  balancePending();
 }
 // mise affichée = mise qui sera réellement engagée
 function shownStake(C){ return C.pending>0 ? C.pending : Math.max(stakeC(C),0); }
@@ -1093,11 +1120,12 @@ function drawChart(){
 function exportSessions(){
   if(!sessions.length){ toast("Aucune session à exporter"); return; }
   const sep=";", num=v=>(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  const head=["Date","Solde début (€)","Solde fin (€)","Gain (€)","Ratio (%)","Temps","€/h","Coups"];
+  const head=["Date","Solde début (€)","Solde fin (€)","Gain (€)","Misé (€)","Rendement (%)","Ratio (%)","Temps","€/h","Coups"];
   const rows=sessions.map(s=>{
     const d=new Date(s.date), date=d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
     const h=(s.duree||0)/3600000, rate=h>0?s.gain/h:0;
-    return [date,num(s.debut),num(s.fin),num(s.gain),(s.pct||0).toFixed(1).replace(".",","),fmtDur(s.duree||0),num(rate),s.coups].join(sep);
+    const rdt=(s.wagered>0)?(s.gain/s.wagered*100):0;
+    return [date,num(s.debut),num(s.fin),num(s.gain),num(s.wagered),rdt.toFixed(1).replace(".",","),(s.pct||0).toFixed(1).replace(".",","),fmtDur(s.duree||0),num(rate),s.coups].join(sep);
   });
   const csv="\uFEFF"+[head.join(sep),...rows].join("\r\n");
   try{
@@ -1269,6 +1297,7 @@ function renderHistory(){
     <div class="hstat"><span class="hv ${cls(avg)}">${sg(avg)}</span><span class="hl">moy./session</span></div>
     <div class="hstat"><span class="hv ${cls(best)}">${sg(best)}</span><span class="hl">meilleure</span></div>
     <div class="hstat"><span class="hv ${cls(worst)}">${sg(worst)}</span><span class="hl">pire</span></div>
+    <div class="hstat" style="grid-column:1/-1"><span class="hv ${cls(tg)}">${tw>0?((tg/tw*100)>=0?"+":"−")+Math.abs(tg/tw*100).toFixed(1)+" %":"—"}</span><span class="hl">rendement · net ÷ misé (l'avantage maison joue contre toi)</span></div>
   </div>`;
   el.innerHTML=mig+grid+cumCurveSVG(cum)+
     `<div class="chart-meta"><span>${pos}/${n} positives</span><span>${tCoups} coups</span><span>${fmtDur(tDur)}</span></div>`;
@@ -1424,7 +1453,10 @@ function render(){
       const act = C.sig.side==="a"?wa:wb, oth = C.sig.side==="a"?wb:wa;
       act.className="w hi "+c2;
       oth.style.display="none"; if(sepEl)sepEl.style.display="none";
-      scoreTxt=eur(shownStake(C));                      // montant à jouer à la place de l'équilibre 7/6
+      const st=shownStake(C);
+      scoreTxt=eur(st);                                 // montant à jouer à la place de l'équilibre 7/6
+      // le cycle s'emballe : mise ≥ 5× la base -> liseré d'alerte sur la carte
+      if(st>=5) mc.classList.add("hot");
     } else if(won){
       mscEl.className="mscore mono note";
       scoreTxt="✓ "+plusEur(g);
@@ -1523,7 +1555,8 @@ $("clearTrack").addEventListener("click",async()=>{
     n+" numéro"+(n>1?"s":"")+" et le journal des coups de la séance seront effacés. Le solde repart de "+fmtEur2(S.capitalEur)+".",
     "Vider", true);
   if(!ok) return;
-  setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Piste vidée");
+  const snap={spins:S.spins.slice(),ctx:S.ctx,sessionStart:S.sessionStart};
+  setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toastUndo("Piste vidée",snap);
 });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
@@ -1531,7 +1564,8 @@ $("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.targe
 $("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
 $("resetAll").addEventListener("click",async()=>{
   if(!await ask("Tout réinitialiser ?","La piste et le journal des coups sont effacés, le solde repart de "+fmtEur2(S.capitalEur)+". Les sessions enregistrées sont conservées.","Réinitialiser",true)) return;
-  setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Réinitialisé");
+  const snap={spins:S.spins.slice(),ctx:S.ctx,sessionStart:S.sessionStart};
+  setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toastUndo("Réinitialisé",snap);
 });
 $("goalContinue").addEventListener("click",continueSession);
 $("goalRecover").addEventListener("click",recoverSession);
@@ -1602,7 +1636,22 @@ function updateRate(){
 setInterval(updateRate,1000);
 
 let toastT;
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+function toast(msg){ const t=$("toast"); t.innerHTML=""; t.textContent=msg; t.classList.remove("with-undo"); t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
+// toast avec bouton « Annuler » : garde un instantané et le restaure si on appuie (5 s)
+let undoSnap=null, undoT;
+function toastUndo(msg,snapshot){
+  undoSnap=snapshot;
+  const t=$("toast"); t.classList.add("with-undo");
+  t.innerHTML=`<span>${msg}</span><button id="toastUndo">Annuler</button>`;
+  $("toastUndo").onclick=()=>{
+    if(!undoSnap) return;
+    S.spins=undoSnap.spins.slice(); S.ctx=undoSnap.ctx; S.sessionStart=undoSnap.sessionStart;
+    undoSnap=null; t.classList.remove("show"); replay(false); render(); save(); toast("Rétabli");
+  };
+  t.classList.add("show"); clearTimeout(toastT); clearTimeout(undoT);
+  toastT=setTimeout(()=>t.classList.remove("show"),5000);
+  undoT=setTimeout(()=>{ undoSnap=null; },5000);
+}
 
 (async function(){ buildMini(); buildPad(); await load(); await loadSessions(); await loadSheetUrl(); if($("sheetUrl")) $("sheetUrl").value=sheetUrl; recalcCapital(); replay(false); renderSessions(); render(); updateSyncUI(); if(sheetUrl) await cloudSyncNow(true); openStartModal(); })();
 </script>
