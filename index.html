@@ -424,6 +424,10 @@
       gap:4px;
     }
     .num{min-width:0;min-height:0;border-radius:8px;font-size:17px;aspect-ratio:1.2}
+    /* En paysage la largeur est abondante : montantes et solde côte à côte plutôt qu'empilés
+       sur toute la largeur, où ils s'étirent pour trois lignes de texte. */
+    #leftcol{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+    #leftcol #mini{grid-column:1 / -1}
     .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto;font-size:19px}
     .num:nth-child(3n+2){grid-row:1}   /* 1, 4, 7 … 34  → rangée du haut */
     .num:nth-child(3n+3){grid-row:2}   /* 2, 5, 8 … 35  → rangée du milieu */
@@ -465,9 +469,12 @@
     .hfilter{margin-bottom:8px;gap:5px}
     .hfilter button{font-size:10px;padding:4px 9px}
     .hmig{padding:8px 10px;margin-bottom:8px;font-size:10.5px}
-    .solde-box{margin-top:9px;padding-top:9px}
+    /* (le margin-top/padding-top d'origine datait du temps où ce bloc était le pied de
+       l'encadré d'évolution — il décalait la carte de 9px sous celle des montantes) */
+    .solde-box{padding:8px 10px}
     .solde-box .sb-solde{font-size:21px}
     .solde-box .sb-pnl{font-size:15px}
+    .mont-box{padding:8px 10px}
     .chartsvg{height:120px}
     .histsvg{height:110px}
     .log{max-height:150px}
@@ -697,12 +704,20 @@ function freshSlots(){ S.slots=[]; const k=Math.max(1,Math.min(OG_SLOTS_MAX,S.og
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); freshSlots(); }
 // Attribution : on reprend en priorité le cycle le plus abîmé (cumul le plus négatif),
 // pour le réparer avant d'en ouvrir un neuf. Sinon un slot vierge. Aucun libre → signal ignoré.
+// Priorité d'attribution : la montante la plus ÉLOIGNÉE de son objectif (reste = palier − cumul)
+// passe en premier — c'est celle qui a le plus de chemin à faire. À reste égal, on prend celle
+// dont l'OBJECTIF est le plus haut (cycle le plus abîmé). Renvoie <0 si x doit être servi avant y.
+function slotPriority(x,y){
+  const sx=S.slots[x], sy=S.slots[y];
+  const rx=slotTarget(sx)-sx.cumul, ry=slotTarget(sy)-sy.cumul;
+  return (ry-rx) || (slotTarget(sy)-slotTarget(sx)) || (sx.low-sy.low);
+}
 function grabSlot(C){
   if(C.slot!=null) return C.slot;
   const free=[]; for(let i=0;i<S.slots.length;i++) if(!S.slots[i].busy) free.push(i);
   if(!free.length) return null;
   // priorité à la montante la plus basse ; à cumul égal, la plus creusée (low) passe devant
-  free.sort((x,y)=>(S.slots[x].cumul-S.slots[y].cumul) || (S.slots[x].low-S.slots[y].low));
+  free.sort(slotPriority);
   const i=free[0]; S.slots[i].busy=true; C.slot=i; return i;
 }
 function freeSlot(C){ if(C.slot!=null){ S.slots[C.slot].busy=false; C.slot=null; } }
@@ -711,11 +726,12 @@ function freeSlot(C){ if(C.slot!=null){ S.slots[C.slot].busy=false; C.slot=null;
 // disponible pour une chance qui passe en 7-6 maintenant — au lieu d'en ouvrir une neuve.
 // (Sans cette passe séparée, le résultat dépendrait de l'ordre R/N → P/I → M/P.)
 function assignSlots(){
-  // Toutes les chances qui vont miser prennent les montantes les plus basses mobilisables.
-  // Mobilisables = les libres + celles des chances qui misent ce coup-ci : une chance déjà
-  // engagée TROQUE la sienne contre une plus creusée restée libre. Une montante est un compte,
-  // pas une propriété : on répare toujours la plus abîmée d'abord. Une chance engagée ne
-  // retombe jamais sur une montante neuve, elle ne peut que descendre.
+  // Toutes les chances qui vont miser prennent les montantes prioritaires (voir slotPriority :
+  // la plus éloignée de son objectif d'abord). Mobilisables = les libres + celles des chances qui
+  // misent ce coup-ci : une chance déjà engagée TROQUE la sienne contre une montante prioritaire
+  // restée libre. Une montante est un compte, pas une propriété : on répare d'abord celle qui a le
+  // plus de chemin. Une chance engagée ne retombe jamais sur une montante neuve (reste = +1, la
+  // plus faible priorité), elle ne peut que passer sur un cycle plus abîmé.
   // Les montantes des chances en observation (après une perte) ne sont pas touchées : elles
   // restent à leur chance, conformément à la règle « perte → pas de changement ».
   const jouent=COUPLES.filter(ch=>S.cpl[ch].sig.phase==="play");
@@ -725,7 +741,7 @@ function assignSlots(){
     const detenteur=COUPLES.find(ch=>S.cpl[ch].slot===i);
     if(!detenteur || jouent.includes(detenteur)) dispo.push(i);
   }
-  dispo.sort((x,y)=>(S.slots[x].cumul-S.slots[y].cumul)||(S.slots[x].low-S.slots[y].low));
+  dispo.sort(slotPriority);
   for(const ch of jouent) freeSlot(S.cpl[ch]);
   let k=0;
   for(const ch of jouent){
