@@ -64,16 +64,12 @@
   .mcell.bal .mscore{color:var(--ivory);font-weight:500}
   .mcell.await{border:2px dashed var(--ivory);background:rgba(250,250,250,.07);animation:awaitblink 1.3s ease-in-out infinite}
   .mcell.await .mscore{color:var(--ivory);font-weight:500}
-  .mcell.play{border:2px solid var(--ivory);background:var(--ivory);transform:translateY(-2px);
-    box-shadow:0 0 0 4px rgba(250,250,250,.16)}
-  .mcell.play .mscore{color:#09090b;font-size:20px;font-weight:600}
-  .mcell.play .mname{color:#09090b}
-  /* la carte est blanche : on ré-encre son contenu */
-  .mcell.play .mdot{background:rgba(9,9,11,.1)}
-  .mcell.play.rn .mdot.b{background:#3f3f46}
-  .mcell.play.pi .mdot.a,.mcell.play.mp .mdot.a{background:#52525b}
-  .mcell.play.pi .mdot.b,.mcell.play.mp .mdot.b{background:#18181b}
-  .mcell.play .mname .w.hi.neutre{background:#09090b;color:var(--ivory)}
+  /* Un aplat blanc plein sur cette surface éblouit. Le contour blanc franc + un voile
+     léger suffisent à trancher : c'est la seule carte à liseré plein de l'écran. */
+  .mcell.play{border:2px solid var(--ivory);background:rgba(250,250,250,.09);transform:translateY(-2px);
+    box-shadow:0 0 0 3px rgba(250,250,250,.10)}
+  .mcell.play .mscore{color:var(--ivory);font-size:20px;font-weight:600}
+  .mcell.play .mname{color:var(--ivory)}
   .mcell.won{border-color:rgba(16,185,129,.55);background:rgba(16,185,129,.07)}
   .mcell.won .mscore{color:var(--win)}
   .mcell.ended{opacity:.36;filter:saturate(.55)}
@@ -689,7 +685,7 @@ let jview="chart";
 let sessions=[]; let goalDismissed=false;
 const SESS_KEY="cresus:sessions:v1";
 let S={
-  capitalEur:200, pieceEur:1, capital:200, sessionStart:Date.now(),
+  capitalEur:200, pieceEur:1, capital:200, sessionStart:null,   // démarre au 1er équilibre 6-6
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
@@ -715,10 +711,27 @@ function freeSlot(C){ if(C.slot!=null){ S.slots[C.slot].busy=false; C.slot=null;
 // disponible pour une chance qui passe en 7-6 maintenant — au lieu d'en ouvrir une neuve.
 // (Sans cette passe séparée, le résultat dépendrait de l'ordre R/N → P/I → M/P.)
 function assignSlots(){
-  for(const ch of COUPLES){
+  // Toutes les chances qui vont miser prennent les montantes les plus basses mobilisables.
+  // Mobilisables = les libres + celles des chances qui misent ce coup-ci : une chance déjà
+  // engagée TROQUE la sienne contre une plus creusée restée libre. Une montante est un compte,
+  // pas une propriété : on répare toujours la plus abîmée d'abord. Une chance engagée ne
+  // retombe jamais sur une montante neuve, elle ne peut que descendre.
+  // Les montantes des chances en observation (après une perte) ne sont pas touchées : elles
+  // restent à leur chance, conformément à la règle « perte → pas de changement ».
+  const jouent=COUPLES.filter(ch=>S.cpl[ch].sig.phase==="play");
+  if(!jouent.length) return;
+  const dispo=[];
+  for(let i=0;i<S.slots.length;i++){
+    const detenteur=COUPLES.find(ch=>S.cpl[ch].slot===i);
+    if(!detenteur || jouent.includes(detenteur)) dispo.push(i);
+  }
+  dispo.sort((x,y)=>(S.slots[x].cumul-S.slots[y].cumul)||(S.slots[x].low-S.slots[y].low));
+  for(const ch of jouent) freeSlot(S.cpl[ch]);
+  let k=0;
+  for(const ch of jouent){
     const C=S.cpl[ch];
-    if(C.sig.phase!=="play" || C.slot!=null) continue;
-    if(grabSlot(C)==null) C.sig={phase:"none",side:null,obs:null};   // pool épuisé → signal abandonné
+    if(k>=dispo.length){ C.sig={phase:"none",side:null,obs:null}; continue; }  // pool épuisé
+    const i=dispo[k++]; S.slots[i].busy=true; C.slot=i;
   }
 }
 
@@ -740,7 +753,7 @@ const Store={
 };
 let lastTs=0;            // horodatage du dernier changement local
 function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal,ogSlots:S.ogSlots,histFilter:S.histFilter}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=o.sessionStart||Date.now(); S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT; recalcCapital(); }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT; recalcCapital(); }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -820,6 +833,10 @@ function stakeC(C){
 }
 // Deux (ou trois) montantes sur le même coup : on égalise les mises pour ne pas exposer
 // 7 pièces d'un côté et 1 de l'autre. Le total engagé est conservé, l'écart tombe à 1 pièce max.
+// ARBITRAGE ASSUMÉ — l'équilibrage ne peut que remonter les PETITES mises (la plus grosse
+// n'augmente jamais). Si la montante concernée vient de perdre, sa mise monte donc malgré la
+// règle « après une perte la mise ne monte jamais ». Mesuré : ~1 % des coups. C'est voulu :
+// l'équilibrage prime. Ne pas « corriger » sans revoir la décision.
 function balancePending(){
   const act=COUPLES.filter(ch=>S.cpl[ch].pending>0);
   if(act.length<2) return;
@@ -840,6 +857,11 @@ function advanceC(ch,C,result){
   const sl=S.slots[C.slot];
   const stake=(C.pending>0)?C.pending:stakeC(C); const ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake;
+  // Registre de la montante. La mise réellement jouée peut différer de sl.bet : rabotée par le
+  // plafond « palier − cumul », ou gonflée par l'équilibrage entre chances. Le registre suit
+  // toujours la PLUS PETITE des deux — sinon il conserve une valeur jamais jouée, et la mise
+  // remonte dès que le plafond se relâche : la mise augmenterait après une perte.
+  const own=Math.min(sl.bet, stake);
   if(result==="G"){ S.solde+=stake; C.pBilan+=stake; sl.cumul+=stake; }
   else { S.solde-=stake; C.pBilan-=stake; sl.cumul-=stake; sl.low=Math.min(sl.low,sl.cumul); }
   S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
@@ -847,8 +869,9 @@ function advanceC(ch,C,result){
     const b=sl.cumul; sl.cumul=0; sl.bet=1; sl.low=0; C.pMise=0; C.pBilan=0; freeSlot(C);
     C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won";
   }
-  if(result==="G"){ sl.bet=stake+1; freeSlot(C); return "wait"; }  // gain : mise +1, montante rendue, on attend un 6-6
-  return "obs";                                                     // perte : mise inchangée, observation obligatoire
+  if(result==="G"){ sl.bet=own+1; freeSlot(C); return "wait"; }   // gain : +1 sur la mise jouée
+  sl.bet=own;                                                      // perte : la mise ne monte JAMAIS
+  return "obs";
 }
 function setNextState(C){
   // règle Crésus : on joue le côté EN AVANCE ; on n'attend une boule d'observation
@@ -877,7 +900,8 @@ function zeroC(ch,C){
   const stake=(C.pending>0)?C.pending:stakeC(C), ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
   S.log.push({ch,r:"Z",amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
-  const sl=S.slots[C.slot]; if(sl){ sl.cumul-=stake; sl.low=Math.min(sl.low,sl.cumul); }
+  const sl=S.slots[C.slot];
+  if(sl){ sl.cumul-=stake; sl.low=Math.min(sl.low,sl.cumul); sl.bet=Math.min(sl.bet,stake); }  // perte : jamais de hausse
   mt(CLABELS[ch].join("/")+" · zéro");                 // perte : mise inchangée
   setNextState(C);
 }
@@ -919,11 +943,21 @@ function replay(emitLast){
     assignSlots();          // 2e passe : les gains de ce coup ont déjà rendu leur montante
   }
   EMIT=false; CUR_I=N-1;
+  // Mises du PROCHAIN coup. Sans ça les cartes affichent la mise brute de chaque montante,
+  // alors que le coup sera joué avec les mises équilibrées : 1 et 4 à l'écran pour 2 et 3 réels.
+  for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
+  balancePending();
 }
+// mise affichée = mise qui sera réellement engagée
+function shownStake(C){ return C.pending>0 ? C.pending : Math.max(stakeC(C),0); }
 
 /* ---- saisie ---- */
-function addSpin(n){ S.spins.push(n); if(S.spins.length>400){ S.spins.shift(); if(S.ctx>0)S.ctx--; } replay(true); render(); save(); }
-function undoSpin(){ S.spins.pop(); replay(false); render(); save(); }
+// Le chronomètre démarre à la 1re détection d'équilibre 6-6 de la séance : avant ça on ne
+// joue pas, compter ce temps fausserait le €/h. Les numéros n'étant pas horodatés, on
+// l'arme ici (à la saisie) et non dans replay(), qui rejoue tout l'historique.
+function armClock(){ if(S.sessionStart==null && COUPLES.some(ch=>activeC(S.cpl[ch]))) S.sessionStart=Date.now(); }
+function addSpin(n){ S.spins.push(n); if(S.spins.length>400){ S.spins.shift(); if(S.ctx>0)S.ctx--; } replay(true); armClock(); render(); save(); }
+function undoSpin(){ S.spins.pop(); replay(false); if(!S.spins.length) S.sessionStart=null; render(); save(); }
 
 /* ---- utils ---- */
 const round2=x=>Math.round((x+Number.EPSILON)*100)/100;
@@ -1033,7 +1067,7 @@ function saveCurrentSession(){
   let bal=S.capital, curve=[bal*S.pieceEur], nG=0,nP=0;
   for(const e of S.log){ bal+=(e.r==="G"?e.amt:-e.amt); curve.push(bal*S.pieceEur); if(e.r==="G")nG++; else nP++; }
   const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
-    pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:Date.now()-(S.sessionStart||Date.now()),
+    pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:S.sessionStart?Date.now()-S.sessionStart:0,
     coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:CUR_MONT, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
@@ -1213,7 +1247,7 @@ function startNewSession(){
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
   S.tpFinal=parseFloat($("startTP").value)||autoTP();
   S.recoverTargetEur=0; S.tpNormal=S.tpFinal;
-  S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=Date.now(); goalDismissed=false;
+  S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
   replay(false); save(); render(); closeStartModal();
 }
 
@@ -1230,7 +1264,7 @@ function continueSession(){
   S.capitalEur=finEur; recalcCapital();
   S.tpFinal = endingRecovery ? (S.tpNormal || autoTP()) : autoTP();   // TP auto = 3 % du nouveau solde, arrondi sup.
   S.tpNormal = S.tpFinal;
-  S.log=[]; S.sessionStart=Date.now(); goalDismissed=false;
+  S.log=[]; S.sessionStart=null; goalDismissed=false;                        // chrono armé au 1er 6-6
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
 }
@@ -1251,7 +1285,7 @@ function recoverSession(){
   S.capitalEur = Math.max(soldeEur, newPiece); S.pieceEur = newPiece; recalcCapital();
   S.tpFinal = Math.max(1, Math.ceil(lossEur/newPiece - 1e-9));   // TP atteint = perte effacée
   const keep = S.spins.slice(-16); S.spins = keep; S.ctx = keep.length;
-  S.log = []; S.sessionStart = Date.now(); goalDismissed = false;
+  S.log = []; S.sessionStart = null; goalDismissed = false;                  // chrono armé au 1er 6-6
   replay(false); save(); render();
   toast("Rattrapage · perte "+fmtEur2(lossEur)+" · mise "+fmtEur2(newPiece)+" · TP +"+S.tpFinal+" pièces");
 }
@@ -1264,7 +1298,7 @@ function openHist(ch){
   {
     const sl=C.slot!=null?S.slots[C.slot]:null;
     if(sl){
-      const tgt=slotTarget(sl), reste=round2(tgt-sl.cumul), nm=Math.max(stakeC(C),0);
+      const tgt=slotTarget(sl), reste=round2(tgt-sl.cumul), nm=shownStake(C);
       cur=`<div class="hist-cur">Oscar's Grind — <b>montante n°${C.slot+1}</b> sur ${S.slots.length}<br>cumul <b>${(sl.cumul>0?"+":"")+round2(sl.cumul)}</b> / +${tgt} · reste <b>${reste}</b> à gagner<br>prochaine mise <b>${eur(nm)}</b></div>`;
     } else {
       const libres=S.slots.filter(x=>!x.busy).length;
@@ -1341,7 +1375,7 @@ function render(){
       const act = C.sig.side==="a"?wa:wb, oth = C.sig.side==="a"?wb:wa;
       act.className="w hi "+c2;
       oth.style.display="none"; if(sepEl)sepEl.style.display="none";
-      scoreTxt=(C.phase==="fini"?"—":eur(stakeC(C)));   // montant à jouer à la place de l'équilibre 7/6
+      scoreTxt=eur(shownStake(C));                      // montant à jouer à la place de l'équilibre 7/6
     } else if(won){
       mscEl.className="mscore mono note";
       scoreTxt="✓ "+plusEur(g);
@@ -1435,7 +1469,7 @@ $("clearTrack").addEventListener("click",async()=>{
     n+" numéro"+(n>1?"s":"")+" et le journal des coups de la séance seront effacés. Le solde repart de "+fmtEur2(S.capitalEur)+".",
     "Vider", true);
   if(!ok) return;
-  S.spins=[]; S.ctx=0; replay(false); render(); save(); toast("Piste vidée");
+  S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Piste vidée");
 });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
@@ -1443,7 +1477,7 @@ $("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.targe
 $("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
 $("resetAll").addEventListener("click",async()=>{
   if(!await ask("Tout réinitialiser ?","La piste et le journal des coups sont effacés, le solde repart de "+fmtEur2(S.capitalEur)+". Les sessions enregistrées sont conservées.","Réinitialiser",true)) return;
-  S.spins=[]; S.ctx=0; replay(false); render(); save(); toast("Réinitialisé");
+  S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Réinitialisé");
 });
 $("goalContinue").addEventListener("click",continueSession);
 $("goalRecover").addEventListener("click",recoverSession);
@@ -1466,7 +1500,7 @@ $("sheetTest").addEventListener("click",()=>cloudSyncNow(false));
 $("sheetSyncAll").addEventListener("click",cloudForce);
 $("newSessionBtn").addEventListener("click",openStartModal);
 $("startNew").addEventListener("click",startNewSession);
-$("startResume").addEventListener("click",()=>{ S.sessionStart=S.sessionStart||Date.now(); closeStartModal(); });
+$("startResume").addEventListener("click",()=>{ closeStartModal(); });
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
 $("histBody").addEventListener("click",async e=>{
@@ -1502,7 +1536,8 @@ $("sessionsList").addEventListener("click",e=>{
 // on l'affiche donc seulement passé ce seuil. Rafraîchi à la seconde, indépendamment de render().
 function updateRate(){
   const d=$("sessDur"), r=$("sessRate"); if(!d||!r) return;
-  const ms=Date.now()-(S.sessionStart||Date.now());
+  if(S.sessionStart==null){ d.textContent="00:00"; r.textContent="—"; r.className=""; return; }
+  const ms=Date.now()-S.sessionStart;
   d.textContent=fmtDur(ms);
   const h=ms/3600000;
   if(h<1/60){ r.textContent="—"; r.className=""; return; }
