@@ -118,6 +118,11 @@
   .pad-actions{display:flex;gap:8px;margin-top:12px}
   .pad-actions button{flex:1;padding:11px;border-radius:11px;font-size:12px;font-weight:500;background:var(--felt2);border:1px solid var(--line);color:var(--sage);transition:transform .12s,border-color .15s,color .15s}
   .pad-actions button:active{transform:scale(.97);border-color:var(--sage-dim);color:var(--ivory)}
+  /* saisie inversée active : bouton mis en avant, aide visible sous le pavé */
+  .pad-actions button.on{border-color:var(--ivory);color:var(--ivory);background:rgba(250,250,250,.06)}
+  .rev-hint{margin-top:8px;font-size:10.5px;color:var(--sage);text-align:center;line-height:1.4;display:none}
+  .rev-hint.show{display:block}
+  .rev-hint b{color:var(--ivory);font-family:var(--mono)}
 
   .log{list-style:none;margin:0;padding:0;max-height:200px;overflow-y:auto}
   .jarrow{font-size:15px;color:var(--sage);padding:3px 11px;border:1px solid var(--line);border-radius:9px;background:var(--felt2);line-height:1}
@@ -524,8 +529,10 @@
       <div class="num-grid" id="numGrid"></div>
       <div class="pad-actions">
         <button id="undo">↶ Annuler le dernier</button>
+        <button id="revInput">⇄ Saisie inversée</button>
         <button id="clearTrack">Vider la piste</button>
       </div>
+      <div class="rev-hint" id="revHint">Saisie inversée — tape du <b>dernier</b> numéro sorti vers le plus ancien. <span id="revCount">0</span>/12</div>
     </section>
 
     <!-- COLONNE GAUCHE : détections + solde -->
@@ -972,8 +979,34 @@ function shownStake(C){ return C.pending>0 ? C.pending : Math.max(stakeC(C),0); 
 // joue pas, compter ce temps fausserait le €/h. Les numéros n'étant pas horodatés, on
 // l'arme ici (à la saisie) et non dans replay(), qui rejoue tout l'historique.
 function armClock(){ if(S.sessionStart==null && COUPLES.some(ch=>activeC(S.cpl[ch]))) S.sessionStart=Date.now(); }
-function addSpin(n){ S.spins.push(n); if(S.spins.length>400){ S.spins.shift(); if(S.ctx>0)S.ctx--; } replay(true); armClock(); render(); save(); }
-function undoSpin(){ S.spins.pop(); replay(false); if(!S.spins.length) S.sessionStart=null; render(); save(); }
+let revMode=false;
+// Saisie inversée : pour amorcer une séance en recopiant l'historique affiché au tableau,
+// du DERNIER numéro sorti vers le plus ancien. Chaque numéro s'insère AVANT les précédents
+// (l'ordre chronologique interne est ainsi respecté), et compte comme contexte : ces boules
+// de départ servent à établir l'équilibre, elles ne déclenchent aucune mise.
+function setRev(on){
+  revMode=on && S.spins.length<12;
+  $("revInput").classList.toggle("on",revMode);
+  $("revHint").classList.toggle("show",revMode);
+  updateRevCount();
+}
+function updateRevCount(){ const el=$("revCount"); if(el) el.textContent=S.spins.length; }
+function addSpin(n){
+  if(revMode){
+    S.spins.unshift(n); S.ctx=S.spins.length;          // insère en tête, tout reste du contexte
+    if(S.spins.length>=12) setRev(false);              // 12 numéros saisis : on arrête
+    replay(false);
+    // un signal est apparu pendant la saisie inversée → on bascule en jeu normal
+    if(COUPLES.some(ch=>activeC(S.cpl[ch]))) setRev(false);
+    updateRevCount(); render(); save(); return;
+  }
+  S.spins.push(n); if(S.spins.length>400){ S.spins.shift(); if(S.ctx>0)S.ctx--; }
+  replay(true); armClock(); render(); save();
+}
+function undoSpin(){
+  if(revMode){ S.spins.shift(); S.ctx=S.spins.length; replay(false); updateRevCount(); render(); save(); return; }
+  S.spins.pop(); replay(false); if(!S.spins.length) S.sessionStart=null; render(); save();
+}
 
 /* ---- utils ---- */
 const round2=x=>Math.round((x+Number.EPSILON)*100)/100;
@@ -1263,7 +1296,7 @@ function startNewSession(){
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
   S.tpFinal=parseFloat($("startTP").value)||autoTP();
   S.recoverTargetEur=0; S.tpNormal=S.tpFinal;
-  S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
+  setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
   replay(false); save(); render(); closeStartModal();
 }
 
@@ -1478,6 +1511,11 @@ $("askModal").addEventListener("click",e=>{ if(e.target===$("askModal")) askClos
 /* ---- events ---- */
 $("numGrid").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(parseInt(t.dataset.n,10)); });
 $("undo").addEventListener("click",undoSpin);
+$("revInput").addEventListener("click",()=>{
+  if(revMode){ setRev(false); return; }
+  if(S.spins.length>=12){ toast("Piste déjà remplie — vide-la d'abord"); return; }
+  setRev(true); toast("Saisie inversée · du dernier sorti au plus ancien");
+});
 $("clearTrack").addEventListener("click",async()=>{
   const n=S.spins.length;
   if(!n){ toast("La piste est déjà vide"); return; }
@@ -1485,7 +1523,7 @@ $("clearTrack").addEventListener("click",async()=>{
     n+" numéro"+(n>1?"s":"")+" et le journal des coups de la séance seront effacés. Le solde repart de "+fmtEur2(S.capitalEur)+".",
     "Vider", true);
   if(!ok) return;
-  S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Piste vidée");
+  setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Piste vidée");
 });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
@@ -1493,7 +1531,7 @@ $("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.targe
 $("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
 $("resetAll").addEventListener("click",async()=>{
   if(!await ask("Tout réinitialiser ?","La piste et le journal des coups sont effacés, le solde repart de "+fmtEur2(S.capitalEur)+". Les sessions enregistrées sont conservées.","Réinitialiser",true)) return;
-  S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Réinitialisé");
+  setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toast("Réinitialisé");
 });
 $("goalContinue").addEventListener("click",continueSession);
 $("goalRecover").addEventListener("click",recoverSession);
