@@ -881,24 +881,25 @@ function stakeC(C){
   else                                   m = Math.min(sl.bet, reste);
   return Math.max(1, Math.min(m, capTP));
 }
-// ⚠️ DÉSACTIVÉE (choix : chaque montante joue sa vraie mise Oscar, le cycle le plus profond mise
-// le plus). Conservée sans être appelée, au cas où l'on voudrait revenir à des mises lissées.
-// Elle égalisait les mises d'un même coup : total conservé, écart ramené à 1 pièce max.
+// Équilibrage de 2 OU 3 montantes jouant le même coup. But : éviter une mise très haute face à
+// une très basse, en gardant le total constant. On répartit le plus également possible ; les parts
+// hautes restantes (division non entière) vont aux montantes les plus PROFONDES (low le plus bas).
+// On mémorise pour chacune sa mise VOULUE (want, avant équilibrage) : si une montante est gonflée
+// au-dessus de son besoin et gagne, le surplus est reversé au cumul de la plus profonde des AUTRES
+// (voir advanceC). À 3, plusieurs peuvent déborder — chaque surplus est traité indépendamment.
 function balancePending(){
   const act=COUPLES.filter(ch=>S.cpl[ch].pending>0);
-  if(act.length<2) return;
+  for(const ch of COUPLES){ const C=S.cpl[ch]; C.want=C.pending; C.balPeers=null; }
+  if(act.length<2) return;                         // 0 ou 1 : rien à équilibrer
+  const lowOf=ch=>S.slots[S.cpl[ch].slot].low;
   const total=act.reduce((s,ch)=>s+S.cpl[ch].pending,0);
-  const base=Math.max(1,Math.floor(total/act.length));
-  let rem=total-base*act.length;
-  // Le reste va en priorité à la chance allée LE PLUS LOIN dans les pertes : sa montante a le
-  // plus-bas (low) le plus négatif — plusieurs pertes consécutives l'y ont menée. On concentre
-  // ainsi la plus grosse mise sur le cycle le plus abîmé. Départage : la mise déjà la plus haute.
-  const lowOf=ch=>{ const k=S.cpl[ch].slot; return k!=null?S.slots[k].low:0; };
-  const order=act.slice().sort((x,y)=> (lowOf(x)-lowOf(y)) || (S.cpl[y].pending-S.cpl[x].pending));
+  const k=act.length, base=Math.floor(total/k), rem=total-base*k;
+  // les 'rem' parts supplémentaires aux plus profondes (low croissant = plus profond d'abord)
+  const byDepth=act.slice().sort((x,y)=> lowOf(x)-lowOf(y) || S.cpl[y].pending-S.cpl[x].pending);
   for(const ch of act) S.cpl[ch].pending=base;
-  for(let i=0;i<rem;i++) S.cpl[order[i%order.length]].pending++;
-  const cap=Math.max(1,S.tpFinal-(S.solde-S.capital));                     // plafond de séance
-  for(const ch of act) S.cpl[ch].pending=Math.max(1,Math.min(S.cpl[ch].pending,cap));
+  for(let i=0;i<rem;i++) S.cpl[byDepth[i]].pending++;
+  // chaque montante retient la liste de ses partenaires, pour router un éventuel surplus
+  for(const ch of act) S.cpl[ch].balPeers=act.filter(o=>o!==ch);
 }
 function phaseLabel(C){
   const sl = C.slot!=null ? S.slots[C.slot] : null;
@@ -913,7 +914,33 @@ function advanceC(ch,C,result){
   // toujours la PLUS PETITE des deux — sinon il conserve une valeur jamais jouée, et la mise
   // remonte dès que le plafond se relâche : la mise augmenterait après une perte.
   const own=Math.min(sl.bet, stake);
-  if(result==="G"){ S.solde+=stake; C.pBilan+=stake; sl.cumul+=stake; }
+  if(result==="G"){
+    S.solde+=stake; C.pBilan+=stake;
+    // Surplus d'équilibrage : si cette montante a été gonflée au-dessus de son besoin (want) et
+    // gagne, elle ne crédite son cumul que jusqu'à want ; le surplus va au cumul du partenaire.
+    // La pièce n'est pas créée — elle a bien été misée ici et gagnée, on la réaffecte, c'est tout.
+    const want=(C.want!=null)?C.want:stake;
+    const surplus=(stake>want)?(stake-want):0;
+    sl.cumul+=stake-surplus;
+    if(surplus>0 && C.balPeers && C.balPeers.length){
+      // vers la plus profonde des AUTRES montantes encore en jeu (slot non rendu)
+      let dest=null;
+      for(const o of C.balPeers){ const P=S.cpl[o];
+        if(P&&P.slot!=null){ const ps=S.slots[P.slot];
+          if(!dest || ps.low<S.slots[S.cpl[dest].slot].low) dest=o; } }
+      if(dest){
+        const P=S.cpl[dest], ps=S.slots[P.slot];
+        ps.cumul+=surplus; ps.low=Math.min(ps.low,ps.cumul);
+        // rare : si le surplus reçu porte le partenaire à son palier, on le boucle proprement
+        if(ps.cumul>=slotTarget(ps)-1e-9){
+          ps.cumul=0; ps.bet=1; ps.low=0;
+          freeSlot(P); P.sig={phase:"none",side:null,obs:null}; P.flash="won";
+          if(EMIT) toast(CLABELS[dest].join("/")+" cycle bouclé (report)");
+        }
+      }
+      else sl.cumul+=surplus;                       // tous les partenaires déjà bouclés : on garde la pièce
+    }
+  }
   else { S.solde-=stake; C.pBilan-=stake; sl.cumul-=stake; sl.low=Math.min(sl.low,sl.cumul); }
   S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
   if(sl.cumul>=slotTarget(sl)-1e-9){                   // palier atteint : la montante est rendue au pool
@@ -989,14 +1016,15 @@ function replay(emitLast){
     // les paris sont posés AVANT la boule : on fige les mises pour que la résolution
     // d'une chance ne modifie pas la mise déjà engagée d'une autre (plafond TP)
     for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
+    balancePending();
     for(const ch of COUPLES) feedCouple(ch);
     assignSlots();          // 2e passe : les gains de ce coup ont déjà rendu leur montante
   }
   EMIT=false; CUR_I=N-1;
   // Mises du PROCHAIN coup, calculées APRÈS l'attribution : chaque chance porte alors sa montante
-  // définitive, donc la mise affichée est celle qui sera réellement engagée. Plus d'équilibrage :
-  // chaque montante joue sa vraie mise Oscar (le cycle le plus profond mise le plus).
+  // définitive, donc la mise affichée est celle qui sera réellement engagée.
   for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
+  balancePending();
 }
 // mise affichée = mise qui sera réellement engagée
 function shownStake(C){ return C.pending>0 ? C.pending : Math.max(stakeC(C),0); }
