@@ -15,7 +15,7 @@
        contraste maximal, zéro décoration. */
     --felt:#09090b; --felt2:#141417; --card:#111113; --card2:#18181b;
     --line:#27272a; --line-soft:rgba(255,255,255,.05);
-    --gold:#fafafa; --gold-2:#ffffff; --gold-dim:#3f3f46; --gold-soft:rgba(250,250,250,.06);
+    --gold:#e3b23c; --gold-2:#f0c860; --gold-dim:#6b5518; --gold-soft:rgba(227,178,60,.08);
     --rouge:#9b3a32; --rouge-2:#9b3a32; --rouge-d:#7a2c26; --noir:#1a1a1d; --noir-edge:#2f2f34;
     --zero:#1c5545; --zero-2:#1c5545;
     --ivory:#fafafa; --sage:#a1a1aa; --sage-dim:#71717a;
@@ -66,13 +66,14 @@
   .mcell.await .mscore{color:var(--ivory);font-weight:500}
   /* Un aplat blanc plein sur cette surface éblouit. Le contour blanc franc + un voile
      léger suffisent à trancher : c'est la seule carte à liseré plein de l'écran. */
-  .mcell.play{border:2px solid var(--ivory);background:rgba(250,250,250,.09);transform:translateY(-2px);
-    box-shadow:0 0 0 3px rgba(250,250,250,.10)}
-  .mcell.play .mscore{color:var(--ivory);font-size:20px;font-weight:600}
-  .mcell.play .mname{color:var(--ivory)}
-  /* mise élevée (cycle qui s'emballe) : bordure ambrée d'avertissement */
-  .mcell.play.hot{border-color:#f5a524;box-shadow:0 0 0 3px rgba(245,165,36,.14)}
-  .mcell.play.hot .mscore{color:#f5a524}
+  .mcell.play{border:2px solid var(--gold);background:var(--gold-soft);transform:translateY(-2px);
+    animation:goldshimmer 1.6s ease-in-out infinite}
+  .mcell.play .mscore{color:var(--gold);font-size:20px;font-weight:600}
+  .mcell.play .mname{color:var(--gold)}
+  /* mise élevée (cycle qui s'emballe) : passe en ROUGE, scintillement rouge */
+  .mcell.play.hot{border-color:var(--lose);animation:redshimmer 1.2s ease-in-out infinite}
+  .mcell.play.hot .mscore{color:var(--lose)}
+  .mcell.play.hot .mname{color:var(--lose)}
   .mcell.won{border-color:rgba(16,185,129,.55);background:rgba(16,185,129,.07)}
   .mcell.won .mscore{color:var(--win)}
   .mcell.ended{opacity:.36;filter:saturate(.55)}
@@ -96,6 +97,8 @@
   .mwait.won{color:var(--win);font-weight:600}
   @keyframes playpulse{0%,100%{box-shadow:0 0 0 1px var(--gold)}50%{box-shadow:0 0 0 1px var(--gold)}}
   @keyframes awaitblink{0%,100%{border-color:rgba(250,250,250,.35)}50%{border-color:var(--ivory)}}
+  @keyframes goldshimmer{0%,100%{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(227,178,60,.15)}50%{border-color:var(--gold);box-shadow:0 0 0 4px rgba(227,178,60,.22)}}
+  @keyframes redshimmer{0%,100%{border-color:rgba(239,68,68,.5);box-shadow:0 0 0 1px rgba(239,68,68,.2)}50%{border-color:var(--lose);box-shadow:0 0 0 4px rgba(239,68,68,.28)}}
   @media (prefers-reduced-motion:reduce){
     .mcell.play{box-shadow:0 0 0 1px var(--gold)}
     .mcell.await{animation:none}
@@ -327,6 +330,11 @@
   .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
   .cyc-fig{font-size:10.5px;color:var(--sage-dim);font-variant-numeric:tabular-nums}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
+  /* trois repères : TP partiel · SL · TP cycle */
+  .cyc-tps{display:flex;justify-content:space-between;gap:4px;margin-top:6px;padding-top:6px;
+    border-top:1px solid var(--line);font-size:9px;color:var(--sage-dim);flex-wrap:wrap}
+  .cyc-tps b{font-weight:600;font-size:9.5px}
+  .cyc-tps b.pos{color:var(--win)} .cyc-tps b.neg{color:var(--lose)} .cyc-tps b{color:var(--ivory)}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -527,8 +535,7 @@
   <div class="banner" id="goalBanner" style="display:none">
     <div class="banner-txt" id="goalTxt">🎯 Take-profit atteint</div>
     <div class="banner-act">
-      <button id="goalSave">Enregistrer</button>
-      <button id="goalContinue">Continuer ▸</button>
+      <button id="goalContinue">Enregistrer &amp; continuer ▸</button>
       <button id="goalDismiss" aria-label="fermer">×</button>
     </div>
   </div>
@@ -586,7 +593,7 @@
   <details class="set">
     <summary><span>Réglages</span><span style="color:var(--sage)">⚙</span></summary>
     <div class="set-body">
-      <div class="field"><label>Take-profit<span class="hint">5 % du solde · arrondi sup. · modifiable</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1"></div>
+      <div class="field"><label>Take-profit<span class="hint">calculé automatiquement · verrouillé</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1" readonly></div>
       <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
       <div class="field"><label>Montantes<span class="hint">pool Oscar partagé · 1 à 3</span></label><input type="number" id="inSlots" inputmode="decimal" value="3" step="1" min="1" max="3"></div>
       <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
@@ -622,7 +629,7 @@
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
 
       <div class="tp-row">
-        <div><label class="modal-lab">Take-profit (pièces)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="10"></div>
+        <div><label class="modal-lab">Take-profit (auto)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="10" readonly></div>
         <div><label class="modal-lab">Stop-loss (auto)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-50" readonly></div>
       </div>
 
@@ -785,7 +792,12 @@ function assignSlots(){
 
 const SL_PCT=0.25;                                                     // stop-loss = 25 % du solde
 const TP_PCT=0.05;                                                     // take-profit = 5 % du solde, arrondi au supérieur
-function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; S.sl = -round2(S.capital*SL_PCT); }
+function recalcCapital(){
+  S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0;
+  // En mode cycle, le SL est fixé en pièces par le partiel (±CYCLE_PART_TP) et ne doit PAS être
+  // ré-dérivé du % du capital, sinon chaque recalcul l'écrase et la séance ne s'arrête jamais.
+  if(!S.cycleOn) S.sl = -round2(S.capital*SL_PCT);
+}
 function autoTP(){ return Math.max(1, Math.ceil(S.capital*TP_PCT - 1e-9)); }  // arrondi sup., en pièces entières (palier = 1 pièce = mise de base)
 function baseMise(soldeEur){ return Math.max(1, round2(Math.floor((soldeEur/200)/0.5)*0.5)); } // solde ÷ 200, palier de 0,50 €, minimum 1 €
 const Store={
@@ -803,7 +815,11 @@ function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT;
   S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
   S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1;
-  recalcCapital(); }
+  recalcCapital();
+  // en mode cycle, re-fixer mise jouée / TP partiel / SL depuis l'état du cycle restauré
+  // (recalcCapital seul ne suffit pas : pieceEur et le SL fixe doivent suivre cycleU)
+  if(S.cycleOn && S.cycleObjEur>0) configureSessionFromCycle();
+}
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -1372,12 +1388,16 @@ function startNewSession(){
 }
 
 function continueSession(){
+  saveCurrentSession();                        // « Continuer » enregistre d'abord automatiquement
   // reporte le solde de fin de séance comme nouveau capital, garde les derniers numéros comme contexte
   const finEur=Math.max(round2(S.solde*S.pieceEur), S.pieceEur);
+  // IMPORTANT : le résultat du cycle se lit AVANT d'écraser le capital (sinon solde==capital → gain 0,
+  // le cumul ne bougeait pas et une séance gagnée était comptée comme perdue → mise +2 au lieu de +1).
+  const cycleGainEur = S.cycleOn ? round2((S.solde-S.capital)*S.pieceEur) : 0;
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
   S.capitalEur=finEur; recalcCapital();
-  if(S.cycleOn) applyCycleSession(); else S.tpFinal=autoTP();
+  if(S.cycleOn) applyCycleSession(cycleGainEur); else S.tpFinal=autoTP();
   S.log=[]; S.sessionStart=null; goalDismissed=false;                        // chrono armé au 1er 6-6
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
@@ -1416,9 +1436,10 @@ function configureSessionFromCycle(){
   S.tpFinal=CYCLE_PART_TP;                                  // partiel en pièces
   S.sl=-CYCLE_PART_TP;                                      // SL symétrique (ratio 1:1)
 }
-// appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé
-function applyCycleSession(){
-  const gainEur=round2((S.solde-S.capital)*S.pieceEur);    // résultat de la séance en €
+// appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé.
+// gainEur est fourni par l'appelant (mesuré AVANT que le capital soit reporté), voir continueSession.
+function applyCycleSession(gainEur){
+  if(gainEur==null) gainEur=round2((S.solde-S.capital)*S.pieceEur);
   S.cycleCumEur=round2(S.cycleCumEur+gainEur);
   if(gainEur>0) S.cycleBaseEur+=1; else S.cycleBaseEur+=2; // Triple S : +1 gain / +2 perte
   if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → on encaisse, reset
@@ -1516,8 +1537,9 @@ function render(){
       oth.style.display="none"; if(sepEl)sepEl.style.display="none";
       const st=shownStake(C);
       scoreTxt=eur(st);                                 // montant à jouer à la place de l'équilibre 7/6
-      // le cycle s'emballe : mise ≥ 5× la base -> liseré d'alerte sur la carte
-      if(st>=5) mc.classList.add("hot");
+      // mise haute = ≥ 5× la mise de base (relative, car en mode cycle la base progresse)
+      const baseUnit = S.cycleOn ? 1 : (S.pieceEur||1);   // 1 pièce de référence
+      if(st>=5*baseUnit) mc.classList.add("hot");
     } else if(won){
       mscEl.className="mscore mono note";
       scoreTxt="✓ "+plusEur(g);
@@ -1548,6 +1570,11 @@ function render(){
       <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-mise mono">mise ${fmtEur2(S.cycleU||S.cycleBaseEur)}</span></div>
       <div class="cyc-bar"><div class="cyc-fill" style="width:${pct}%"></div></div>
       <div class="cyc-fig mono"><span class="${S.cycleCumEur>=0?'pos':'neg'}">${(S.cycleCumEur>=0?'+':'−')+fmtEur2(Math.abs(S.cycleCumEur)).replace(' €','')}</span> / +${fmtEur2(S.cycleObjEur).replace(' €','')} €</div>
+      <div class="cyc-tps mono">
+        <span title="objectif partiel de la séance">TP séance <b class="pos">+${fmtEur2(S.tpFinal*S.pieceEur)}</b></span>
+        <span title="stop-loss de la séance">SL <b class="neg">−${fmtEur2(Math.abs(S.sl)*S.pieceEur)}</b></span>
+        <span title="objectif total du cycle">TP cycle <b>+${fmtEur2(S.cycleObjEur)}</b></span>
+      </div>
     </div>`;
   }
   $("mbList").innerHTML=cycHTML+S.slots.map((sl,i)=>{
@@ -1581,8 +1608,21 @@ function render(){
   const banner=$("goalBanner");
   banner.style.display=ended?"":"none";
   banner.className="banner"+(hitSL?" banner-sl":"");
-  if(hitTP) $("goalTxt").textContent="🎯 Take-profit · +"+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
-  else if(hitSL) $("goalTxt").textContent="🛑 Stop-loss · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
+  if(ended){
+    const gEur=gainPieces*S.pieceEur;
+    let main = hitTP ? "🎯 Take-profit · "+plusEur(gEur) : "🛑 Stop-loss · "+fmtEur2(gEur);
+    if(S.cycleOn){
+      // projette l'état du cycle APRÈS cette séance : cumul, prochaine mise, reste
+      const cumApres=round2(S.cycleCumEur+gEur);
+      const nextBase=S.cycleBaseEur+(gEur>0?1:2);
+      const reste=round2(S.cycleObjEur-cumApres);
+      const boucle = cumApres>=S.cycleObjEur-1e-9;
+      main += boucle
+        ? " · <b>cycle bouclé "+plusEur(cumApres)+"</b> → nouveau cycle"
+        : " · cycle "+plusEur(cumApres)+"/"+fmtEur2(S.cycleObjEur)+" · reste "+fmtEur2(reste)+" · mise suiv. "+fmtEur2(Math.min(nextBase,S.cycleCapEur));
+    }
+    $("goalTxt").innerHTML=main;
+  }
   updateRate();
   if(jview==="chart" && $("soldeModal").style.display==="flex") drawChart();
 }
@@ -1622,7 +1662,7 @@ $("clearTrack").addEventListener("click",async()=>{
 });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
-$("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.target.value)||autoTP()); goalDismissed=false; render(); save(); });
+
 $("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
 $("inCycle").addEventListener("change",e=>{
   const on=e.target.value==="on"; S.cycleOn=on;
@@ -1656,7 +1696,6 @@ $("jToggle").addEventListener("click",()=> setJview(jview==="chart"?"log":"chart
 $("soldeBox").addEventListener("click",()=>{ $("soldeModal").style.display="flex"; drawChart(); });
 $("soldeClose").addEventListener("click",()=>{ $("soldeModal").style.display="none"; });
 $("soldeModal").addEventListener("click",e=>{ if(e.target===$("soldeModal")) $("soldeModal").style.display="none"; });
-$("goalSave").addEventListener("click",saveCurrentSession);
 $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
 $("saveSessionBtn").addEventListener("click",saveCurrentSession);
 $("exportBtn").addEventListener("click",exportSessions);
