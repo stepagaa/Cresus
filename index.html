@@ -182,6 +182,7 @@
   .field label{font-size:13px;color:var(--ivory)}
   .field .hint{font-size:11px;color:var(--sage-dim);display:block;margin-top:2px}
   .field input{width:96px;background:var(--felt2);border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--ivory);font-family:var(--mono);font-size:15px;text-align:right}
+  .field select{background:var(--felt2);border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--ivory);font-size:13px;max-width:160px}
   .set-mont-row{margin-bottom:14px}
   .set-mont-row>label{font-size:13px;color:var(--ivory);display:block;margin-bottom:8px}
   .reset-all{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--lose);font-size:13px;margin-top:4px}
@@ -317,6 +318,15 @@
   .mb-row.on .mb-c{border-color:var(--sage-dim);color:var(--ivory)}
   .mb-v{font-variant-numeric:tabular-nums;flex:none}
   .mb-row.neg .mb-v{color:var(--lose)}
+  /* état du cycle Triple S (au-dessus du pool de montantes) */
+  .cyc-box{background:rgba(250,250,250,.04);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px}
+  .cyc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
+  .cyc-mise{font-size:11px;color:var(--ivory);font-weight:500}
+  .cyc-bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:5px}
+  .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
+  .cyc-fig{font-size:10.5px;color:var(--sage-dim);font-variant-numeric:tabular-nums}
+  .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -344,7 +354,6 @@
   .banner{flex-direction:column;align-items:stretch}
   .banner-act{justify-content:flex-end;flex-wrap:wrap}
   #goalContinue{font-size:12px;font-weight:600;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);border-radius:9px;padding:7px 11px}
-  #goalRecover{font-size:12px;font-weight:600;color:#09090b;background:var(--gold);border-radius:9px;padding:7px 11px}
 
   /* ===== FORMAT PORTRAIT : tapis vertical à droite, détections à gauche =====
      Le pavé reprend la disposition d'un vrai tapis vu en hauteur : le 0 en tête
@@ -519,7 +528,6 @@
     <div class="banner-txt" id="goalTxt">🎯 Take-profit atteint</div>
     <div class="banner-act">
       <button id="goalSave">Enregistrer</button>
-      <button id="goalRecover" style="display:none">Rattraper ▸</button>
       <button id="goalContinue">Continuer ▸</button>
       <button id="goalDismiss" aria-label="fermer">×</button>
     </div>
@@ -581,6 +589,8 @@
       <div class="field"><label>Take-profit<span class="hint">5 % du solde · arrondi sup. · modifiable</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1"></div>
       <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
       <div class="field"><label>Montantes<span class="hint">pool Oscar partagé · 1 à 3</span></label><input type="number" id="inSlots" inputmode="decimal" value="3" step="1" min="1" max="3"></div>
+      <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
+        <select id="inCycle"><option value="off">Manuelle (TP/SL %)</option><option value="on">Triple S (automatique)</option></select></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="field"><label>Mise de départ<span class="hint">en € · solde ÷ 200, palier 0,50 €, min 1 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.5"></div>
       <div class="sheet-sync">
@@ -592,6 +602,7 @@
         </div>
         <p class="sheet-help">Le Google Sheet devient ta base principale : solde, piste, réglages et historique y sont sauvegardés et rechargés automatiquement à l'ouverture, sur tous tes appareils. Déploie le script en « application web », accès « Tout le monde ». Le stockage local sert juste de secours hors-ligne. Laisse vide pour rester en local uniquement.</p>
       </div>
+      <button class="reset-all" id="clearSessions" style="background:transparent;border:1px solid var(--line);color:var(--sage)">Effacer l'historique des sessions</button>
       <button class="reset-all" id="resetAll">Tout réinitialiser (solde, piste, journal)</button>
     </div>
   </details>
@@ -709,7 +720,8 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  tpFinal:10, sl:-50, ctx:0, recoverTargetEur:0, tpNormal:10, ogSlots:3, histFilter:CUR_MONT
+  tpFinal:10, sl:-50, ctx:0, ogSlots:3, histFilter:CUR_MONT,
+  cycleOn:false, cycleStartEur:0, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1
 };
 const OG_SLOTS_MAX=3;   // Oscar : pool de montantes, détachées des chances (nombre réglable : S.ogSlots)
 function freshCouple(){ return {pMise:0,pBilan:0,slot:null,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
@@ -776,7 +788,6 @@ const TP_PCT=0.05;                                                     // take-p
 function recalcCapital(){ S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0; S.sl = -round2(S.capital*SL_PCT); }
 function autoTP(){ return Math.max(1, Math.ceil(S.capital*TP_PCT - 1e-9)); }  // arrondi sup., en pièces entières (palier = 1 pièce = mise de base)
 function baseMise(soldeEur){ return Math.max(1, round2(Math.floor((soldeEur/200)/0.5)*0.5)); } // solde ÷ 200, palier de 0,50 €, minimum 1 €
-function recoverPiece(soldeEur){ return round2(5*baseMise(soldeEur)); }                          // rattrapage : mise de base × 5
 const Store={
   async get(k){
     if(window.storage){ try{ const r=await window.storage.get(k); return (r&&r.value!=null)?r.value:null; }catch(e){ return null; } }
@@ -788,8 +799,11 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,recoverTargetEur:S.recoverTargetEur,tpNormal:S.tpNormal,ogSlots:S.ogSlots,histFilter:S.histFilter}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.recoverTargetEur=(o.recoverTargetEur!=null)?o.recoverTargetEur:0; S.tpNormal=(o.tpNormal!=null)?o.tpNormal:S.tpFinal; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT; recalcCapital(); }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU}; }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT;
+  S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
+  S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1;
+  recalcCapital(); }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
 async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
@@ -1351,8 +1365,8 @@ function startNewSession(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v<=0){ toast("Indique un solde valide"); return; }
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
-  S.tpFinal=parseFloat($("startTP").value)||autoTP();
-  S.recoverTargetEur=0; S.tpNormal=S.tpFinal;
+  if(S.cycleOn){ startCycle(); } else { S.tpFinal=parseFloat($("startTP").value)||autoTP(); }
+
   setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
   replay(false); save(); render(); closeStartModal();
 }
@@ -1360,40 +1374,59 @@ function startNewSession(){
 function continueSession(){
   // reporte le solde de fin de séance comme nouveau capital, garde les derniers numéros comme contexte
   const finEur=Math.max(round2(S.solde*S.pieceEur), S.pieceEur);
-  const endingRecovery = !!S.recoverTargetEur;
-  if(endingRecovery){                          // fin de la chaîne de rattrapage : retour mise normale
-    S.pieceEur = baseMise(finEur);
-    S.recoverTargetEur = 0;
-  }
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
   S.capitalEur=finEur; recalcCapital();
-  S.tpFinal = endingRecovery ? (S.tpNormal || autoTP()) : autoTP();   // TP auto = 3 % du nouveau solde, arrondi sup.
-  S.tpNormal = S.tpFinal;
+  if(S.cycleOn) applyCycleSession(); else S.tpFinal=autoTP();
   S.log=[]; S.sessionStart=null; goalDismissed=false;                        // chrono armé au 1er 6-6
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
 }
 
-function recoverSession(){
-  // Séance perdue : on la garde à l'historique, puis on repart avec une mise de base × 5.
-  // Le TP est recalculé pour que l'atteindre efface la perte CUMULÉE depuis le début
-  // de la chaîne de rattrapage (et pas seulement celle de la dernière séance).
-  saveCurrentSession();
-  if(!S.recoverTargetEur){                     // 1re perte de la chaîne : on mémorise le niveau à reprendre
-    S.recoverTargetEur = S.capitalEur;
-    S.tpNormal = S.tpFinal;
+/* ═══════════════════ GESTION DE CYCLE « TRIPLE S » (optionnelle) ═══════════════════
+   Trois étages emboîtés :
+   • le moteur interne d'une séance reste Oscar's Grind sur les montantes (inchangé) ;
+   • chaque séance vise un partiel (TP/SL fixes en pièces) ; gagnée/perdue, elle fait
+     progresser la mise de base selon Triple S : +1€ sur gain, +2€ sur perte ;
+   • le cycle vise un objectif global (% du solde de départ, figé) ; atteint, on encaisse
+     le dépassement et on repart mise de base 1€, objectif recalculé sur le nouveau solde.
+   Tous les montants sont proportionnels au solde de DÉPART DU CYCLE, figés jusqu'au reset. */
+const CYCLE_OBJ_PCT=0.075;    // objectif de cycle = 7,5 % du solde de départ
+const CYCLE_PART_TP=5;        // partiel de séance : +5 / -5 pièces (ratio 1:1)
+const CYCLE_CAP_PCT=0.10;     // plafond de mise de base = 10 % du solde de départ
+
+// démarre un nouveau cycle sur le solde courant (fige objectif, partiel, plafond)
+function startCycle(){
+  const soldeEur=S.capitalEur;
+  S.cycleStartEur=soldeEur;
+  S.cycleObjEur=round2(soldeEur*CYCLE_OBJ_PCT);   // ex. 200€ → 15€
+  S.cycleCapEur=round2(soldeEur*CYCLE_CAP_PCT);   // ex. 200€ → 20€
+  S.cycleCumEur=0;                                 // cumul gagné dans le cycle
+  S.cycleBaseEur=1;                                // mise de base (u), démarre à 1€
+  configureSessionFromCycle();
+}
+// règle la séance courante d'après l'état du cycle : mise = u (plafonnée / réduite pour finir pile)
+function configureSessionFromCycle(){
+  let u=S.cycleBaseEur;
+  u=Math.min(u, S.cycleCapEur);                             // plafond 10 % du solde
+  const resteEur=S.cycleObjEur-S.cycleCumEur;               // ce qu'il reste à gagner
+  if(CYCLE_PART_TP*u > resteEur) u=Math.max(1, resteEur/CYCLE_PART_TP);  // ne pas dépasser l'objectif
+  S.cycleU=round2(u);
+  S.pieceEur=S.cycleU; recalcCapital();
+  S.tpFinal=CYCLE_PART_TP;                                  // partiel en pièces
+  S.sl=-CYCLE_PART_TP;                                      // SL symétrique (ratio 1:1)
+}
+// appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé
+function applyCycleSession(){
+  const gainEur=round2((S.solde-S.capital)*S.pieceEur);    // résultat de la séance en €
+  S.cycleCumEur=round2(S.cycleCumEur+gainEur);
+  if(gainEur>0) S.cycleBaseEur+=1; else S.cycleBaseEur+=2; // Triple S : +1 gain / +2 perte
+  if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → on encaisse, reset
+    if(EMIT) toast("Cycle bouclé "+plusEur(S.cycleCumEur)+" — nouveau cycle");
+    startCycle();
+  } else {
+    configureSessionFromCycle();
   }
-  const soldeEur = round2(S.solde * S.pieceEur);
-  const lossEur  = round2(S.recoverTargetEur - soldeEur);   // perte cumulée vs l'ancrage
-  if(lossEur <= 0){ S.recoverTargetEur=0; toast("Plus rien à rattraper"); return; }
-  const newPiece = recoverPiece(soldeEur);     // mise de base × 5
-  S.capitalEur = Math.max(soldeEur, newPiece); S.pieceEur = newPiece; recalcCapital();
-  S.tpFinal = Math.max(1, Math.ceil(lossEur/newPiece - 1e-9));   // TP atteint = perte effacée
-  const keep = S.spins.slice(-16); S.spins = keep; S.ctx = keep.length;
-  S.log = []; S.sessionStart = null; goalDismissed = false;                  // chrono armé au 1er 6-6
-  replay(false); save(); render();
-  toast("Rattrapage · perte "+fmtEur2(lossEur)+" · mise "+fmtEur2(newPiece)+" · TP +"+S.tpFinal+" pièces");
 }
 
 /* ---- historique d'une chance simple (où j'en suis sur la montante) ---- */
@@ -1508,7 +1541,16 @@ function render(){
 
   // état du pool : quelle chance occupe quelle montante, cumul et palier visé
   const holder={}; for(const ch of COUPLES){ const k=S.cpl[ch].slot; if(k!=null) holder[k]=CID[ch]; }
-  $("mbList").innerHTML=S.slots.map((sl,i)=>{
+  let cycHTML="";
+  if(S.cycleOn){
+    const pct=S.cycleObjEur>0?Math.max(0,Math.min(100,S.cycleCumEur/S.cycleObjEur*100)):0;
+    cycHTML=`<div class="cyc-box">
+      <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-mise mono">mise ${fmtEur2(S.cycleU||S.cycleBaseEur)}</span></div>
+      <div class="cyc-bar"><div class="cyc-fill" style="width:${pct}%"></div></div>
+      <div class="cyc-fig mono"><span class="${S.cycleCumEur>=0?'pos':'neg'}">${(S.cycleCumEur>=0?'+':'−')+fmtEur2(Math.abs(S.cycleCumEur)).replace(' €','')}</span> / +${fmtEur2(S.cycleObjEur).replace(' €','')} €</div>
+    </div>`;
+  }
+  $("mbList").innerHTML=cycHTML+S.slots.map((sl,i)=>{
     const t=slotTarget(sl), on=sl.busy, cum=round2(sl.cumul);
     return `<div class="mb-row${on?" on":""}${cum<0?" neg":""}">`
       +`<span class="mb-k">M${i+1}</span>`
@@ -1533,7 +1575,7 @@ function render(){
         return `<li class="${cls}" data-li="${it.idx}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
 
   $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur; $("inSlots").value=S.ogSlots;
-  $("inTP").value=S.tpFinal; $("inSL").value=S.sl;
+  $("inTP").value=S.tpFinal; $("inSL").value=S.sl; if($("inCycle")) $("inCycle").value=S.cycleOn?"on":"off";
 
   // fin de séance : take-profit ou stop-loss
   const banner=$("goalBanner");
@@ -1541,14 +1583,6 @@ function render(){
   banner.className="banner"+(hitSL?" banner-sl":"");
   if(hitTP) $("goalTxt").textContent="🎯 Take-profit · +"+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
   else if(hitSL) $("goalTxt").textContent="🛑 Stop-loss · "+Math.round(gainPieces)+" pièces ("+fmtEur2(gainPieces*S.pieceEur)+")";
-  // "Rattraper" : visible seulement sur séance perdante, libellé = mise de rattrapage à venir
-  if(ended && hitSL){
-    const mp = recoverPiece(round2(S.solde*S.pieceEur));           // mise de base × 5
-    $("goalRecover").style.display="";
-    $("goalRecover").textContent="Rattraper ▸ mise "+fmtEur2(mp);
-  } else {
-    $("goalRecover").style.display="none";
-  }
   updateRate();
   if(jview==="chart" && $("soldeModal").style.display==="flex") drawChart();
 }
@@ -1586,17 +1620,32 @@ $("clearTrack").addEventListener("click",async()=>{
   const snap={spins:S.spins.slice(),ctx:S.ctx,sessionStart:S.sessionStart};
   setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toastUndo("Piste vidée",snap);
 });
-$("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
-$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); S.tpNormal=S.tpFinal; replay(false); render(); save(); });
-$("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.target.value)||autoTP()); S.tpNormal=S.tpFinal; goalDismissed=false; render(); save(); });
+$("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
+$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
+$("inTP").addEventListener("change",e=>{ S.tpFinal=Math.max(1,parseFloat(e.target.value)||autoTP()); goalDismissed=false; render(); save(); });
 $("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
+$("inCycle").addEventListener("change",e=>{
+  const on=e.target.value==="on"; S.cycleOn=on;
+  if(on){ startCycle(); toast("Gestion Triple S activée — objectif "+fmtEur2(S.cycleObjEur)); }
+  else { S.pieceEur=baseMise(S.capitalEur); recalcCapital(); S.tpFinal=autoTP(); toast("Gestion manuelle rétablie"); }
+  replay(false); render(); save();
+});
+$("clearSessions").addEventListener("click",async()=>{
+  const n=sessions.length;
+  if(!n){ toast("Aucune session à effacer"); return; }
+  const cloud = sheetUrl ? " (y compris sur le Google Sheet synchronisé)" : "";
+  if(!await ask("Effacer l'historique ?","Les "+n+" session"+(n>1?"s":"")+" enregistrée"+(n>1?"s":"")+", les courbes et les statistiques long terme seront définitivement supprimées"+cloud+". Ton solde, ta piste et le mode Triple S sont conservés. Action irréversible.","Effacer",true)) return;
+  sessions=[]; openDay=""; openSession=-1;
+  await saveSessions();                 // écrase le journal local + propage au cloud
+  renderSessions(); render();
+  toast("Historique effacé — nouveau départ");
+});
 $("resetAll").addEventListener("click",async()=>{
   if(!await ask("Tout réinitialiser ?","La piste et le journal des coups sont effacés, le solde repart de "+fmtEur2(S.capitalEur)+". Les sessions enregistrées sont conservées.","Réinitialiser",true)) return;
   const snap={spins:S.spins.slice(),ctx:S.ctx,sessionStart:S.sessionStart};
   setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toastUndo("Réinitialisé",snap);
 });
 $("goalContinue").addEventListener("click",continueSession);
-$("goalRecover").addEventListener("click",recoverSession);
 $("mini").addEventListener("click",e=>{ const cell=e.target.closest("[data-ch]"); if(cell) openHist(cell.dataset.ch); });
 $("histClose").addEventListener("click",()=>{ $("histModal").style.display="none"; });
 $("histModal").addEventListener("click",e=>{ if(e.target===$("histModal")) $("histModal").style.display="none"; });
