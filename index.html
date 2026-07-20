@@ -278,6 +278,9 @@
   .modal{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-height:calc(100vh - 36px);overflow-y:auto}
   .modal-title{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--ivory)}
   .modal-sub{font-size:12.5px;color:var(--sage);line-height:1.5;margin:8px 0 16px}
+  .modal-sync{margin:2px 0 10px;font-size:11px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;background:var(--card2);border:1px solid var(--line);border-radius:10px}
+  .modal-sync-lab{color:var(--sage);letter-spacing:.02em}
+  .modal-sync .sync-pill{float:none;display:inline-flex;align-items:center}
   .modal-cyc{background:var(--gold-soft);border:1px solid var(--gold-dim);border-radius:10px;padding:9px 11px;margin:10px 0 4px;font-size:12.5px;color:var(--gold-2);line-height:1.45}
   .modal-cyc b{color:var(--gold);font-weight:600}
   .modal-lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);display:block;margin-bottom:7px}
@@ -670,6 +673,7 @@
   <div class="modal-bg" id="startModal">
     <div class="modal">
       <h3 class="modal-title">Nouvelle séance</h3>
+      <div class="modal-sync" id="startSyncRow"><span class="modal-sync-lab">Sauvegarde cloud</span><span id="startSync" class="sync-pill off">● non configuré</span></div>
       <div class="modal-cyc" id="startCycInfo" style="display:none"></div>
       <p class="modal-sub">Solde de départ et montante. Mise de base = solde ÷ 200, arrondie au palier de 0,50 €, minimum 1 € (1,00 € à 200 €, 1,50 € à 300 €…). Take-profit ≈ 5 % du solde (arrondi supérieur, modifiable) · Stop-loss = 25 % du solde (auto).</p>
       <label class="modal-lab">Solde de départ (€)</label>
@@ -882,13 +886,18 @@ async function saveSheetUrl(v){ const u=(v||"").trim(); const changed=u!==sheetU
 let syncState="off", lastSyncAt=0, cloudTimer=null;
 function cloudState(){ return { ts:lastTs, state:stateBlob(), sessions }; }
 function setSync(st){ syncState=st; if(st==="ok") lastSyncAt=Date.now(); updateSyncUI(); }
-function updateSyncUI(){
-  const el=$("syncStatus"); if(!el) return;
-  if(!sheetUrl){ el.textContent="● non configuré"; el.className="sync-pill off"; return; }
-  if(syncState==="pending"){ el.textContent="● synchro…"; el.className="sync-pill pending"; return; }
-  if(syncState==="offline"){ el.textContent="● hors-ligne"; el.className="sync-pill offline"; return; }
+function syncPillText(){
+  // renvoie {txt, cls} décrivant l'état de synchro courant, partagé par les deux pastilles
+  if(!sheetUrl) return {txt:"● non configuré", cls:"off"};
+  if(syncState==="pending") return {txt:"● synchro…", cls:"pending"};
+  if(syncState==="offline") return {txt:"● hors-ligne", cls:"offline"};
   const t=lastSyncAt?" · "+new Date(lastSyncAt).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
-  el.textContent="● cloud ✓"+t; el.className="sync-pill ok";
+  return {txt:"● cloud ✓"+t, cls:"ok"};
+}
+function updateSyncUI(){
+  const {txt,cls}=syncPillText();
+  const el=$("syncStatus"); if(el){ el.textContent=txt; el.className="sync-pill "+cls; }
+  const ms=$("startSync"); if(ms){ ms.textContent=txt; ms.className="sync-pill "+cls; }
 }
 function scheduleCloud(){ if(!sheetUrl) return; setSync("pending"); clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,1200); }
 async function cloudPush(){
@@ -1411,7 +1420,7 @@ function renderHistory(){
 }
 function openStartModal(){
   $("startSolde").value=S.capitalEur||200;
-  $("startTP").value=S.tpFinal; $("startSL").value=S.sl; updateStartMise();
+  $("startTP").value=S.tpFinal; $("startSL").value=S.sl; updateStartMise(); updateSyncUI();
   const has=S.spins&&S.spins.length>0;
   const rb=$("startResume"); rb.style.display=has?"":"none";
   if(has) rb.textContent="Reprendre la séance en cours ("+S.spins.length+" n°)";
@@ -1509,17 +1518,31 @@ function startCycle(){
 }
 // règle la séance courante d'après l'état du cycle : mise = u (plafonnée / réduite pour finir pile)
 function configureSessionFromCycle(){
-  const startMise=S.cycleStartMise||baseMise(S.cycleStartEur||S.capitalEur);
-  let u=S.cycleBaseEur;
-  u=Math.min(u, S.cycleCapEur);                            // plafond 20× la mise de départ
-  const resteEur=S.cycleObjEur-S.cycleCumEur;              // ce qu'il reste à gagner
-  // le partiel vaut CYCLE_PART_MULT pièces (= CYCLE_PART_MULT*u en €). S'il dépasse le reste,
-  // on réduit la mise pour finir pile sans dépasser (plancher = la mise de départ).
-  if(CYCLE_PART_MULT*u > resteEur) u=Math.max(startMise, resteEur/CYCLE_PART_MULT);
+  // La mise jouée est TOUJOURS la mise de base de la progression Triple S (donc un multiple de la
+  // mise de départ), seulement bornée par le plafond. On NE bricole PAS la mise pour tomber sur
+  // l'objectif — ça casserait la séquence +1/+2 et les multiples.
+  let u=Math.min(S.cycleBaseEur, S.cycleCapEur);
   S.cycleU=round2(u);
   S.pieceEur=S.cycleU; recalcCapital();
-  S.tpFinal=CYCLE_PART_MULT;                               // partiel = 5 pièces (à la mise courante)
-  S.sl=-CYCLE_PART_MULT;                                   // SL symétrique (ratio 1:1)
+  // Le partiel vaut CYCLE_PART_MULT pièces (= CYCLE_PART_MULT × mise en €). Si ce gain dépasserait
+  // ce qu'il reste pour boucler le cycle, on RÉDUIT le TP (en pièces), pas la mise : ainsi la séance
+  // gagne juste ce qu'il faut pour finir pile, sans dépasser, et la mise reste un multiple propre.
+  const resteEur=S.cycleObjEur-S.cycleCumEur;             // ce qu'il reste à gagner
+  let tp=CYCLE_PART_MULT;                                  // partiel plein = 5 pièces
+  if(tp*S.cycleU > resteEur){                             // le partiel plein dépasserait l'objectif
+    // on veut gagner AU PLUS resteEur. On réduit le TP (pièces), mise inchangée, en arrondissant
+    // vers le BAS pour ne jamais dépasser l'objectif.
+    let tpN=Math.floor(resteEur/S.cycleU + 1e-9);
+    if(tpN>=1){
+      tp=tpN;                                             // TP réduit, mise conservée (multiple propre)
+    } else {
+      // reste plus petit qu'UNE mise : aucun TP entier ne tient sans dépasser. Dernier recours, on
+      // réduit la mise à hauteur exacte du reste (TP 1 pièce), pour finir pile. Seul cas où la mise bouge.
+      tp=1; S.cycleU=round2(Math.max(0.5, resteEur)); S.pieceEur=S.cycleU; recalcCapital();
+    }
+  }
+  S.tpFinal=tp;
+  S.sl=-CYCLE_PART_MULT;                                   // SL reste au partiel plein (ratio inchangé)
 }
 // appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé.
 // gainEur est fourni par l'appelant (mesuré AVANT que le capital soit reporté), voir continueSession.
