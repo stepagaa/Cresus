@@ -10,17 +10,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* Gris neutres (pas de bleu marine) + aplats sans dégradé.
-       Une seule couleur chaude : le brique du tapis. L'accent du signal est blanc :
-       contraste maximal, zéro décoration. */
-    --felt:#09090b; --felt2:#141417; --card:#111113; --card2:#18181b;
-    --line:#27272a; --line-soft:rgba(255,255,255,.05);
-    --gold:#e3b23c; --gold-2:#f0c860; --gold-dim:#6b5518; --gold-soft:rgba(227,178,60,.08);
-    --rouge:#9b3a32; --rouge-2:#9b3a32; --rouge-d:#7a2c26; --noir:#1a1a1d; --noir-edge:#2f2f34;
-    --zero:#1c5545; --zero-2:#1c5545;
-    --ivory:#fafafa; --sage:#a1a1aa; --sage-dim:#71717a;
-    --win:#10b981; --lose:#ef4444;
-    --shadow-card:0 1px 2px rgba(0,0,0,.35);
+    /* PALETTE NUIT — pensée pour jouer dans la pénombre : aucune couleur vive, tout est mat et
+       désaturé pour ne pas éblouir. Fond presque noir légèrement chaud, un seul accent : un or
+       patiné (jeton usé, pas or brillant). Rouge roulette = terracotta sombre. Gain/perte = teintes
+       poudrées basse luminance. Rien au-dessus de ~65 % de clarté. */
+    --felt:#0d0e10; --felt2:#141619; --card:#161819; --card2:#1c1f21;
+    --line:#25282c; --line-soft:rgba(255,255,255,.045);
+    --gold:#c9a86a; --gold-2:#dcc088; --gold-dim:#5a4c2f; --gold-soft:rgba(201,168,106,.07);
+    --rouge:#824039; --rouge-2:#824039; --rouge-d:#67322c; --noir:#191b1d; --noir-edge:#2b2e31;
+    --zero:#2a4f43; --zero-2:#2a4f43;
+    --ivory:#e8e6e1; --sage:#9a9691; --sage-dim:#6a6763;
+    --win:#6aa585; --lose:#b8635b;
+    --shadow-card:0 1px 2px rgba(0,0,0,.4);
     --mono:"DM Mono",ui-monospace,monospace;
     --disp:"Bricolage Grotesque",system-ui,sans-serif;
     --body:"Inter",system-ui,sans-serif;
@@ -60,18 +61,18 @@
   /* 6-6 atteint : signalé en ivoire discret, l'or reste réservé au « joue maintenant » */
   /* Échelle d'intensité : veille (rien) → 6-6 (contour blanc) → observation (tirets
      clignotants) → à jouer (carte inversée en blanc plein, impossible à manquer). */
-  .mcell.bal{border-color:rgba(250,250,250,.55);background:rgba(250,250,250,.06)}
-  .mcell.bal .mscore{color:var(--ivory);font-weight:500}
-  .mcell.await{border:2px dashed var(--ivory);background:rgba(250,250,250,.07);animation:awaitblink 1.3s ease-in-out infinite}
+  .mcell.bal{border-color:var(--gold);background:var(--gold-soft)}
+  .mcell.bal .mscore{color:var(--gold);font-weight:500}
+  .mcell.await{border:2px dashed var(--ivory);background:rgba(232,230,225,.05);animation:awaitblink 2s ease-in-out infinite}
   .mcell.await .mscore{color:var(--ivory);font-weight:500}
   /* Un aplat blanc plein sur cette surface éblouit. Le contour blanc franc + un voile
      léger suffisent à trancher : c'est la seule carte à liseré plein de l'écran. */
   .mcell.play{border:2px solid var(--gold);background:var(--gold-soft);transform:translateY(-2px);
-    animation:goldshimmer 1.6s ease-in-out infinite}
+    animation:goldshimmer 2.4s ease-in-out infinite}
   .mcell.play .mscore{color:var(--gold);font-size:20px;font-weight:600}
   .mcell.play .mname{color:var(--gold)}
   /* mise élevée (cycle qui s'emballe) : passe en ROUGE, scintillement rouge */
-  .mcell.play.hot{border-color:var(--lose);animation:redshimmer 1.2s ease-in-out infinite}
+  .mcell.play.hot{border-color:var(--lose);animation:redshimmer 2s ease-in-out infinite}
   .mcell.play.hot .mscore{color:var(--lose)}
   .mcell.play.hot .mname{color:var(--lose)}
   .mcell.won{border-color:rgba(16,185,129,.55);background:rgba(16,185,129,.07)}
@@ -86,19 +87,19 @@
   .rn .mdot.a{background:var(--rouge)}
   .rn .mdot.b{background:#2f2f34}
   .pi .mdot.a,.mp .mdot.a{background:#a1a1aa}
-  .pi .mdot.b,.mp .mdot.b{background:#3f3f46}
+  .pi .mdot.b,.mp .mdot.b{background:var(--noir-edge)}
   .mcell.bal .mdot.a,.mcell.bal .mdot.b{opacity:1}
   .mcell.play .mstrip{opacity:.95}
   .mdetail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)}
   .mside{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.02em;line-height:1.1}
-  .mside.rouge{color:#ff7a6e} .mside.noir{color:#fff} .mside.neutre{color:var(--gold)}
+  .mside.rouge{color:#c98379} .mside.noir{color:var(--ivory)} .mside.neutre{color:var(--gold)}
   .mmise{font-family:var(--mono);font-size:18px;color:var(--gold);margin-top:9px;font-weight:500;letter-spacing:.01em}
   .mwait{font-size:10px;color:var(--gold);line-height:1.35;margin-top:6px;letter-spacing:.02em}
   .mwait.won{color:var(--win);font-weight:600}
   @keyframes playpulse{0%,100%{box-shadow:0 0 0 1px var(--gold)}50%{box-shadow:0 0 0 1px var(--gold)}}
-  @keyframes awaitblink{0%,100%{border-color:rgba(250,250,250,.35)}50%{border-color:var(--ivory)}}
-  @keyframes goldshimmer{0%,100%{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(227,178,60,.15)}50%{border-color:var(--gold);box-shadow:0 0 0 4px rgba(227,178,60,.22)}}
-  @keyframes redshimmer{0%,100%{border-color:rgba(239,68,68,.5);box-shadow:0 0 0 1px rgba(239,68,68,.2)}50%{border-color:var(--lose);box-shadow:0 0 0 4px rgba(239,68,68,.28)}}
+  @keyframes awaitblink{0%,100%{border-color:rgba(232,230,225,.22)}50%{border-color:rgba(232,230,225,.6)}}
+  @keyframes goldshimmer{0%,100%{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(201,168,106,.1)}50%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,106,.14)}}
+  @keyframes redshimmer{0%,100%{border-color:rgba(184,99,91,.4);box-shadow:0 0 0 1px rgba(184,99,91,.14)}50%{border-color:var(--lose);box-shadow:0 0 0 3px rgba(184,99,91,.2)}}
   @media (prefers-reduced-motion:reduce){
     .mcell.play{box-shadow:0 0 0 1px var(--gold)}
     .mcell.await{animation:none}
@@ -112,20 +113,20 @@
   /* Tapis : nappe unie découpée par des filets d'1px (le gap laisse voir le fond),
      pas une grille de pastilles. Seul le contour du bloc est arrondi. */
   .num-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:#e4e4e7;border:none;transition:filter .1s,transform .1s;font-weight:500}
-  .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#d4d4d8}
-  .num.z0{background:var(--zero);color:#e6f2ee}
+  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--ivory);border:none;transition:filter .1s,transform .1s;font-weight:500}
+  .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#c9c6c0}
+  .num.z0{background:var(--zero);color:#cfe0d8}
   .num:active{filter:brightness(1.45);transform:scale(.93)}
   .track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;min-height:28px;margin:18px 0 6px}
   .chip{height:28px;min-width:0;padding:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
-  .chip.r{background:var(--rouge);color:#fff}.chip.n{background:var(--noir);color:#d4d4d8;border-color:var(--noir-edge)}.chip.z{background:var(--zero);border-color:transparent;color:#e6f2ee}
+  .chip.r{background:var(--rouge);color:var(--ivory)}.chip.n{background:var(--noir);color:#c9c6c0;border-color:var(--noir-edge)}.chip.z{background:var(--zero);border-color:transparent;color:#cfe0d8}
   .chip.last{box-shadow:0 0 0 2px var(--ivory)}
   .empty-note{grid-column:1/-1;text-align:center;align-self:center;color:var(--sage-dim);font-size:12.5px}
   .pad-actions{display:flex;gap:8px;margin-top:12px}
   .pad-actions button{flex:1;padding:11px;border-radius:11px;font-size:12px;font-weight:500;background:var(--felt2);border:1px solid var(--line);color:var(--sage);transition:transform .12s,border-color .15s,color .15s}
   .pad-actions button:active{transform:scale(.97);border-color:var(--sage-dim);color:var(--ivory)}
   /* saisie inversée active : bouton mis en avant, aide visible sous le pavé */
-  .pad-actions button.on{border-color:var(--ivory);color:var(--ivory);background:rgba(250,250,250,.06)}
+  .pad-actions button.on{border-color:var(--ivory);color:var(--ivory);background:rgba(232,230,225,.04)}
   .rev-hint{margin-top:8px;font-size:10.5px;color:var(--sage);text-align:center;line-height:1.4;display:none}
   .rev-hint.show{display:block}
   .rev-hint b{color:var(--ivory);font-family:var(--mono)}
@@ -165,13 +166,13 @@
   .cp-v{font-size:13px;color:var(--ivory);font-weight:600;text-align:right}
   .cp-v.pos{color:var(--win)} .cp-v.neg{color:var(--lose)}
   .cp-side{display:inline-block;padding:3px 11px;border-radius:9px;font-size:12px;font-weight:800;letter-spacing:.02em}
-  .cp-side.rouge{background:var(--rouge);color:#fff}
-  .cp-side.noir{background:#27272a;color:#fff;border:1px solid #3f3f46}
-  .cp-side.neutre{background:var(--gold);color:#09090b}
+  .cp-side.rouge{background:var(--rouge);color:var(--ivory)}
+  .cp-side.noir{background:var(--noir);color:var(--ivory);border:1px solid var(--noir-edge)}
+  .cp-side.neutre{background:var(--gold);color:#0d0e10}
   .rl-strip{display:flex;justify-content:center;align-items:center;gap:6px;margin:2px 0 0}
-  .rl-cell{width:18%;max-width:48px;aspect-ratio:.85;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;font-weight:600;color:#fff;opacity:.5;transform:scale(.9)}
+  .rl-cell{width:18%;max-width:48px;aspect-ratio:.85;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ivory);opacity:.5;transform:scale(.9)}
   .rl-cell.r{background:var(--rouge)}
-  .rl-cell.n{background:var(--noir);border:1px solid var(--noir-edge);color:#d4d4d8}
+  .rl-cell.n{background:var(--noir);border:1px solid var(--noir-edge);color:#c9c6c0}
   .rl-cell.z{background:var(--zero)}
   .rl-cell.cur{opacity:1;transform:scale(1.1);box-shadow:0 0 0 2px var(--gold)}
   .rl-cap{text-align:center;font-size:10.5px;color:var(--sage-dim);margin-top:9px}
@@ -204,21 +205,21 @@
   .tp-row input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:11px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center}
 
   footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#09090b;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:90;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#0d0e10;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:90;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
   .toast.with-undo{pointer-events:auto}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.with-undo{display:flex;align-items:center;gap:12px;padding:9px 9px 9px 18px}
-  .toast.with-undo #toastUndo{background:#09090b;color:var(--gold);border:none;border-radius:22px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit}
+  .toast.with-undo #toastUndo{background:#0d0e10;color:var(--gold);border:none;border-radius:22px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit}
 
   /* bannière fin de séance (TP / SL) */
   .banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(51,192,141,.12);border:1px solid var(--win)}
   .banner-txt{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--win)}
   .banner-act{display:flex;align-items:center;gap:8px;flex:none}
-  .banner-act #goalSave{font-size:12px;font-weight:600;color:#052e22;background:var(--win);border-radius:9px;padding:7px 11px}
+  .banner-act #goalSave{font-size:12px;font-weight:600;color:#0d1f18;background:var(--win);border-radius:9px;padding:7px 11px}
   .banner-act #goalDismiss{font-size:18px;color:var(--sage);padding:0 4px;line-height:1}
   .banner.banner-sl{background:rgba(224,71,63,.12);border-color:var(--lose)}
   .banner.banner-sl .banner-txt{color:var(--lose)}
-  .banner.banner-sl #goalSave{background:var(--lose);color:#2a0808}
+  .banner.banner-sl #goalSave{background:var(--lose);color:#1f0d0c}
 
   @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 
@@ -270,27 +271,29 @@
   .hfilter button.on{border-color:rgba(238,241,250,.4);background:rgba(238,241,250,.06);color:var(--ivory)}
   .hfilter button small{font-family:var(--mono);font-size:9.5px;opacity:.65;margin-left:3px}
   .hmig{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:11px;border:1px solid var(--gold-dim);border-radius:11px;background:var(--gold-soft);font-size:11.5px;color:var(--sage);line-height:1.45}
-  .hmig button{flex:none;font-size:11px;font-weight:600;padding:6px 11px;border-radius:9px;background:var(--gold);color:#09090b}
+  .hmig button{flex:none;font-size:11px;font-weight:600;padding:6px 11px;border-radius:9px;background:var(--gold);color:#0d0e10}
 
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(6,10,20,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80;overflow-y:auto}
   .modal{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-height:calc(100vh - 36px);overflow-y:auto}
   .modal-title{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--ivory)}
   .modal-sub{font-size:12.5px;color:var(--sage);line-height:1.5;margin:8px 0 16px}
+  .modal-cyc{background:var(--gold-soft);border:1px solid var(--gold-dim);border-radius:10px;padding:9px 11px;margin:10px 0 4px;font-size:12.5px;color:var(--gold-2);line-height:1.45}
+  .modal-cyc b{color:var(--gold);font-weight:600}
   .modal-lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);display:block;margin-bottom:7px}
   .modal input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--ivory);font-family:var(--mono);font-size:20px;text-align:center}
   .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
-  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#09090b;font-size:15px;font-weight:700;margin-top:6px}
-  .modal-go.danger{background:var(--lose);color:#fff}
+  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#0d0e10;font-size:15px;font-weight:700;margin-top:6px}
+  .modal-go.danger{background:var(--lose);color:var(--ivory)}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
   /* libellés majuscules + surbrillance du côté à jouer (pastille pleine) */
   .mname{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:nowrap;white-space:nowrap;min-height:28px}
   .mname .w{transition:all .2s ease;border-radius:9px;display:inline-block}
   .mname .sep{color:var(--sage-dim);opacity:.5}
   .mname .w.hi{font-weight:800;font-size:13px;padding:5px 12px;border-radius:10px;transform:scale(1.12);letter-spacing:.03em}
-  .mname .w.hi.rouge{background:var(--rouge);color:#fff}
-  .mname .w.hi.noir{background:#27272a;color:#fff;border:1px solid #3f3f46}
-  .mname .w.hi.neutre{background:var(--gold);color:#09090b}
+  .mname .w.hi.rouge{background:var(--rouge);color:var(--ivory)}
+  .mname .w.hi.noir{background:var(--noir);color:var(--ivory);border:1px solid var(--noir-edge)}
+  .mname .w.hi.neutre{background:var(--gold);color:#0d0e10}
   .mcell{cursor:pointer}
   .mhist-hint{margin-top:8px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim)}
   .mcell.play .mhist-hint{color:var(--gold)}
@@ -322,7 +325,7 @@
   .mb-v{font-variant-numeric:tabular-nums;flex:none}
   .mb-row.neg .mb-v{color:var(--lose)}
   /* état du cycle Triple S (au-dessus du pool de montantes) */
-  .cyc-box{background:rgba(250,250,250,.04);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px}
+  .cyc-box{background:rgba(232,230,225,.03);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px}
   .cyc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
   .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
   .cyc-mise{font-size:11px;color:var(--ivory);font-weight:500}
@@ -386,8 +389,42 @@
     /* 8px = bordure (1) + padding (7) de la section du pavé : la 1re carte démarre
        ainsi exactement au haut de la grille, et le bloc fait sa hauteur pile. */
     #padrow>#leftcol{order:1;flex:0 0 31%;min-width:0;gap:8px;margin-bottom:0;
-      padding:8px 0 0;height:calc(100dvh - 178px)}
-    #leftcol #mini{flex:1;min-height:0;grid-template-columns:1fr;grid-template-rows:repeat(3,1fr);gap:8px}
+      padding:8px 0 0;height:calc(100dvh - 178px);overflow:hidden}
+    #leftcol #mini{flex:1 1 auto;min-height:0;grid-template-columns:1fr;grid-template-rows:repeat(3,1fr);gap:8px}
+    /* En mode cycle, la carte cycle, les montantes et le solde gardent leur taille ; ce sont les
+       cartes de détection qui se compriment (flex:1 1 0, elles absorbent le reste). Tout tient
+       dans la hauteur de la grille, sans défilement ni rognage du solde. */
+    body.cycle-on #leftcol #mini{flex:1 1 0;min-height:0;grid-template-rows:repeat(3,minmax(0,1fr))}
+    body.cycle-on #leftcol #mini .mcell{min-height:0;overflow:hidden}
+    body.cycle-on #leftcol .mont-box{flex:0 0 auto}
+    /* carte cycle plus plate : mise sur une ligne, cumul compact, repères serrés */
+    body.cycle-on #leftcol .cyc-box{padding:5px 8px;margin-bottom:5px}
+    body.cycle-on #leftcol .cyc-top{margin-bottom:3px}
+    body.cycle-on #leftcol .cyc-mise{font-size:10px}
+    body.cycle-on #leftcol .cyc-bar{height:3px;margin-bottom:3px}
+    body.cycle-on #leftcol .cyc-fig{font-size:9px}
+    body.cycle-on #leftcol .cyc-tps{margin-top:4px;padding-top:4px}
+    /* cartes de détection compactées en mode cycle pour laisser la place au solde en bas de colonne */
+    body.cycle-on #leftcol .mcell{padding:6px 8px}
+    body.cycle-on #leftcol .mcell .mname{font-size:11px;min-height:0}
+    body.cycle-on #leftcol .mcell .mscore{font-size:13px;margin-top:4px;min-height:0}
+    body.cycle-on #leftcol .mcell .mstrip{margin-top:5px}
+    body.cycle-on #leftcol .mcell .mdot{height:6px}
+    /* cartes À JOUER (dorées, plus grandes) compactées aussi en mode cycle : sinon 3 signaux
+       simultanés allongent la colonne et rognent le solde en bas. */
+    body.cycle-on #leftcol .mcell.play .mscore{font-size:15px}
+    body.cycle-on #leftcol .mcell .mname .w.hi{font-size:11px;padding:3px 8px;transform:none}
+    body.cycle-on #leftcol .mcell.play{transform:none}
+    body.cycle-on #leftcol .solde-box{flex:0 0 auto}
+    /* écrans courts (SE, mini) : compacter davantage pour que le solde tienne sans défiler */
+    @media (max-height:700px){
+      body.cycle-on #leftcol{gap:6px}
+      body.cycle-on #leftcol .mcell{padding:5px 7px}
+      body.cycle-on #leftcol .mcell .mscore{font-size:12px;margin-top:2px}
+      body.cycle-on #leftcol .mcell .mstrip{margin-top:3px}
+      body.cycle-on #leftcol .solde-box{padding:6px 9px}
+      body.cycle-on #leftcol .sb-rate{display:none}
+    }
     .mcell{padding:10px 8px;border-radius:12px;display:flex;flex-direction:column;justify-content:center}
     .mcell .mname{font-size:12.5px}
     .mname{min-height:22px;gap:4px}
@@ -401,6 +438,16 @@
     #leftcol .solde-box{flex:none;padding:8px 10px;border-radius:12px}
     #leftcol .sb-top{flex-direction:column;align-items:flex-start;gap:2px}  /* trop étroit pour 2 montants côte à côte */
     #leftcol .mont-box{flex:none;padding:8px 10px;border-radius:12px}
+    /* carte cycle compacte en colonne étroite : évite que le contenu déborde et se fasse rogner */
+    #leftcol .cyc-box{padding:6px 8px;margin-bottom:6px}
+    #leftcol .cyc-top{margin-bottom:4px}
+    #leftcol .cyc-lab{font-size:8px}
+    #leftcol .cyc-mise{font-size:10.5px}
+    #leftcol .cyc-bar{height:3px;margin-bottom:4px}
+    #leftcol .cyc-fig{font-size:9.5px}
+    #leftcol .cyc-tps{gap:2px;margin-top:4px;padding-top:4px;font-size:8px;flex-wrap:nowrap}
+    #leftcol .cyc-tps span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #leftcol .cyc-tps b{font-size:8.5px}
     #leftcol .mb-lab{margin-bottom:6px}
     #leftcol .sb-solde{font-size:17px}
     #leftcol .sb-pnl{font-size:13px}
@@ -597,7 +644,7 @@
       <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
       <div class="field"><label>Montantes<span class="hint">pool Oscar partagé · 1 à 3</span></label><input type="number" id="inSlots" inputmode="decimal" value="3" step="1" min="1" max="3"></div>
       <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
-        <select id="inCycle"><option value="off">Manuelle (TP/SL %)</option><option value="on">Triple S (automatique)</option></select></div>
+        <select id="inCycle"><option value="on">Triple S (automatique)</option><option value="off">Manuelle (TP/SL %)</option></select></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="field"><label>Mise de départ<span class="hint">en € · solde ÷ 200, palier 0,50 €, min 1 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.5"></div>
       <div class="sheet-sync">
@@ -623,6 +670,7 @@
   <div class="modal-bg" id="startModal">
     <div class="modal">
       <h3 class="modal-title">Nouvelle séance</h3>
+      <div class="modal-cyc" id="startCycInfo" style="display:none"></div>
       <p class="modal-sub">Solde de départ et montante. Mise de base = solde ÷ 200, arrondie au palier de 0,50 €, minimum 1 € (1,00 € à 200 €, 1,50 € à 300 €…). Take-profit ≈ 5 % du solde (arrondi supérieur, modifiable) · Stop-loss = 25 % du solde (auto).</p>
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
@@ -633,8 +681,9 @@
         <div><label class="modal-lab">Stop-loss (auto)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-50" readonly></div>
       </div>
 
-      <button class="modal-go" id="startNew">Démarrer la séance</button>
       <button class="modal-resume" id="startResume" style="display:none">Reprendre la séance en cours</button>
+      <button class="modal-resume" id="startResumeCycle" style="display:none">Reprendre le cycle · piste neuve</button>
+      <button class="modal-go" id="startNew">Démarrer la séance</button>
     </div>
   </div>
 
@@ -728,7 +777,7 @@ let S={
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
   tpFinal:10, sl:-50, ctx:0, ogSlots:3, histFilter:CUR_MONT,
-  cycleOn:false, cycleStartEur:0, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1
+  cycleOn:true, cycleStartEur:0, cycleStartMise:1, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1
 };
 const OG_SLOTS_MAX=3;   // Oscar : pool de montantes, détachées des chances (nombre réglable : S.ogSlots)
 function freshCouple(){ return {pMise:0,pBilan:0,slot:null,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
@@ -811,9 +860,9 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU}; }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleStartMise:S.cycleStartMise,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU}; }
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT;
-  S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
+  S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleStartMise=o.cycleStartMise||baseMise(o.cycleStartEur||200); S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
   S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1;
   recalcCapital();
   // en mode cycle, re-fixer mise jouée / TP partiel / SL depuis l'état du cycle restauré
@@ -1366,6 +1415,21 @@ function openStartModal(){
   const has=S.spins&&S.spins.length>0;
   const rb=$("startResume"); rb.style.display=has?"":"none";
   if(has) rb.textContent="Reprendre la séance en cours ("+S.spins.length+" n°)";
+  // si un cycle Triple S est en cours (cumul entamé), on le signale et on protège le bouton Démarrer
+  const ci=$("startCycInfo");
+  const cycleEnCours = S.cycleOn && S.cycleObjEur>0 && (S.cycleCumEur!==0 || S.cycleBaseEur!==S.cycleStartMise);
+  $("startResumeCycle").style.display = cycleEnCours ? "" : "none";
+  if(cycleEnCours){
+    ci.style.display="";
+    ci.innerHTML="🔶 <b>Cycle Triple S en cours</b> · cumul "+plusEur(S.cycleCumEur)+" / "+fmtEur2(S.cycleObjEur)
+      +" · mise "+fmtEur2(S.cycleU||S.cycleBaseEur)
+      +"<br><b>Reprendre le cycle · piste neuve</b> : continue le cycle avec des numéros vierges (recommandé si la table a tourné)."
+      +"<br>« Démarrer » repart un nouveau cycle (l'en-cours sera perdu).";
+    $("startNew").textContent="Démarrer un nouveau cycle";
+  } else {
+    ci.style.display="none";
+    $("startNew").textContent="Démarrer la séance";
+  }
   $("startModal").style.display="flex";
 }
 function closeStartModal(){ $("startModal").style.display="none"; }
@@ -1377,9 +1441,23 @@ function updateStartMise(){ const v=Math.max(0,parseFloat($("startSolde").value)
     $("startTP").value=tp;
   } else { $("startMise").textContent="Mise de base : —"; $("startSL").value=""; $("startTP").value=""; }
 }
-function startNewSession(){
+// Reprendre le cycle Triple S sur une PISTE NEUVE : la table de roulette a tourné pendant
+// l'interruption, on repart donc sur des numéros vierges, mais le cycle (cumul, mise de base,
+// objectif) est conservé — c'est la gestion de mises qui continue, pas la séance de roulette.
+function resumeCycleFreshTrack(){
+  S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false; setRev(false);
+  if(S.cycleOn) configureSessionFromCycle();   // ré-applique mise/TP/SL du cycle en cours
+  replay(false); save(); render(); closeStartModal();
+  toast("Cycle repris — nouvelle piste, mise "+fmtEur2(S.cycleU||S.pieceEur));
+}
+async function startNewSession(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v<=0){ toast("Indique un solde valide"); return; }
+  // garde-fou : si un cycle Triple S est entamé, confirmer avant de le réinitialiser
+  const cycleEnCours = S.cycleOn && S.cycleObjEur>0 && (S.cycleCumEur!==0 || S.cycleBaseEur!==S.cycleStartMise);
+  if(cycleEnCours){
+    if(!await ask("Repartir un nouveau cycle ?","Le cycle Triple S en cours (cumul "+plusEur(S.cycleCumEur)+" / "+fmtEur2(S.cycleObjEur)+", mise "+fmtEur2(S.cycleU||S.cycleBaseEur)+") sera abandonné et repart de zéro. Pour le garder, choisis plutôt « Reprendre ».","Nouveau cycle",true)) return;
+  }
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
   if(S.cycleOn){ startCycle(); } else { S.tpFinal=parseFloat($("startTP").value)||autoTP(); }
 
@@ -1411,37 +1489,46 @@ function continueSession(){
    • le cycle vise un objectif global (% du solde de départ, figé) ; atteint, on encaisse
      le dépassement et on repart mise de base 1€, objectif recalculé sur le nouveau solde.
    Tous les montants sont proportionnels au solde de DÉPART DU CYCLE, figés jusqu'au reset. */
-const CYCLE_OBJ_PCT=0.075;    // objectif de cycle = 7,5 % du solde de départ
-const CYCLE_PART_TP=5;        // partiel de séance : +5 / -5 pièces (ratio 1:1)
-const CYCLE_CAP_PCT=0.10;     // plafond de mise de base = 10 % du solde de départ
+const CYCLE_PART_MULT=5;      // TP partiel = 5 × mise de départ du cycle
+const CYCLE_OBJ_MULT=15;      // TP cycle   = 15 × mise de départ (= 3 partiels pleins, jamais de résidu)
+const CYCLE_CAP_MULT=20;      // plafond de mise = 20 × mise de départ
 
-// démarre un nouveau cycle sur le solde courant (fige objectif, partiel, plafond)
+// démarre un nouveau cycle sur le solde courant. La mise de DÉPART découle du solde (baseMise) et
+// partiel/objectif/plafond en sont des multiples exacts → 3 partiels pleins ferment le cycle,
+// plus jamais de dernière session pour un résidu (ex. 1,35 €).
 function startCycle(){
   const soldeEur=S.capitalEur;
+  const startMise=baseMise(soldeEur);              // 200€→1€, 300€→1,5€
   S.cycleStartEur=soldeEur;
-  S.cycleObjEur=round2(soldeEur*CYCLE_OBJ_PCT);   // ex. 200€ → 15€
-  S.cycleCapEur=round2(soldeEur*CYCLE_CAP_PCT);   // ex. 200€ → 20€
+  S.cycleStartMise=startMise;                      // mise de départ, figée pour tout le cycle
+  S.cycleObjEur=round2(CYCLE_OBJ_MULT*startMise);  // 15× : 200€→15€, 300€→22,5€
+  S.cycleCapEur=round2(CYCLE_CAP_MULT*startMise);  // 20× : plafond de mise
   S.cycleCumEur=0;                                 // cumul gagné dans le cycle
-  S.cycleBaseEur=1;                                // mise de base (u), démarre à 1€
+  S.cycleBaseEur=startMise;                        // mise de base (u), démarre à la mise de départ
   configureSessionFromCycle();
 }
 // règle la séance courante d'après l'état du cycle : mise = u (plafonnée / réduite pour finir pile)
 function configureSessionFromCycle(){
+  const startMise=S.cycleStartMise||baseMise(S.cycleStartEur||S.capitalEur);
   let u=S.cycleBaseEur;
-  u=Math.min(u, S.cycleCapEur);                             // plafond 10 % du solde
-  const resteEur=S.cycleObjEur-S.cycleCumEur;               // ce qu'il reste à gagner
-  if(CYCLE_PART_TP*u > resteEur) u=Math.max(1, resteEur/CYCLE_PART_TP);  // ne pas dépasser l'objectif
+  u=Math.min(u, S.cycleCapEur);                            // plafond 20× la mise de départ
+  const resteEur=S.cycleObjEur-S.cycleCumEur;              // ce qu'il reste à gagner
+  // le partiel vaut CYCLE_PART_MULT pièces (= CYCLE_PART_MULT*u en €). S'il dépasse le reste,
+  // on réduit la mise pour finir pile sans dépasser (plancher = la mise de départ).
+  if(CYCLE_PART_MULT*u > resteEur) u=Math.max(startMise, resteEur/CYCLE_PART_MULT);
   S.cycleU=round2(u);
   S.pieceEur=S.cycleU; recalcCapital();
-  S.tpFinal=CYCLE_PART_TP;                                  // partiel en pièces
-  S.sl=-CYCLE_PART_TP;                                      // SL symétrique (ratio 1:1)
+  S.tpFinal=CYCLE_PART_MULT;                               // partiel = 5 pièces (à la mise courante)
+  S.sl=-CYCLE_PART_MULT;                                   // SL symétrique (ratio 1:1)
 }
 // appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé.
 // gainEur est fourni par l'appelant (mesuré AVANT que le capital soit reporté), voir continueSession.
 function applyCycleSession(gainEur){
   if(gainEur==null) gainEur=round2((S.solde-S.capital)*S.pieceEur);
   S.cycleCumEur=round2(S.cycleCumEur+gainEur);
-  if(gainEur>0) S.cycleBaseEur+=1; else S.cycleBaseEur+=2; // Triple S : +1 gain / +2 perte
+  const step=S.cycleStartMise||1;                          // pas = 1 mise de départ (garde tout commensurable)
+  if(gainEur>0) S.cycleBaseEur=round2(S.cycleBaseEur+step); // Triple S : +1 mise sur gain
+  else          S.cycleBaseEur=round2(S.cycleBaseEur+2*step);// +2 mises sur perte
   if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → on encaisse, reset
     if(EMIT) toast("Cycle bouclé "+plusEur(S.cycleCumEur)+" — nouveau cycle");
     startCycle();
@@ -1510,6 +1597,7 @@ function openCoup(idx){
 
 /* ---- rendu ---- */
 function render(){
+  document.body.classList.toggle("cycle-on", !!S.cycleOn);
   const last=S.spins.length-1;
   const gainPieces=S.solde-S.capital;
   const hitTP=gainPieces>=(S.tpFinal)-1e-9;
@@ -1705,6 +1793,7 @@ $("sheetSyncAll").addEventListener("click",cloudForce);
 $("newSessionBtn").addEventListener("click",openStartModal);
 $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ closeStartModal(); });
+$("startResumeCycle").addEventListener("click",resumeCycleFreshTrack);
 $("startSolde").addEventListener("input",updateStartMise);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
 $("histBody").addEventListener("click",async e=>{
