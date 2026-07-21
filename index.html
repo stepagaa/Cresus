@@ -347,6 +347,14 @@
   .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
   .cyc-bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:5px}
   .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
+  /* barre bidirectionnelle : perte (rouge) à gauche du zéro, gain (vert) à droite */
+  .cyc-bar-bi{position:relative;overflow:visible}
+  .cyc-bar-bi .cyc-fill{position:absolute;top:0;transition:left .3s,width .3s}
+  .cyc-bar-bi .cyc-fill.pos{background:var(--win)}
+  .cyc-bar-bi .cyc-fill.neg{background:var(--lose)}
+  .cyc-zero{position:absolute;top:-2px;width:1px;height:8px;background:var(--sage-dim);z-index:1}
+  .cyc-bar-ends{display:flex;justify-content:space-between;font-size:8px;margin:-1px 0 5px}
+  .cyc-bar-ends .neg{color:var(--lose)} .cyc-bar-ends .pos{color:var(--win)}
   .cyc-fig{font-size:10.5px;color:var(--sage-dim);font-variant-numeric:tabular-nums}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
   /* trois repères clés bien lisibles : MISE · TP · SL */
@@ -356,6 +364,8 @@
   .cyc-key .ck-lab{font-size:8px;letter-spacing:.1em;color:var(--sage-dim)}
   .cyc-key .ck-val{font-size:11.5px;font-weight:600;color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
   .cyc-key .ck-val.pos{color:var(--win)} .cyc-key .ck-val.neg{color:var(--lose)}
+  .cyc-key-tp{cursor:pointer;transition:border-color .15s}
+  .cyc-key-tp:active{border-color:var(--gold)}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -799,7 +809,7 @@ const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
 let jview="chart";
-let sessions=[]; let goalDismissed=false;
+let sessions=[]; let goalDismissed=false; let cycleSLfired=false; let cycleSeq=1;
 const SESS_KEY="cresus:sessions:v1";
 let S={
   capitalEur:200, pieceEur:1, capital:200, sessionStart:null,   // démarre au 1er équilibre 6-6
@@ -807,7 +817,7 @@ let S={
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
   tpFinal:10, sl:-50, ctx:0, ogSlots:3, histFilter:CUR_MONT,
-  cycleOn:true, cycleStartEur:0, cycleStartMise:1, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1
+  cycleOn:true, cycleStartEur:0, cycleStartMise:1, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1, cycleSlEur:0, tpManualEur:0
 };
 
 // ─── Montante 1-2-3-5 par chance : plus de pool partagé, plus d'attribution dynamique. ───
@@ -836,13 +846,14 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleStartMise:S.cycleStartMise,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU,sessionProg:SESSION_PROG,cycleObjMult:CYCLE_OBJ_MULT}; }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleStartMise:S.cycleStartMise,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU,cycleSlEur:S.cycleSlEur,tpManualEur:S.tpManualEur,sessionProg:SESSION_PROG,cycleObjMult:CYCLE_OBJ_MULT,cycleSeq:cycleSeq}; }
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT;
   S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleStartMise=o.cycleStartMise||baseMise(o.cycleStartEur||200); S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
-  S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1;
+  S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1; S.cycleSlEur=o.cycleSlEur||0; S.tpManualEur=o.tpManualEur||0;
   // restaurer la config réglable : progression de session et objectif de cycle
   if(Array.isArray(o.sessionProg) && o.sessionProg.length) SESSION_PROG=o.sessionProg.filter(x=>x>0);
   if(o.cycleObjMult>0) CYCLE_OBJ_MULT=o.cycleObjMult;
+  if(o.cycleSeq>0) cycleSeq=o.cycleSeq;
   recalcCapital();                                  // le SL de session dépend de SESSION_PROG
   // en mode cycle, re-fixer mise jouée / TP partiel / SL depuis l'état du cycle restauré
   // (recalcCapital seul ne suffit pas : pieceEur et le SL fixe doivent suivre cycleU)
@@ -930,6 +941,15 @@ const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
 function stakeC(C){
   // mise = palier courant de la montante de CETTE chance (1-2-3-5), en pièces.
   return SESSION_PROG[Math.min(C.mIdx, SESSION_PROG.length-1)];
+}
+// Mise plafonnée au reste jusqu'au TP : inutile de miser plus que ce qu'il faut pour fermer la
+// session. Si le palier vaut 2 mais qu'il ne manque qu'1 pièce pour le TP, on ne mise qu'1.
+// Le coup plafonné reste un coup normal de la montante : perdu, elle avance au palier suivant.
+function cappedStake(C){
+  const base=stakeC(C);
+  const resteTP=S.tpFinal-(S.solde-S.capital);          // pièces restantes avant le take-profit
+  if(resteTP>0 && resteTP<base) return Math.max(1e-9, round2(resteTP));
+  return base;
 }
 function balancePending(){ /* montantes indépendantes : aucun équilibrage entre chances */ }
 function phaseLabel(C){
@@ -1028,7 +1048,7 @@ function replay(emitLast){
   for(let i=0;i<N;i++){ CUR_I=i; if(i<ctx) continue; EMIT=!!emitLast&&(i===N-1);
     // les paris sont posés AVANT la boule : on fige les mises pour que la résolution
     // d'une chance ne modifie pas la mise déjà engagée d'une autre (plafond TP)
-    for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
+    for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?cappedStake(C):0; }
     balancePending();
     for(const ch of COUPLES) feedCouple(ch);
     assignSlots();          // 2e passe : les gains de ce coup ont déjà rendu leur montante
@@ -1036,11 +1056,11 @@ function replay(emitLast){
   EMIT=false; CUR_I=N-1;
   // Mises du PROCHAIN coup, calculées APRÈS l'attribution : chaque chance porte alors sa montante
   // définitive, donc la mise affichée est celle qui sera réellement engagée.
-  for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?stakeC(C):0; }
+  for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?cappedStake(C):0; }
   balancePending();
 }
 // mise affichée = mise qui sera réellement engagée
-function shownStake(C){ return C.pending>0 ? C.pending : Math.max(stakeC(C),0); }
+function shownStake(C){ return C.pending>0 ? C.pending : Math.max(cappedStake(C),0); }
 
 /* ---- saisie ---- */
 // Le chronomètre démarre à la 1re détection d'équilibre 6-6 de la séance : avant ça on ne
@@ -1188,7 +1208,8 @@ function saveCurrentSession(){
   for(const e of S.log){ bal+=(e.r==="G"?e.amt:-e.amt); curve.push(bal*S.pieceEur); if(e.r==="G")nG++; else nP++; }
   const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
     pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:S.sessionStart?Date.now()-S.sessionStart:0,
-    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:CUR_MONT, curve:downsample(curve,140) };
+    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:CUR_MONT,
+    cycleId:(S.cycleOn?cycleSeq:0), cycleObj:S.cycleObjEur, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
   saveSessions(); renderSessions(); render();
@@ -1229,11 +1250,12 @@ function renderSessions(){
   const sg=v=>(Math.abs(v)<0.005?"":(v>0?"+":"−"))+num2(Math.abs(v))+" €";
   const cls=v=>Math.abs(v)<0.005?"":(v>0?"pos":"neg");
 
-  // regroupement par jour — sessions est déjà trié du plus récent au plus ancien
-  const days=[], map={};
-  sessions.forEach((s,i)=>{ const k=dayKey(s.date);
-    if(!map[k]){ map[k]={key:k,date:s.date,idx:[]}; days.push(map[k]); }
-    map[k].idx.push(i); });
+  // regroupement par CYCLE — sessions est déjà trié du plus récent au plus ancien.
+  // cycleId = 0 signifie « hors cycle » (gestion manuelle) ; on regroupe tout de même par valeur.
+  const groups=[], gmap={};
+  sessions.forEach((s,i)=>{ const k=(s.cycleId!=null?s.cycleId:0);
+    if(!gmap[k]){ gmap[k]={key:k,first:s,idx:[]}; groups.push(gmap[k]); }
+    gmap[k].idx.push(i); });
 
   const sessionRow=i=>{
     const s=sessions[i], d=new Date(s.date);
@@ -1254,17 +1276,25 @@ function renderSessions(){
     return row;
   };
 
-  el.innerHTML=days.map(d=>{
-    const list=d.idx.map(i=>sessions[i]);
+  el.innerHTML=groups.map(gr=>{
+    const list=gr.idx.map(i=>sessions[i]);            // du plus récent au plus ancien
     const gain=list.reduce((a,s)=>a+(s.gain||0),0);
     const wag =list.reduce((a,s)=>a+(s.wagered||0),0);
     const dur =list.reduce((a,s)=>a+(s.duree||0),0);
-    // % du jour : rapporté au solde de départ de la PREMIÈRE séance du jour
-    // (les séances s'enchaînent, additionner les débuts n'aurait aucun sens)
-    const first=list[list.length-1], pct=first&&first.debut? gain/first.debut*100 : 0;
-    const open=d.key===openDay, n=list.length;
-    let row=`<li class="d-row${open?' open':''}" data-d="${d.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${dayLabel(d.date)}</span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
-    if(open) row+=d.idx.map(sessionRow).join("");
+    const chrono=list[list.length-1];                 // 1re séance du cycle (chronologiquement)
+    const pct=chrono&&chrono.debut? gain/chrono.debut*100 : 0;
+    const n=list.length;
+    // statut du cycle : bouclé si le cumul net a atteint son objectif, sinon en cours / stoppé
+    const obj=chrono&&chrono.cycleObj?chrono.cycleObj:0;
+    let statut="", scls="";
+    if(gr.key===0){ statut="Gestion manuelle"; }
+    else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="pos"; }
+    else if(gain<=-0.01 && Math.abs(gain)>=obj*2){ statut="stoppé"; scls="neg"; }  // grosse perte = SL cycle probable
+    else { statut="en cours"; }
+    const titre=gr.key===0?"Hors cycle":("Cycle "+gr.key);
+    const open=("cyc"+gr.key)===openDay;
+    let row=`<li class="d-row${open?' open':''}" data-d="cyc${gr.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${titre}</span><span class="d-meta">${n} séance${n>1?"s":""}${statut?" · "+statut:""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
+    if(open) row+=gr.idx.map(sessionRow).join("");
     return row;
   }).join("");
   renderHistFilter(); renderHistory();
@@ -1430,6 +1460,7 @@ function continueSession(){
   const cycleGainEur = S.cycleOn ? round2((S.solde-S.capital)*S.pieceEur) : 0;
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
+  S.tpManualEur=0;                              // le TP manuel ne vaut que pour la séance qui vient de finir
   S.capitalEur=finEur; recalcCapital();
   if(S.cycleOn) applyCycleSession(cycleGainEur); else S.tpFinal=autoTP();
   S.log=[]; S.sessionStart=null; goalDismissed=false;                        // chrono armé au 1er 6-6
@@ -1448,6 +1479,7 @@ function continueSession(){
 const CYCLE_PART_MULT=SESSION_TP; // TP partiel de session = SESSION_TP × mise de départ (aligné session)
 let CYCLE_OBJ_MULT=9;   // réglable depuis l'accueil (× mise de départ)       // TP cycle = 9 × mise de départ (= 3 sessions pleines, multiple de 3)
 const CYCLE_CAP_MULT=20;      // plafond de mise = 20 × mise de départ
+const CYCLE_SL_PCT=0.50;      // SL de cycle = 50 % du solde de départ du cycle (arrêt immédiat)
 
 // démarre un nouveau cycle sur le solde courant. La mise de DÉPART découle du solde (baseMise) et
 // partiel/objectif/plafond en sont des multiples exacts → 3 partiels pleins ferment le cycle,
@@ -1458,9 +1490,12 @@ function startCycle(){
   S.cycleStartEur=soldeEur;
   S.cycleStartMise=startMise;                      // mise de départ, figée pour tout le cycle
   S.cycleObjEur=round2(CYCLE_OBJ_MULT*startMise);  // 15× : 200€→15€, 300€→22,5€
+  S.cycleSlEur=-round2(soldeEur*CYCLE_SL_PCT);     // SL de cycle : −50 % du solde de départ
   S.cycleCapEur=round2(CYCLE_CAP_MULT*startMise);  // 20× : plafond de mise
   S.cycleCumEur=0;                                 // cumul gagné dans le cycle
   S.cycleBaseEur=startMise;                        // mise de base (u), démarre à la mise de départ
+  S.tpManualEur=0;                                 // pas de TP manuel au démarrage d'un cycle
+  cycleSLfired=false;                              // réarme le garde-fou du SL de cycle
   configureSessionFromCycle();
 }
 // règle la séance courante d'après l'état du cycle : mise = u (plafonnée / réduite pour finir pile)
@@ -1481,13 +1516,14 @@ function configureSessionFromCycle(){
   }
   S.cycleU=round2(u);
   S.pieceEur=S.cycleU; recalcCapital();
-  // TP/SL de SESSION en pièces : le TP vaut SESSION_TP, le SL est dérivé de la montante 1-2-3-5.
-  // Sur le tout dernier pas, si SESSION_TP pièces dépasseraient le reste, on rabote le TP en pièces
-  // pour finir pile sans dépasser (mise déjà ajustée juste au-dessus).
-  let tp=SESSION_TP;
-  const restePieces=resteEur/S.cycleU;
-  if(tp > restePieces + 1e-9) tp=Math.max(1, Math.floor(restePieces+1e-9));
-  S.tpFinal=tp;
+  // TP de session : TOUJOURS SESSION_TP pièces (= SESSION_TP × mise). On ne le réduit JAMAIS pour
+  // finir pile — si le gain dépasse l'objectif du cycle, l'excédent est encaissé en bonus (géré au
+  // bouclage). Un TP manuel (en €) peut le remplacer ponctuellement (réglable dans la bannière).
+  if(S.tpManualEur>0){
+    S.tpFinal=S.tpManualEur/S.cycleU;             // TP manuel en € → seuil en pièces (peut être fractionnaire)
+  } else {
+    S.tpFinal=SESSION_TP;
+  }
   S.sl=-sessionSL();                                       // SL session = somme des paliers (dérivé)
 }
 // appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé.
@@ -1504,6 +1540,7 @@ function applyCycleSession(gainEur){
   else          S.cycleBaseEur=round2(played+2*step);
   if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → encaisse, reset
     if(EMIT) toast("Cycle bouclé "+plusEur(S.cycleCumEur)+" — nouveau cycle");
+    cycleSeq++;                                             // le prochain cycle a un nouvel identifiant
     startCycle();
   } else {
     configureSessionFromCycle();
@@ -1569,12 +1606,32 @@ function openCoup(idx){
 }
 
 /* ---- rendu ---- */
+// Déclenché quand le cumul de cycle atteint le SL (−50 % du solde de départ) : arrêt immédiat.
+// On enregistre la session en cours, on solde le cycle en perte, on revient à l'accueil.
+function onCycleSL(){
+  const perte=round2(S.cycleCumEur + (S.solde-S.capital)*S.pieceEur);
+  saveCurrentSession();                    // fige la session en cours dans le journal
+  cycleSeq++;                              // ce cycle est clos (en perte)
+  S.capitalEur=Math.max(0, round2(S.solde*S.pieceEur));
+  toast("🛑 Stop-loss de cycle atteint ("+plusEur(perte)+") — cycle arrêté");
+  goalDismissed=true;
+  render();
+  openStartModal();                        // retour à l'accueil : à toi de décider la suite
+}
 function render(){
   document.body.classList.toggle("cycle-on", !!S.cycleOn);
   const last=S.spins.length-1;
   const gainPieces=S.solde-S.capital;
   const hitTP=gainPieces>=(S.tpFinal)-1e-9;
   const hitSL=gainPieces<=(S.sl)+1e-9;
+  // SL de cycle (arrêt immédiat) : cumul du cycle + perte de la session EN COURS ≤ −50 % du solde.
+  // Se surveille en temps réel, sans attendre la fin de session.
+  let hitCycleSL=false;
+  if(S.cycleOn && S.cycleSlEur<0){
+    const cumLive=S.cycleCumEur + round2(gainPieces*S.pieceEur);
+    hitCycleSL = cumLive <= S.cycleSlEur + 1e-9;
+  }
+  if(hitCycleSL && !cycleSLfired){ cycleSLfired=true; onCycleSL(); return; }
   const ended=(hitTP||hitSL)&&!goalDismissed;
   for(const ch of COUPLES){
     const C=S.cpl[ch], id=CID[ch];
@@ -1624,13 +1681,30 @@ function render(){
   // état du pool : quelle chance occupe quelle montante, cumul et palier visé
   let cycHTML="";
   if(S.cycleOn){
-    const pct=S.cycleObjEur>0?Math.max(0,Math.min(100,S.cycleCumEur/S.cycleObjEur*100)):0;
+    // Barre bidirectionnelle : axe de cycleSlEur (gauche, rouge) à cycleObjEur (droite, vert).
+    // Le zéro est placé proportionnellement ; le remplissage part du zéro vers la droite (gain)
+    // ou vers la gauche (perte).
+    const obj=S.cycleObjEur||1, slAbs=Math.abs(S.cycleSlEur)||1, span=obj+slAbs;
+    const zeroPct=slAbs/span*100;                              // position du 0 sur la barre
+    const cum=S.cycleCumEur;
+    let fillLeft, fillWidth, fillCls;
+    if(cum>=0){
+      fillLeft=zeroPct;
+      fillWidth=Math.min(obj,cum)/span*100;
+      fillCls="pos";
+    } else {
+      const p=Math.min(slAbs,-cum)/span*100;
+      fillLeft=zeroPct-p;
+      fillWidth=p;
+      fillCls="neg";
+    }
     cycHTML=`<div class="cyc-box">
-      <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-fig mono"><span class="${S.cycleCumEur>=0?'pos':'neg'}">${(S.cycleCumEur>=0?'+':'−')+fmtEur2(Math.abs(S.cycleCumEur)).replace(' €','')}</span> / +${fmtEur2(S.cycleObjEur).replace(' €','')} €</span></div>
-      <div class="cyc-bar"><div class="cyc-fill" style="width:${pct}%"></div></div>
+      <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-fig mono"><span class="${cum>=0?'pos':'neg'}">${(cum>=0?'+':'−')+fmtEur2(Math.abs(cum)).replace(' €','')}</span> / +${fmtEur2(obj).replace(' €','')} €</span></div>
+      <div class="cyc-bar cyc-bar-bi"><div class="cyc-zero" style="left:${zeroPct}%"></div><div class="cyc-fill ${fillCls}" style="left:${fillLeft}%;width:${fillWidth}%"></div></div>
+      <div class="cyc-bar-ends mono"><span class="neg">${fmtEurC(S.cycleSlEur)}</span><span class="pos">+${fmtEurC(obj)}</span></div>
       <div class="cyc-keys mono">
         <div class="cyc-key"><span class="ck-lab">MISE</span><span class="ck-val">${fmtEurC(S.cycleU||S.cycleBaseEur)}</span></div>
-        <div class="cyc-key"><span class="ck-lab">TP</span><span class="ck-val pos">+${fmtEurC(S.tpFinal*S.pieceEur)}</span></div>
+        <div class="cyc-key cyc-key-tp" id="cycTPkey" title="Modifier le take-profit"><span class="ck-lab">TP ✎</span><span class="ck-val pos">+${fmtEurC(S.tpFinal*S.pieceEur)}</span></div>
         <div class="cyc-key"><span class="ck-lab">SL</span><span class="ck-val neg">−${fmtEurC(Math.abs(S.sl)*S.pieceEur)}</span></div>
       </div>
     </div>`;
@@ -1697,6 +1771,18 @@ $("askModal").addEventListener("click",e=>{ if(e.target===$("askModal")) askClos
 /* ---- events ---- */
 $("numGrid").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(parseInt(t.dataset.n,10)); });
 $("undo").addEventListener("click",undoSpin);
+// TP modifiable en euros : tap sur la case TP de la carte cycle
+$("mbList").addEventListener("click",e=>{
+  if(!e.target.closest("#cycTPkey")) return;
+  if(!S.cycleOn){ toast("Le TP se règle en mode Triple S"); return; }
+  const actuel=round2(S.tpFinal*S.pieceEur);
+  const saisie=prompt("Take-profit de la séance en € (défaut : "+fmtEur2(SESSION_TP*S.cycleU)+")", String(actuel));
+  if(saisie==null) return;                       // annulé
+  const v=parseFloat(String(saisie).replace(",","."));
+  if(!(v>0)){ S.tpManualEur=0; toast("TP remis au défaut ("+SESSION_TP+"× mise)"); }
+  else { S.tpManualEur=round2(v); toast("TP fixé à "+fmtEur2(v)); }
+  configureSessionFromCycle(); replay(false); save(); render();
+});
 $("revInput").addEventListener("click",()=>{
   if(revMode){ setRev(false); return; }
   if(S.spins.length>=12){ toast("Piste déjà remplie — vide-la d'abord"); return; }
