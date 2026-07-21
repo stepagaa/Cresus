@@ -63,8 +63,8 @@
      clignotants) → à jouer (carte inversée en blanc plein, impossible à manquer). */
   .mcell.bal{border-color:var(--gold);background:var(--gold-soft)}
   .mcell.bal .mscore{color:var(--gold);font-weight:500}
-  .mcell.await{border:2px dashed var(--ivory);background:rgba(232,230,225,.05);animation:awaitblink 2s ease-in-out infinite}
-  .mcell.await .mscore{color:var(--ivory);font-weight:500}
+  .mcell.await{border:2px dashed var(--gold-dim);background:var(--gold-soft);animation:awaitblink 2s ease-in-out infinite}
+  .mcell.await .mscore{color:var(--gold-2);font-weight:500}
   /* Un aplat blanc plein sur cette surface éblouit. Le contour blanc franc + un voile
      léger suffisent à trancher : c'est la seule carte à liseré plein de l'écran. */
   .mcell.play{border:2px solid var(--gold);background:var(--gold-soft);transform:translateY(-2px);
@@ -97,7 +97,7 @@
   .mwait{font-size:10px;color:var(--gold);line-height:1.35;margin-top:6px;letter-spacing:.02em}
   .mwait.won{color:var(--win);font-weight:600}
   @keyframes playpulse{0%,100%{box-shadow:0 0 0 1px var(--gold)}50%{box-shadow:0 0 0 1px var(--gold)}}
-  @keyframes awaitblink{0%,100%{border-color:rgba(232,230,225,.22)}50%{border-color:rgba(232,230,225,.6)}}
+  @keyframes awaitblink{0%,100%{border-color:var(--gold-dim)}50%{border-color:var(--gold)}}
   @keyframes goldshimmer{0%,100%{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(201,168,106,.1)}50%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,106,.14)}}
   @keyframes redshimmer{0%,100%{border-color:rgba(184,99,91,.4);box-shadow:0 0 0 1px rgba(184,99,91,.14)}50%{border-color:var(--lose);box-shadow:0 0 0 3px rgba(184,99,91,.2)}}
   @media (prefers-reduced-motion:reduce){
@@ -919,12 +919,23 @@ function advanceC(ch,C,result){
   if(result==="G"){
     S.solde+=stake; C.pBilan+=stake;
     C.mIdx=0;                                    // gain : retour au palier de base
-  } else {
-    S.solde-=stake; C.pBilan-=stake;
-    C.mIdx++;                                    // perte : palier suivant
+    S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
+    return "wait";                               // gain : on repart en observation
   }
+  // perte
+  S.solde-=stake; C.pBilan-=stake;
+  C.mIdx++;                                       // palier suivant
   S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
-  if(result==="G"){ return "wait"; }             // gain : on repart en observation
+  // Si la montante a épuisé tous ses paliers (4 pertes sur 1-2-3-5), elle est soldée en perte :
+  // elle NE rejoue PAS le dernier palier indéfiniment. On la remet à zéro et la chance repasse en
+  // veille — une nouvelle montante pourra démarrer sur un prochain signal. (Le SL de session, lui,
+  // reste géré à part sur le P&L global.)
+  if(C.mIdx>=SESSION_PROG.length){
+    C.mIdx=0;
+    C.sig={phase:"none",side:null,obs:null};      // montante arrêtée → veille
+    mt(CLABELS[ch].join("/")+" · montante soldée (4 pertes)");
+    return "stopped";
+  }
   return "obs";                                  // perte : observation obligatoire avant de rejouer
 }
 
@@ -936,6 +947,7 @@ function setNextState(C){
 }
 function resolveC(ch,C,result){
   const ev=advanceC(ch,C,result);
+  if(ev==="stopped"){ return; }                  // montante soldée (4 pertes) : chance déjà en veille
   if(ev==="won"||ev==="wait"){
     // sur GAIN : si un 6-6 est déjà présent (juste avant OU avec la boule gagnante),
     // celle-ci tient lieu d'observation → on rejoue son côté dès la boule suivante.
@@ -1541,9 +1553,8 @@ function render(){
       oth.style.display="none"; if(sepEl)sepEl.style.display="none";
       const st=shownStake(C);
       scoreTxt=eur(st);                                 // montant à jouer à la place de l'équilibre 7/6
-      // mise haute = ≥ 5× la mise de base (relative, car en mode cycle la base progresse)
-      const baseUnit = S.cycleOn ? 1 : (S.pieceEur||1);   // 1 pièce de référence
-      if(st>=5*baseUnit) mc.classList.add("hot");
+      // ROUGE uniquement au dernier palier de la montante (le 4e coup, mise 5) : le coup le plus risqué.
+      if(C.mIdx>=SESSION_PROG.length-1) mc.classList.add("hot");
     } else if(won){
       mscEl.className="mscore mono note";
       scoreTxt="✓ "+plusEur(g);
