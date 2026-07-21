@@ -284,6 +284,20 @@
   .modal-cyc{background:var(--gold-soft);border:1px solid var(--gold-dim);border-radius:10px;padding:9px 11px;margin:10px 0 4px;font-size:12.5px;color:var(--gold-2);line-height:1.45}
   .modal-cyc b{color:var(--gold);font-weight:600}
   .modal-lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);display:block;margin-bottom:7px}
+  /* carte stratégie interactive sur l'accueil */
+  .strat-card{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin:14px 0}
+  .strat-head{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .strat-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+  .strat-lab{font-size:12px;color:var(--sage);flex:1;line-height:1.3}
+  .strat-card .strat-row input{width:96px;flex:none;margin:0;padding:8px 9px;font-size:14px;text-align:center;
+    background:var(--felt2);border:1px solid var(--line);border-radius:9px;color:var(--ivory);font-family:var(--mono)}
+  .strat-card .strat-row input:focus{outline:none;border-color:var(--gold-dim)}
+  .strat-figs{display:flex;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  .strat-fig{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:var(--felt2);border:1px solid var(--line);border-radius:9px;padding:7px 4px}
+  .strat-fig .sf-lab{font-size:8px;letter-spacing:.08em;color:var(--sage-dim)}
+  .strat-fig .sf-val{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--ivory);white-space:nowrap}
+  .strat-fig .sf-val.pos{color:var(--win)} .strat-fig .sf-val.neg{color:var(--lose)}
   .modal input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--ivory);font-family:var(--mono);font-size:20px;text-align:center}
   .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
   .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#0d0e10;font-size:15px;font-weight:700;margin-top:6px}
@@ -679,14 +693,22 @@
       <h3 class="modal-title">Nouvelle séance</h3>
       <div class="modal-sync" id="startSyncRow"><span class="modal-sync-lab">Sauvegarde cloud</span><span id="startSync" class="sync-pill off">● non configuré</span></div>
       <div class="modal-cyc" id="startCycInfo" style="display:none"></div>
-      <p class="modal-sub">Solde de départ et montante. Mise de base = solde ÷ 200, arrondie au palier de 0,50 €, minimum 1 € (1,00 € à 200 €, 1,50 € à 300 €…). Take-profit ≈ 5 % du solde (arrondi supérieur, modifiable) · Stop-loss = 25 % du solde (auto).</p>
+
       <label class="modal-lab">Solde de départ (€)</label>
       <input type="number" id="startSolde" inputmode="decimal" step="1" value="200">
       <div class="modal-mise" id="startMise">Mise de base : 1,00 €</div>
 
-      <div class="tp-row">
-        <div><label class="modal-lab">Take-profit (auto)</label><input type="number" id="startTP" inputmode="decimal" step="1" value="10" readonly></div>
-        <div><label class="modal-lab">Stop-loss (auto)</label><input type="number" id="startSL" inputmode="decimal" step="1" value="-50" readonly></div>
+      <div class="strat-card">
+        <div class="strat-head">Stratégie</div>
+        <div class="strat-row">
+          <label class="strat-lab" for="startProg">Montante de session</label>
+          <input type="text" id="startProg" inputmode="text" value="1-2-3-5" placeholder="1-2-3-5">
+        </div>
+        <div class="strat-row">
+          <label class="strat-lab" for="startObj">Objectif de cycle (× mise départ)</label>
+          <input type="number" id="startObj" inputmode="decimal" step="1" min="1" value="9">
+        </div>
+        <div class="strat-figs" id="startStratFigs"></div>
       </div>
 
       <button class="modal-resume" id="startResume" style="display:none">Reprendre la séance en cours</button>
@@ -814,11 +836,14 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleStartMise:S.cycleStartMise,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU}; }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,ogSlots:S.ogSlots,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleStartMise:S.cycleStartMise,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU,sessionProg:SESSION_PROG,cycleObjMult:CYCLE_OBJ_MULT}; }
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.ogSlots=(o.ogSlots!=null)?o.ogSlots:3; S.histFilter=o.histFilter||CUR_MONT;
   S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleStartMise=o.cycleStartMise||baseMise(o.cycleStartEur||200); S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
   S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1;
-  recalcCapital();
+  // restaurer la config réglable : progression de session et objectif de cycle
+  if(Array.isArray(o.sessionProg) && o.sessionProg.length) SESSION_PROG=o.sessionProg.filter(x=>x>0);
+  if(o.cycleObjMult>0) CYCLE_OBJ_MULT=o.cycleObjMult;
+  recalcCapital();                                  // le SL de session dépend de SESSION_PROG
   // en mode cycle, re-fixer mise jouée / TP partiel / SL depuis l'état du cycle restauré
   // (recalcCapital seul ne suffit pas : pieceEur et le SL fixe doivent suivre cycleU)
   if(S.cycleOn && S.cycleObjEur>0) configureSessionFromCycle();
@@ -1322,7 +1347,9 @@ function renderHistory(){
 }
 function openStartModal(){
   $("startSolde").value=S.capitalEur||200;
-  $("startTP").value=S.tpFinal; $("startSL").value=S.sl; updateStartMise(); updateSyncUI();
+  if($("startProg")) $("startProg").value=SESSION_PROG.join("-");
+  if($("startObj")) $("startObj").value=CYCLE_OBJ_MULT;
+  updateStartMise(); updateSyncUI();
   const has=S.spins&&S.spins.length>0;
   const rb=$("startResume"); rb.style.display=has?"":"none";
   if(has) rb.textContent="Reprendre la séance en cours ("+S.spins.length+" n°)";
@@ -1344,13 +1371,27 @@ function openStartModal(){
   $("startModal").style.display="flex";
 }
 function closeStartModal(){ $("startModal").style.display="none"; }
-function updateStartMise(){ const v=Math.max(0,parseFloat($("startSolde").value)||0);
+function updateStartMise(){
+  const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v>0){
-    const p=baseMise(v), nbP=v/p, sl=-round2(nbP*SL_PCT), tp=Math.max(1,Math.ceil(nbP*TP_PCT - 1e-9));
-    $("startMise").textContent="Mise de base : "+fmtEur2(p)+" · "+Math.round(nbP)+" pièces · TP +"+tp+" ("+fmtEur2(tp*p)+") · SL "+Math.round(sl)+" ("+fmtEur2(Math.abs(sl)*p)+")";
-    $("startSL").value=Math.round(sl);
-    $("startTP").value=tp;
-  } else { $("startMise").textContent="Mise de base : —"; $("startSL").value=""; $("startTP").value=""; }
+    const p=baseMise(v);
+    $("startMise").textContent="Mise de base : "+fmtEur2(p)+" · "+Math.round(v/p)+" pièces";
+  } else {
+    $("startMise").textContent="Mise de base : —";
+  }
+  updateStratFigs();
+}
+// Récapitule la stratégie active en euros, d'après le solde de départ et la config éditable.
+function updateStratFigs(){
+  const el=$("startStratFigs"); if(!el) return;
+  const v=Math.max(0,parseFloat($("startSolde").value)||0);
+  const p=v>0?baseMise(v):1;                       // mise de base (= mise de départ du cycle)
+  const slPieces=SESSION_PROG.reduce((a,b)=>a+b,0);// SL session = somme des paliers
+  const objMult=Math.max(1,parseInt($("startObj")&&$("startObj").value,10)||CYCLE_OBJ_MULT);
+  el.innerHTML=
+    `<div class="strat-fig"><span class="sf-lab">TP SÉANCE</span><span class="sf-val pos">+${fmtEurC(SESSION_TP*p)}</span></div>`
+   +`<div class="strat-fig"><span class="sf-lab">SL SÉANCE</span><span class="sf-val neg">−${fmtEurC(slPieces*p)}</span></div>`
+   +`<div class="strat-fig"><span class="sf-lab">OBJ. CYCLE</span><span class="sf-val">+${fmtEurC(objMult*p)}</span></div>`;
 }
 // Reprendre le cycle Triple S sur une PISTE NEUVE : la table de roulette a tourné pendant
 // l'interruption, on repart donc sur des numéros vierges, mais le cycle (cumul, mise de base,
@@ -1369,8 +1410,12 @@ async function startNewSession(){
   if(cycleEnCours){
     if(!await ask("Repartir un nouveau cycle ?","Le cycle Triple S en cours (cumul "+plusEur(S.cycleCumEur)+" / "+fmtEur2(S.cycleObjEur)+", mise "+fmtEur2(S.cycleU||S.cycleBaseEur)+") sera abandonné et repart de zéro. Pour le garder, choisis plutôt « Reprendre ».","Nouveau cycle",true)) return;
   }
+  // appliquer la config choisie sur l'accueil
+  const parts=($("startProg").value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
+  if(parts.length){ SESSION_PROG=parts; }
+  const objM=Math.max(1,parseInt($("startObj").value,10)||CYCLE_OBJ_MULT); CYCLE_OBJ_MULT=objM;
   S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
-  if(S.cycleOn){ startCycle(); } else { S.tpFinal=parseFloat($("startTP").value)||autoTP(); }
+  if(S.cycleOn){ startCycle(); } else { S.tpFinal=SESSION_TP; }
 
   setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
   replay(false); save(); render(); closeStartModal();
@@ -1401,7 +1446,7 @@ function continueSession(){
      le dépassement et on repart mise de base 1€, objectif recalculé sur le nouveau solde.
    Tous les montants sont proportionnels au solde de DÉPART DU CYCLE, figés jusqu'au reset. */
 const CYCLE_PART_MULT=SESSION_TP; // TP partiel de session = SESSION_TP × mise de départ (aligné session)
-const CYCLE_OBJ_MULT=9;       // TP cycle = 9 × mise de départ (= 3 sessions pleines, multiple de 3)
+let CYCLE_OBJ_MULT=9;   // réglable depuis l'accueil (× mise de départ)       // TP cycle = 9 × mise de départ (= 3 sessions pleines, multiple de 3)
 const CYCLE_CAP_MULT=20;      // plafond de mise = 20 × mise de départ
 
 // démarre un nouveau cycle sur le solde courant. La mise de DÉPART découle du solde (baseMise) et
@@ -1723,6 +1768,13 @@ $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ closeStartModal(); });
 $("startResumeCycle").addEventListener("click",resumeCycleFreshTrack);
 $("startSolde").addEventListener("input",updateStartMise);
+$("startProg").addEventListener("input",()=>{
+  const parts=($("startProg").value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
+  if(parts.length){ SESSION_PROG=parts; }
+  updateStratFigs();
+});
+$("startProg").addEventListener("change",()=>{ $("startProg").value=SESSION_PROG.join("-"); if($("inProg"))$("inProg").value=SESSION_PROG.join("-"); recalcCapital(); updateStratFigs(); });
+$("startObj").addEventListener("input",updateStratFigs);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
 $("histBody").addEventListener("click",async e=>{
   const b=e.target.closest("[data-mig]"); if(!b) return;
