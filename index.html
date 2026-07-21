@@ -331,16 +331,17 @@
   .cyc-box{background:rgba(232,230,225,.03);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px}
   .cyc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
   .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
-  .cyc-mise{font-size:11px;color:var(--ivory);font-weight:500}
   .cyc-bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:5px}
   .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
   .cyc-fig{font-size:10.5px;color:var(--sage-dim);font-variant-numeric:tabular-nums}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
-  /* trois repères : TP partiel · SL · TP cycle */
-  .cyc-tps{display:flex;justify-content:space-between;gap:4px;margin-top:6px;padding-top:6px;
-    border-top:1px solid var(--line);font-size:9px;color:var(--sage-dim);flex-wrap:wrap}
-  .cyc-tps b{font-weight:600;font-size:9.5px}
-  .cyc-tps b.pos{color:var(--win)} .cyc-tps b.neg{color:var(--lose)} .cyc-tps b{color:var(--ivory)}
+  /* trois repères clés bien lisibles : MISE · TP · SL */
+  .cyc-keys{display:flex;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
+  .cyc-key{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;
+    background:var(--felt2);border:1px solid var(--line);border-radius:8px;padding:6px 3px}
+  .cyc-key .ck-lab{font-size:8px;letter-spacing:.1em;color:var(--sage-dim)}
+  .cyc-key .ck-val{font-size:11.5px;font-weight:600;color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cyc-key .ck-val.pos{color:var(--win)} .cyc-key .ck-val.neg{color:var(--lose)}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -400,13 +401,16 @@
     body.cycle-on #leftcol #mini{flex:1 1 0;min-height:0;grid-template-rows:repeat(3,minmax(0,1fr))}
     body.cycle-on #leftcol #mini .mcell{min-height:0;overflow:hidden}
     body.cycle-on #leftcol .mont-box{flex:0 0 auto}
-    /* carte cycle plus plate : mise sur une ligne, cumul compact, repères serrés */
+    /* carte cycle plus plate en colonne étroite */
     body.cycle-on #leftcol .cyc-box{padding:5px 8px;margin-bottom:5px}
     body.cycle-on #leftcol .cyc-top{margin-bottom:3px}
-    body.cycle-on #leftcol .cyc-mise{font-size:10px}
     body.cycle-on #leftcol .cyc-bar{height:3px;margin-bottom:3px}
-    body.cycle-on #leftcol .cyc-fig{font-size:9px}
-    body.cycle-on #leftcol .cyc-tps{margin-top:4px;padding-top:4px}
+    body.cycle-on #leftcol .cyc-fig{font-size:9.5px}
+    body.cycle-on #leftcol .cyc-keys{flex-direction:column;margin-top:5px;padding-top:5px;gap:3px}
+    body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:5px 8px}
+    body.cycle-on #leftcol .cyc-key .ck-lab{font-size:8.5px}
+    body.cycle-on #leftcol .cyc-key .ck-val{font-size:12.5px}
+    body.cycle-on #leftcol .cyc-key .ck-val{font-size:10.5px}
     /* cartes de détection compactées en mode cycle pour laisser la place au solde en bas de colonne */
     body.cycle-on #leftcol .mcell{padding:6px 8px}
     body.cycle-on #leftcol .mcell .mname{font-size:11px;min-height:0}
@@ -445,12 +449,12 @@
     #leftcol .cyc-box{padding:6px 8px;margin-bottom:6px}
     #leftcol .cyc-top{margin-bottom:4px}
     #leftcol .cyc-lab{font-size:8px}
-    #leftcol .cyc-mise{font-size:10.5px}
     #leftcol .cyc-bar{height:3px;margin-bottom:4px}
     #leftcol .cyc-fig{font-size:9.5px}
-    #leftcol .cyc-tps{gap:2px;margin-top:4px;padding-top:4px;font-size:8px;flex-wrap:nowrap}
-    #leftcol .cyc-tps span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #leftcol .cyc-tps b{font-size:8.5px}
+    #leftcol .cyc-keys{flex-direction:column;gap:3px;margin-top:5px;padding-top:5px}
+    #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:4px 8px}
+    #leftcol .cyc-key .ck-val{font-size:12px}
+    #leftcol .cyc-key .ck-lab{font-size:8px}
     #leftcol .mb-lab{margin-bottom:6px}
     #leftcol .sb-solde{font-size:17px}
     #leftcol .sb-pnl{font-size:13px}
@@ -578,7 +582,7 @@
 </head>
 <body>
   <header>
-    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono">Oscar's Grind</span></div>
+    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono">Martingale 1-2-3-5</span></div>
   </header>
 
   <!-- BANNIÈRE FIN DE SÉANCE (TP / SL) -->
@@ -645,7 +649,7 @@
     <div class="set-body">
       <div class="field"><label>Take-profit<span class="hint">calculé automatiquement · verrouillé</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1" readonly></div>
       <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
-      <div class="field"><label>Montantes<span class="hint">pool Oscar partagé · 1 à 3</span></label><input type="number" id="inSlots" inputmode="decimal" value="3" step="1" min="1" max="3"></div>
+      <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-3-5" placeholder="1-2-3-5"></div>
       <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
         <select id="inCycle"><option value="on">Triple S (automatique)</option><option value="off">Manuelle (TP/SL %)</option></select></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
@@ -665,7 +669,7 @@
   </details>
 
   <footer>
-    Suivi personnel de la méthode « Crésus » (N. Fijeac) · Oscar's Grind · 3 chances simples en parallèle.
+    Suivi personnel de la méthode « Crésus » (N. Fijeac) · Martingale 1-2-3-5 par chance · cycle Triple S.
     Aucune montante ne change l'avantage de la maison — fixe-toi une limite.
   </footer>
 
@@ -748,20 +752,20 @@
 <script>
 "use strict";
 const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-const OG_TARGET=1;                  // Oscar's Grind : palier de base d'un cycle (+1)
+// ─── MONTANTE DE SESSION ───
+// Chaque chance simple (R/N, P/I, M/P) porte SA propre montante, indépendante des deux autres.
+// Elle avance d'un palier à chaque perte, revient au palier 0 à chaque gain. La mise = SESSION_PROG[idx].
+// Le SL de session est DÉRIVÉ de la progression : somme de tous les paliers (une montante complète
+// ratée). Changer la progression met à jour le SL automatiquement (1-2-3-5 → 11 ; 1-2-5-10 → 18).
+let SESSION_PROG=[1,2,3,5];
+const sessionSL=()=>SESSION_PROG.reduce((a,b)=>a+b,0);   // pertes cumulées d'une montante pleine
+const SESSION_TP=3;                                       // objectif de session, en pièces
+const OG_TARGET=1;                  // (héritage) plus utilisé par la nouvelle montante
 // Palier dynamique : un cycle qui a creusé doit rapporter davantage avant d'être soldé.
-// +1 de plus par tranche de 5 pièces de creux — on se base sur le PLUS BAS atteint (sl.low)
-// et non sur le cumul courant, sinon l'objectif redescendrait au fur et à mesure qu'on remonte.
-function slotTarget(sl){
-  const d=Math.max(0, -(sl.low!=null?sl.low:0));
-  const t = d<5 ? OG_TARGET : OG_TARGET+Math.floor((d-1e-9)/5);
-  // plafond : jamais plus que le TP de séance — au-delà, le cycle ne pourrait plus se refermer
-  return Math.max(OG_TARGET, Math.min(t, S.tpFinal||OG_TARGET));
-}
 const CUR_MONT="og";                // montante de l'app (les sessions sont étiquetées avec)
 // libellés pour l'historique : les anciennes montantes n'existent plus dans l'app,
 // mais des sessions enregistrées avant leur retrait peuvent encore les référencer
-const MONT_LABEL={og:"Oscar",ts:"Triple S",m4:"Martingale",cresus:"Crésus"};
+const MONT_LABEL={og:"Martingale 1-2-3-5",ts:"Triple S",m4:"Martingale",cresus:"Crésus"};
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -783,75 +787,21 @@ let S={
   tpFinal:10, sl:-50, ctx:0, ogSlots:3, histFilter:CUR_MONT,
   cycleOn:true, cycleStartEur:0, cycleStartMise:1, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1
 };
-const OG_SLOTS_MAX=3;   // Oscar : pool de montantes, détachées des chances (nombre réglable : S.ogSlots)
-function freshCouple(){ return {pMise:0,pBilan:0,slot:null,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
-function freshSlots(){ S.slots=[]; const k=Math.max(1,Math.min(OG_SLOTS_MAX,S.ogSlots||3)); for(let i=0;i<k;i++) S.slots.push({cumul:0,bet:1,busy:false,low:0}); }
-function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); freshSlots(); }
-// Attribution : on reprend en priorité le cycle le plus abîmé (cumul le plus négatif),
-// pour le réparer avant d'en ouvrir un neuf. Sinon un slot vierge. Aucun libre → signal ignoré.
-// Priorité d'attribution : la montante la plus ÉLOIGNÉE de son objectif (reste = palier − cumul)
-// passe en premier — c'est celle qui a le plus de chemin à faire. À reste égal, on prend celle
-// dont l'OBJECTIF est le plus haut (cycle le plus abîmé). Renvoie <0 si x doit être servi avant y.
-function slotPriority(x,y){
-  const sx=S.slots[x], sy=S.slots[y];
-  const rx=slotTarget(sx)-sx.cumul, ry=slotTarget(sy)-sy.cumul;
-  return (ry-rx) || (slotTarget(sy)-slotTarget(sx)) || (sx.low-sy.low);
-}
-function grabSlot(C){
-  if(C.slot!=null) return C.slot;
-  const free=[]; for(let i=0;i<S.slots.length;i++) if(!S.slots[i].busy) free.push(i);
-  if(!free.length) return null;
-  // priorité à la montante la plus basse ; à cumul égal, la plus creusée (low) passe devant
-  free.sort(slotPriority);
-  const i=free[0]; S.slots[i].busy=true; C.slot=i; return i;
-}
-function freeSlot(C){ if(C.slot!=null){ S.slots[C.slot].busy=false; C.slot=null; } }
-// Attribution en 2e passe : on attend que TOUTES les chances aient résolu leur coup avant de
-// distribuer les montantes. Une montante libérée par un gain sur ce même coup redevient donc
-// disponible pour une chance qui passe en 7-6 maintenant — au lieu d'en ouvrir une neuve.
-// (Sans cette passe séparée, le résultat dépendrait de l'ordre R/N → P/I → M/P.)
-function assignSlots(){
-  // Toutes les chances qui vont miser prennent les montantes prioritaires (voir slotPriority :
-  // la plus éloignée de son objectif d'abord). Mobilisables = les libres + celles des chances qui
-  // misent ce coup-ci : une chance déjà engagée TROQUE la sienne contre une montante prioritaire
-  // restée libre. Une montante est un compte, pas une propriété : on répare d'abord celle qui a le
-  // plus de chemin. Une chance engagée ne retombe jamais sur une montante neuve (reste = +1, la
-  // plus faible priorité), elle ne peut que passer sur un cycle plus abîmé.
-  // Les montantes des chances en observation (après une perte) ne sont pas touchées : elles
-  // restent à leur chance, conformément à la règle « perte → pas de changement ».
-  const jouent=COUPLES.filter(ch=>S.cpl[ch].sig.phase==="play");
-  if(!jouent.length) return;
-  const dispo=[];
-  for(let i=0;i<S.slots.length;i++){
-    const detenteur=COUPLES.find(ch=>S.cpl[ch].slot===i);
-    if(!detenteur || jouent.includes(detenteur)) dispo.push(i);
-  }
-  dispo.sort(slotPriority);   // montantes : la plus éloignée de son objectif en tête
-  // Signaux : la chance allée LE PLUS LOIN dans le déséquilibre passe en premier. « Plus loin » =
-  // la profondeur atteinte, 6-6→7-6→7-7→8-7→8-8… soit le total des deux compteurs (acc.a+acc.b).
-  // On apparie ainsi le signal le plus abîmé avec la montante la plus abîmée.
-  const profond=jouent.slice().sort((x,y)=>{
-    const C=S.cpl, dx=C[x].acc.a+C[x].acc.b, dy=C[y].acc.a+C[y].acc.b;
-    return dy-dx;
-  });
-  for(const ch of profond) freeSlot(S.cpl[ch]);
-  let k=0;
-  for(const ch of profond){
-    const C=S.cpl[ch];
-    if(k>=dispo.length){ C.sig={phase:"none",side:null,obs:null}; continue; }  // pool épuisé
-    const i=dispo[k++]; S.slots[i].busy=true; C.slot=i;
-  }
-}
+
+// ─── Montante 1-2-3-5 par chance : plus de pool partagé, plus d'attribution dynamique. ───
+// La mise d'une chance = SESSION_PROG[son mIdx]. assignSlots devient inutile (chaque chance a la sienne).
+function assignSlots(){ /* la montante appartient à la chance : rien à distribuer */ }
+
 
 const SL_PCT=0.25;                                                     // stop-loss = 25 % du solde
 const TP_PCT=0.05;                                                     // take-profit = 5 % du solde, arrondi au supérieur
 function recalcCapital(){
   S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0;
-  // En mode cycle, le SL est fixé en pièces par le partiel (±CYCLE_PART_TP) et ne doit PAS être
-  // ré-dérivé du % du capital, sinon chaque recalcul l'écrase et la séance ne s'arrête jamais.
-  if(!S.cycleOn) S.sl = -round2(S.capital*SL_PCT);
+  // Le SL de session est fixé en pièces par la montante 1-2-3-5 (somme des paliers), en mode cycle
+  // comme en manuel — il ne doit pas être ré-dérivé d'un % du capital (sinon chaque recalcul l'écrase).
+  if(!S.cycleOn) S.sl = -sessionSL();
 }
-function autoTP(){ return Math.max(1, Math.ceil(S.capital*TP_PCT - 1e-9)); }  // arrondi sup., en pièces entières (palier = 1 pièce = mise de base)
+function autoTP(){ return SESSION_TP; }   // TP de session = objectif de la montante (en pièces)
 function baseMise(soldeEur){ return Math.max(1, round2(Math.floor((soldeEur/200)/0.5)*0.5)); } // solde ÷ 200, palier de 0,50 €, minimum 1 €
 const Store={
   async get(k){
@@ -943,102 +893,41 @@ async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
 function countsUpto(ch,idx){ let a=0,b=0,c=0; for(let i=idx;i>=0&&c<12;i--){ const n=S.spins[i]; if(n===0)continue; (memb(n,ch)==="a")?a++:b++; c++; } return [a,b]; }
+// chaque chance porte sa propre montante 1-2-3-5 : mIdx = palier courant (0 = mise de base)
+function freshCouple(){ return {pMise:0,pBilan:0,mIdx:0,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
+function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 // même fenêtre que countsUpto, mais détaillée : les 12 dernières boules, plus ancienne en tête
 function windowUpto(ch,idx){ const out=[]; for(let i=idx;i>=0&&out.length<12;i--){ const n=S.spins[i]; if(n===0)continue; out.push(memb(n,ch)); } return out.reverse(); }
 function balancedUpto(ch,idx){ const[a,b]=countsUpto(ch,idx); return a===6&&b===6; }
 const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
 
-/* ---- moteur par couple : Oscar's Grind, pool de montantes partagées ---- */
+/* ---- moteur par couple : montante 1-2-3-5 indépendante par chance ---- */
 function stakeC(C){
-  // mise plafonnée par le palier du cycle ET par ce qu'il reste à faire pour le TP de séance
-  const sl = C.slot!=null ? S.slots[C.slot] : null; if(!sl) return 1;
-  const pnl = S.solde-S.capital;
-  const capTP = S.tpFinal-pnl;                     // plafond de séance, appliqué en dernier
-  const reste = slotTarget(sl)-sl.cumul;          // R : ce qu'il reste à gagner pour boucler le cycle
-  // SCINDAGE : raisonné sur le CYCLE SEUL (sans le plafond de séance, qui fausserait la comparaison).
-  // Si boucler d'un coup (miser R) laisserait ensuite une mise ridicule — R > 2·bet — on coupe en
-  // deux et on joue la PLUS GROSSE moitié d'abord (R=15 → 8 puis 7). Un gain ramène R à floor(R/2),
-  // soldé au coup suivant. Une perte : bet inchangé, retour Oscar classique. Le TP plafonne à la fin.
-  let m;
-  // SCINDAGE — on coupe l'effort en deux quand jouer la mise Oscar pleine bouclerait presque, mais
-  // laisserait un résidu ridicule : reste compris entre bet (exclu) et 2·bet (exclu). On joue alors
-  // la PLUS GROSSE moitié d'abord (reste 15 → 8 puis 7). Hors de cette fenêtre, Oscar normal :
-  //   reste ≤ bet  → on mise le reste, ça boucle pile ;
-  //   reste ≥ 2·bet → un second coup plein a du sens, pas besoin de scinder.
-  if(sl.bet < reste && reste < 2*sl.bet) m = Math.ceil(reste/2);
-  else                                   m = Math.min(sl.bet, reste);
-  return Math.max(1, Math.min(m, capTP));
+  // mise = palier courant de la montante de CETTE chance (1-2-3-5), en pièces.
+  return SESSION_PROG[Math.min(C.mIdx, SESSION_PROG.length-1)];
 }
-// Équilibrage de 2 OU 3 montantes jouant le même coup. But : éviter une mise très haute face à
-// une très basse, en gardant le total constant. On répartit le plus également possible ; les parts
-// hautes restantes (division non entière) vont aux montantes les plus PROFONDES (low le plus bas).
-// On mémorise pour chacune sa mise VOULUE (want, avant équilibrage) : si une montante est gonflée
-// au-dessus de son besoin et gagne, le surplus est reversé au cumul de la plus profonde des AUTRES
-// (voir advanceC). À 3, plusieurs peuvent déborder — chaque surplus est traité indépendamment.
-function balancePending(){
-  const act=COUPLES.filter(ch=>S.cpl[ch].pending>0);
-  for(const ch of COUPLES){ const C=S.cpl[ch]; C.want=C.pending; C.balPeers=null; }
-  if(act.length<2) return;                         // 0 ou 1 : rien à équilibrer
-  const lowOf=ch=>S.slots[S.cpl[ch].slot].low;
-  const total=act.reduce((s,ch)=>s+S.cpl[ch].pending,0);
-  const k=act.length, base=Math.floor(total/k), rem=total-base*k;
-  // les 'rem' parts supplémentaires aux plus profondes (low croissant = plus profond d'abord)
-  const byDepth=act.slice().sort((x,y)=> lowOf(x)-lowOf(y) || S.cpl[y].pending-S.cpl[x].pending);
-  for(const ch of act) S.cpl[ch].pending=base;
-  for(let i=0;i<rem;i++) S.cpl[byDepth[i]].pending++;
-  // chaque montante retient la liste de ses partenaires, pour router un éventuel surplus
-  for(const ch of act) S.cpl[ch].balPeers=act.filter(o=>o!==ch);
-}
+function balancePending(){ /* montantes indépendantes : aucun équilibrage entre chances */ }
 function phaseLabel(C){
-  const sl = C.slot!=null ? S.slots[C.slot] : null;
-  return sl ? ("Oscar M"+(C.slot+1)+" · cumul "+(sl.cumul>0?"+":"")+round2(sl.cumul)+" / +"+slotTarget(sl)) : "Oscar · en veille";
+  const b=SESSION_PROG[Math.min(C.mIdx,SESSION_PROG.length-1)];
+  return "Montante palier "+(C.mIdx+1)+"/"+SESSION_PROG.length+" · mise "+b;
 }
+// Résolution d'un coup joué par une chance. Gain → la montante revient au palier 0.
+// Perte → palier suivant. La mise jouée est SESSION_PROG[mIdx] (figée dans C.pending avant la boule).
 function advanceC(ch,C,result){
-  const sl=S.slots[C.slot];
   const stake=(C.pending>0)?C.pending:stakeC(C); const ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake;
-  // Registre de la montante. La mise réellement jouée peut différer de sl.bet : rabotée par le
-  // plafond « palier − cumul », ou gonflée par l'équilibrage entre chances. Le registre suit
-  // toujours la PLUS PETITE des deux — sinon il conserve une valeur jamais jouée, et la mise
-  // remonte dès que le plafond se relâche : la mise augmenterait après une perte.
-  const own=Math.min(sl.bet, stake);
   if(result==="G"){
     S.solde+=stake; C.pBilan+=stake;
-    // Surplus d'équilibrage : si cette montante a été gonflée au-dessus de son besoin (want) et
-    // gagne, elle ne crédite son cumul que jusqu'à want ; le surplus va au cumul du partenaire.
-    // La pièce n'est pas créée — elle a bien été misée ici et gagnée, on la réaffecte, c'est tout.
-    const want=(C.want!=null)?C.want:stake;
-    const surplus=(stake>want)?(stake-want):0;
-    sl.cumul+=stake-surplus;
-    if(surplus>0 && C.balPeers && C.balPeers.length){
-      // vers la plus profonde des AUTRES montantes encore en jeu (slot non rendu)
-      let dest=null;
-      for(const o of C.balPeers){ const P=S.cpl[o];
-        if(P&&P.slot!=null){ const ps=S.slots[P.slot];
-          if(!dest || ps.low<S.slots[S.cpl[dest].slot].low) dest=o; } }
-      if(dest){
-        const P=S.cpl[dest], ps=S.slots[P.slot];
-        ps.cumul+=surplus; ps.low=Math.min(ps.low,ps.cumul);
-        // rare : si le surplus reçu porte le partenaire à son palier, on le boucle proprement
-        if(ps.cumul>=slotTarget(ps)-1e-9){
-          ps.cumul=0; ps.bet=1; ps.low=0;
-          freeSlot(P); P.sig={phase:"none",side:null,obs:null}; P.flash="won";
-          if(EMIT) toast(CLABELS[dest].join("/")+" cycle bouclé (report)");
-        }
-      }
-      else sl.cumul+=surplus;                       // tous les partenaires déjà bouclés : on garde la pièce
-    }
+    C.mIdx=0;                                    // gain : retour au palier de base
+  } else {
+    S.solde-=stake; C.pBilan-=stake;
+    C.mIdx++;                                    // perte : palier suivant
   }
-  else { S.solde-=stake; C.pBilan-=stake; sl.cumul-=stake; sl.low=Math.min(sl.low,sl.cumul); }
   S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
-  if(sl.cumul>=slotTarget(sl)-1e-9){                   // palier atteint : la montante est rendue au pool
-    const b=sl.cumul; sl.cumul=0; sl.bet=1; sl.low=0; C.pMise=0; C.pBilan=0; freeSlot(C);
-    C.flash="won"; C.lastGain=b; mt(CLABELS[ch].join("/")+" cycle "+plusEur(b)); return "won";
-  }
-  if(result==="G"){ sl.bet=own+1; freeSlot(C); return "wait"; }   // gain : +1 sur la mise jouée
-  sl.bet=own;                                                      // perte : la mise ne monte JAMAIS
-  return "obs";
+  if(result==="G"){ return "wait"; }             // gain : on repart en observation
+  return "obs";                                  // perte : observation obligatoire avant de rejouer
 }
+
 function setNextState(C){
   // règle Crésus : on joue le côté EN AVANCE ; on n'attend une boule d'observation
   // que lorsque le compte est à égalité (aucun côté en avance).
@@ -1066,9 +955,8 @@ function zeroC(ch,C){
   const stake=(C.pending>0)?C.pending:stakeC(C), ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
   S.log.push({ch,r:"Z",amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
-  const sl=S.slots[C.slot];
-  if(sl){ sl.cumul-=stake; sl.low=Math.min(sl.low,sl.cumul); sl.bet=Math.min(sl.bet,stake); }  // perte : jamais de hausse
-  mt(CLABELS[ch].join("/")+" · zéro");                 // perte : mise inchangée
+  C.mIdx++;                                            // zéro = perte : palier suivant
+  mt(CLABELS[ch].join("/")+" · zéro");
   setNextState(C);
 }
 
@@ -1173,6 +1061,8 @@ function buildPad(){ const g=$("numGrid");
 
 /* ---- durées ---- */
 const fmtEur2=v=>v.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+// format compact pour les petites cases : pas de décimales si le montant est rond (22 € au lieu de 22,00 €)
+const fmtEurC=v=>{const r=Math.round(v*100)/100; return (Number.isInteger(r)?String(r):r.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}))+" €";};
 function fmtDur(ms){ const s=Math.floor(ms/1000), hh=Math.floor(s/3600), mm=Math.floor((s%3600)/60), ss=s%60;
   return (hh>0?String(hh).padStart(2,"0")+":":"")+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0"); }
 
@@ -1492,14 +1382,14 @@ function continueSession(){
 
 /* ═══════════════════ GESTION DE CYCLE « TRIPLE S » (optionnelle) ═══════════════════
    Trois étages emboîtés :
-   • le moteur interne d'une séance reste Oscar's Grind sur les montantes (inchangé) ;
+   • chaque séance se joue à la montante 1-2-3-5 (une par chance simple) ;
    • chaque séance vise un partiel (TP/SL fixes en pièces) ; gagnée/perdue, elle fait
      progresser la mise de base selon Triple S : +1€ sur gain, +2€ sur perte ;
    • le cycle vise un objectif global (% du solde de départ, figé) ; atteint, on encaisse
      le dépassement et on repart mise de base 1€, objectif recalculé sur le nouveau solde.
    Tous les montants sont proportionnels au solde de DÉPART DU CYCLE, figés jusqu'au reset. */
-const CYCLE_PART_MULT=5;      // TP partiel = 5 × mise de départ du cycle
-const CYCLE_OBJ_MULT=15;      // TP cycle   = 15 × mise de départ (= 3 partiels pleins, jamais de résidu)
+const CYCLE_PART_MULT=SESSION_TP; // TP partiel de session = SESSION_TP × mise de départ (aligné session)
+const CYCLE_OBJ_MULT=9;       // TP cycle = 9 × mise de départ (= 3 sessions pleines, multiple de 3)
 const CYCLE_CAP_MULT=20;      // plafond de mise = 20 × mise de départ
 
 // démarre un nouveau cycle sur le solde courant. La mise de DÉPART découle du solde (baseMise) et
@@ -1518,41 +1408,44 @@ function startCycle(){
 }
 // règle la séance courante d'après l'état du cycle : mise = u (plafonnée / réduite pour finir pile)
 function configureSessionFromCycle(){
-  // La mise jouée est TOUJOURS la mise de base de la progression Triple S (donc un multiple de la
-  // mise de départ), seulement bornée par le plafond. On NE bricole PAS la mise pour tomber sur
-  // l'objectif — ça casserait la séquence +1/+2 et les multiples.
+  const startMise=S.cycleStartMise||baseMise(S.cycleStartEur||S.capitalEur);
+  const resteEur=S.cycleObjEur-S.cycleCumEur;             // ce qu'il reste à gagner pour boucler
+  // Mise par défaut = mise de base de la progression Triple S, bornée par le plafond.
   let u=Math.min(S.cycleBaseEur, S.cycleCapEur);
+  // ─── Ajustement de fin de cycle ───
+  // Une session gagnante rapporte au plus SESSION_TP pièces (× mise). Si une session pleine à la
+  // mise Triple S peut DÉJÀ boucler le cycle (SESSION_TP × u ≥ reste), inutile de miser autant :
+  // on prend la PLUS PETITE mise (multiple de la mise de départ) telle que SESSION_TP × mise ≥ reste.
+  // La mise peut ainsi DESCENDRE (reste 20€, TP×5 → mise 4€), pour ne risquer que le nécessaire.
+  if(SESSION_TP*u >= resteEur - 1e-9){
+    const needed = resteEur/SESSION_TP;                   // mise minimale en € pour couvrir le reste
+    const steps  = Math.max(1, Math.ceil(needed/startMise - 1e-9));
+    u = Math.min(u, steps*startMise);                     // on ne monte jamais, on peut descendre
+  }
   S.cycleU=round2(u);
   S.pieceEur=S.cycleU; recalcCapital();
-  // Le partiel vaut CYCLE_PART_MULT pièces (= CYCLE_PART_MULT × mise en €). Si ce gain dépasserait
-  // ce qu'il reste pour boucler le cycle, on RÉDUIT le TP (en pièces), pas la mise : ainsi la séance
-  // gagne juste ce qu'il faut pour finir pile, sans dépasser, et la mise reste un multiple propre.
-  const resteEur=S.cycleObjEur-S.cycleCumEur;             // ce qu'il reste à gagner
-  let tp=CYCLE_PART_MULT;                                  // partiel plein = 5 pièces
-  if(tp*S.cycleU > resteEur){                             // le partiel plein dépasserait l'objectif
-    // on veut gagner AU PLUS resteEur. On réduit le TP (pièces), mise inchangée, en arrondissant
-    // vers le BAS pour ne jamais dépasser l'objectif.
-    let tpN=Math.floor(resteEur/S.cycleU + 1e-9);
-    if(tpN>=1){
-      tp=tpN;                                             // TP réduit, mise conservée (multiple propre)
-    } else {
-      // reste plus petit qu'UNE mise : aucun TP entier ne tient sans dépasser. Dernier recours, on
-      // réduit la mise à hauteur exacte du reste (TP 1 pièce), pour finir pile. Seul cas où la mise bouge.
-      tp=1; S.cycleU=round2(Math.max(0.5, resteEur)); S.pieceEur=S.cycleU; recalcCapital();
-    }
-  }
+  // TP/SL de SESSION en pièces : le TP vaut SESSION_TP, le SL est dérivé de la montante 1-2-3-5.
+  // Sur le tout dernier pas, si SESSION_TP pièces dépasseraient le reste, on rabote le TP en pièces
+  // pour finir pile sans dépasser (mise déjà ajustée juste au-dessus).
+  let tp=SESSION_TP;
+  const restePieces=resteEur/S.cycleU;
+  if(tp > restePieces + 1e-9) tp=Math.max(1, Math.floor(restePieces+1e-9));
   S.tpFinal=tp;
-  S.sl=-CYCLE_PART_MULT;                                   // SL reste au partiel plein (ratio inchangé)
+  S.sl=-sessionSL();                                       // SL session = somme des paliers (dérivé)
 }
 // appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé.
 // gainEur est fourni par l'appelant (mesuré AVANT que le capital soit reporté), voir continueSession.
 function applyCycleSession(gainEur){
   if(gainEur==null) gainEur=round2((S.solde-S.capital)*S.pieceEur);
   S.cycleCumEur=round2(S.cycleCumEur+gainEur);
-  const step=S.cycleStartMise||1;                          // pas = 1 mise de départ (garde tout commensurable)
-  if(gainEur>0) S.cycleBaseEur=round2(S.cycleBaseEur+step); // Triple S : +1 mise sur gain
-  else          S.cycleBaseEur=round2(S.cycleBaseEur+2*step);// +2 mises sur perte
-  if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → on encaisse, reset
+  const step=S.cycleStartMise||1;                          // pas = 1 mise de départ (commensurable)
+  // La progression repart de la mise RÉELLEMENT jouée (S.cycleU) : si elle a été ajustée à la baisse
+  // en fin de cycle, une perte reprend le +2 depuis cette mise ajustée (règle validée), pas depuis
+  // une mise théorique. Gain → +1 mise de départ, perte → +2.
+  const played=S.cycleU||S.cycleBaseEur;
+  if(gainEur>0) S.cycleBaseEur=round2(played+step);
+  else          S.cycleBaseEur=round2(played+2*step);
+  if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → encaisse, reset
     if(EMIT) toast("Cycle bouclé "+plusEur(S.cycleCumEur)+" — nouveau cycle");
     startCycle();
   } else {
@@ -1566,14 +1459,14 @@ function openHist(ch){
   $("histTitle").textContent=CNAME[ch].toUpperCase();
   let cur;
   {
-    const sl=C.slot!=null?S.slots[C.slot]:null;
-    if(sl){
-      const tgt=slotTarget(sl), reste=round2(tgt-sl.cumul), nm=shownStake(C);
-      cur=`<div class="hist-cur">Oscar's Grind — <b>montante n°${C.slot+1}</b> sur ${S.slots.length}<br>cumul <b>${(sl.cumul>0?"+":"")+round2(sl.cumul)}</b> / +${tgt} · reste <b>${reste}</b> à gagner<br>prochaine mise <b>${eur(nm)}</b></div>`;
+    const idx=Math.min(C.mIdx, SESSION_PROG.length-1);
+    const bet=SESSION_PROG[idx];
+    const echelle=SESSION_PROG.map((v,k)=>k===idx?("<b>["+v+"]</b>"):v).join(" ");
+    const active=(C.sig.phase==="play"||C.sig.phase==="await");
+    if(active){
+      cur=`<div class="hist-cur">Montante 1-2-3-5 — palier <b>${idx+1}/${SESSION_PROG.length}</b><br>échelle ${echelle}<br>prochaine mise <b>${eur(bet)}</b></div>`;
     } else {
-      const libres=S.slots.filter(x=>!x.busy).length;
-      const etat=S.slots.map((x,k)=>"M"+(k+1)+" "+(x.busy?"occupée":"libre")+" (cumul "+(x.cumul>0?"+":"")+round2(x.cumul)+")").join(" · ");
-      cur=`<div class="hist-cur">Oscar's Grind — aucune montante en cours sur cette chance<br><b>${libres}</b> libre(s) sur ${S.slots.length}<br><span style="font-size:11px;color:var(--sage-dim)">${etat}</span></div>`;
+      cur=`<div class="hist-cur">Montante en veille — palier de base<br>échelle ${echelle}<br>mise de départ <b>${eur(SESSION_PROG[0])}</b></div>`;
     }
   }
   const sig = C.sig.phase==="play" ? ("à jouer maintenant : "+CLABELS[ch][C.sig.side==="a"?0:1].toUpperCase())
@@ -1673,28 +1566,20 @@ function render(){
     +`<div class="sb-stat"><span class="v">${eur(S.wagered)}</span><span class="k">misé</span></div>`;
 
   // état du pool : quelle chance occupe quelle montante, cumul et palier visé
-  const holder={}; for(const ch of COUPLES){ const k=S.cpl[ch].slot; if(k!=null) holder[k]=CID[ch]; }
   let cycHTML="";
   if(S.cycleOn){
     const pct=S.cycleObjEur>0?Math.max(0,Math.min(100,S.cycleCumEur/S.cycleObjEur*100)):0;
     cycHTML=`<div class="cyc-box">
-      <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-mise mono">mise ${fmtEur2(S.cycleU||S.cycleBaseEur)}</span></div>
+      <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-fig mono"><span class="${S.cycleCumEur>=0?'pos':'neg'}">${(S.cycleCumEur>=0?'+':'−')+fmtEur2(Math.abs(S.cycleCumEur)).replace(' €','')}</span> / +${fmtEur2(S.cycleObjEur).replace(' €','')} €</span></div>
       <div class="cyc-bar"><div class="cyc-fill" style="width:${pct}%"></div></div>
-      <div class="cyc-fig mono"><span class="${S.cycleCumEur>=0?'pos':'neg'}">${(S.cycleCumEur>=0?'+':'−')+fmtEur2(Math.abs(S.cycleCumEur)).replace(' €','')}</span> / +${fmtEur2(S.cycleObjEur).replace(' €','')} €</div>
-      <div class="cyc-tps mono">
-        <span title="objectif partiel de la séance">TP séance <b class="pos">+${fmtEur2(S.tpFinal*S.pieceEur)}</b></span>
-        <span title="stop-loss de la séance">SL <b class="neg">−${fmtEur2(Math.abs(S.sl)*S.pieceEur)}</b></span>
-        <span title="objectif total du cycle">TP cycle <b>+${fmtEur2(S.cycleObjEur)}</b></span>
+      <div class="cyc-keys mono">
+        <div class="cyc-key"><span class="ck-lab">MISE</span><span class="ck-val">${fmtEurC(S.cycleU||S.cycleBaseEur)}</span></div>
+        <div class="cyc-key"><span class="ck-lab">TP</span><span class="ck-val pos">+${fmtEurC(S.tpFinal*S.pieceEur)}</span></div>
+        <div class="cyc-key"><span class="ck-lab">SL</span><span class="ck-val neg">−${fmtEurC(Math.abs(S.sl)*S.pieceEur)}</span></div>
       </div>
     </div>`;
   }
-  $("mbList").innerHTML=cycHTML+S.slots.map((sl,i)=>{
-    const t=slotTarget(sl), on=sl.busy, cum=round2(sl.cumul);
-    return `<div class="mb-row${on?" on":""}${cum<0?" neg":""}">`
-      +`<span class="mb-k">M${i+1}</span>`
-      +`<span class="mb-c">${on?holder[i]||"··":"libre"}</span>`
-      +`<span class="mb-v">${(cum>0?"+":"")+cum}/+${t}</span></div>`;
-  }).join("");
+  $("mbList").innerHTML=cycHTML;
 
   $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
@@ -1712,7 +1597,7 @@ function render(){
         const cpl=CNAME[e.ch]; const sign=e.r==="G"?"+":"−";
         return `<li class="${cls}" data-li="${it.idx}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
 
-  $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur; $("inSlots").value=S.ogSlots;
+  $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur; if($("inProg"))$("inProg").value=SESSION_PROG.join("-");
   $("inTP").value=S.tpFinal; $("inSL").value=S.sl; if($("inCycle")) $("inCycle").value=S.cycleOn?"on":"off";
 
   // fin de séance : take-profit ou stop-loss
@@ -1774,7 +1659,16 @@ $("clearTrack").addEventListener("click",async()=>{
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
 
-$("inSlots").addEventListener("change",e=>{ S.ogSlots=Math.max(1,Math.min(3,parseInt(e.target.value,10)||3)); replay(false); render(); save(); toast("Oscar : "+S.ogSlots+" montante"+(S.ogSlots>1?"s":"")+" en pool"); });
+$("inProg").addEventListener("change",e=>{
+  // parse "1-2-3-5" → [1,2,3,5]. Garde des entiers positifs ; ignore l'entrée invalide.
+  const parts=(e.target.value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
+  if(parts.length){ SESSION_PROG=parts; }
+  e.target.value=SESSION_PROG.join("-");
+  recalcCapital();                       // met à jour le SL (somme des paliers)
+  if(S.cycleOn) configureSessionFromCycle();
+  replay(false); render(); save();
+  toast("Montante "+SESSION_PROG.join("-")+" · SL "+sessionSL()+" pièces");
+});
 $("inCycle").addEventListener("change",e=>{
   const on=e.target.value==="on"; S.cycleOn=on;
   if(on){ startCycle(); toast("Gestion Triple S activée — objectif "+fmtEur2(S.cycleObjEur)); }
