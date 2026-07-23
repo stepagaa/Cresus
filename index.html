@@ -20,7 +20,7 @@
     --rouge:#824039; --rouge-2:#824039; --rouge-d:#67322c; --noir:#191b1d; --noir-edge:#2b2e31;
     --zero:#2a4f43; --zero-2:#2a4f43;
     --ivory:#e8e6e1; --sage:#9a9691; --sage-dim:#6a6763;
-    --win:#6aa585; --lose:#b8635b;
+    --win:#6aa585; --lose:#b8635b; --warn:#c8934e;
     --shadow-card:0 1px 2px rgba(0,0,0,.4);
     --mono:"DM Mono",ui-monospace,monospace;
     --disp:"Bricolage Grotesque",system-ui,sans-serif;
@@ -84,10 +84,14 @@
      au lieu de le résumer par un score. La bande se remplit par la droite. */
   .mstrip{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:9px}
   .mdot{height:7px;border-radius:2px;background:rgba(255,255,255,.06)}
-  .rn .mdot.a{background:var(--rouge)}
-  .rn .mdot.b{background:#2f2f34}
-  .pi .mdot.a,.mp .mdot.a{background:#a1a1aa}
-  .pi .mdot.b,.mp .mdot.b{background:var(--noir-edge)}
+  /* Une TEINTE par chance simple, deux tons par côté : clair = côté A, foncé = côté B.
+     On reconnaît ainsi d'un coup d'œil à quelle chance appartient une bande de points. */
+  .rn .mdot.a{background:var(--rouge)}          /* rouge      */
+  .rn .mdot.b{background:#33363a}               /* noir       */
+  .pi .mdot.a{background:#5b8fa3}               /* pair   — bleu ardoise clair */
+  .pi .mdot.b{background:#2c4550}               /* impair — bleu ardoise foncé */
+  .mp .mdot.a{background:#9179a6}               /* 1-18   — mauve clair */
+  .mp .mdot.b{background:#463a52}               /* 19-36  — mauve foncé */
   .mcell.bal .mdot.a,.mcell.bal .mdot.b{opacity:1}
   .mcell.play .mstrip{opacity:.95}
   .mdetail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)}
@@ -253,8 +257,21 @@
   .slist .s-caret{font-size:10px;color:var(--sage-dim);margin-left:2px;transition:transform .15s}
   .slist li.s-row.open .s-caret{transform:rotate(90deg);color:var(--ivory)}
   .slist li.s-detail-row{display:block;padding:2px 4px 12px;background:var(--felt2)}
-  .sd-stats{display:flex;gap:6px;margin-bottom:9px}
-  .sd-stat{flex:1;text-align:center;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:6px 4px}
+  .sd-stats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  /* code couleur des cycles : vert bouclé · orange en cours · rouge perdu */
+  .cyc-badge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:20px;
+    border:1px solid var(--line);color:var(--sage-dim);margin-left:5px;vertical-align:middle}
+  .cyc-badge.ok{color:var(--win);border-color:rgba(106,165,133,.4);background:rgba(106,165,133,.08)}
+  .cyc-badge.run{color:var(--warn);border-color:rgba(200,147,78,.4);background:rgba(200,147,78,.08)}
+  .cyc-badge.ko{color:var(--lose);border-color:rgba(184,99,91,.4);background:rgba(184,99,91,.08)}
+  .d-row.cyc-ok{border-left:2px solid var(--win)}
+  .d-row.cyc-run{border-left:2px solid var(--warn)}
+  .d-row.cyc-ko{border-left:2px solid var(--lose)}
+  .d-row.cyc-idle{border-left:2px solid var(--line)}
+  /* chaque séance : vert si gagnée, rouge si perdue */
+  .slist li.s-row.win{border-left-color:var(--win)}
+  .slist li.s-row.loss{border-left-color:var(--lose)}
+  .sd-stat{flex:1 1 28%;min-width:0;text-align:center;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:6px 4px}
   .sd-v{display:block;font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ivory);line-height:1.1}
   .sd-v.win{color:var(--win)} .sd-v.lose{color:var(--lose)}
   .sd-l{display:block;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--sage-dim);margin-top:3px}
@@ -646,7 +663,7 @@
           <div><div class="sb-lab">Solde</div><div class="sb-solde mono" id="solde">200,00 €</div></div>
           <div class="sb-pnl mono" id="pnl">0,00 €</div>
         </div>
-        <div class="sb-rate mono"><span id="sessDur">00:00</span><span class="sb-sep">·</span><span id="sessRate">—</span></div>
+        <div class="sb-rate mono"><span id="sessDur">00:00</span></div>
       </div>
     </div>
   </div>
@@ -1262,14 +1279,20 @@ function renderSessions(){
     const hs=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
     const g=sg(s.gain), pct=(s.gain>=0?"+":"−")+Math.abs(s.pct).toFixed(1)+"%";
     const open=i===openSession;
-    let row=`<li class="s-row s-sub${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${hs}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
+    let row=`<li class="s-row s-sub ${s.gain>0?'win':s.gain<0?'loss':''}${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${hs}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
     if(open){
       const w=s.wins, l=s.losses, tot=(w!=null&&l!=null)?w+l:null, rate=tot?Math.round(w/tot*100):null;
       const wagered=s.wagered!=null?num2(s.wagered)+" €":"—";
+      // €/h : calculé après coup, seulement si la séance a duré plus d'une minute (sinon aberrant)
+      const hh=(s.duree||0)/3600000;
+      const eph=hh>=1/60 ? (s.gain/hh) : null;
+      const ephTxt=eph==null?"—":((eph>0?"+":eph<0?"−":"")+num2(Math.abs(eph))+" €");
+      const ephCls=eph==null?"":(eph>0.005?"win":eph<-0.005?"lose":"");
       row+=`<li class="s-detail-row s-sub"><div class="sd-stats">
         <div class="sd-stat"><span class="sd-v win">${w!=null?w:"—"}</span><span class="sd-l">gains</span></div>
         <div class="sd-stat"><span class="sd-v lose">${l!=null?l:"—"}</span><span class="sd-l">pertes</span></div>
         <div class="sd-stat"><span class="sd-v">${rate!=null?rate+" %":"—"}</span><span class="sd-l">réussite</span></div>
+        <div class="sd-stat"><span class="sd-v ${ephCls}">${ephTxt}</span><span class="sd-l">par heure</span></div>
         <div class="sd-stat"><span class="sd-v">${wagered}</span><span class="sd-l">misé</span></div>
       </div>${sparkSVG(s.curve,s.debut)}</li>`;
     }
@@ -1284,16 +1307,16 @@ function renderSessions(){
     const chrono=list[list.length-1];                 // 1re séance du cycle (chronologiquement)
     const pct=chrono&&chrono.debut? gain/chrono.debut*100 : 0;
     const n=list.length;
-    // statut du cycle : bouclé si le cumul net a atteint son objectif, sinon en cours / stoppé
+    // statut du cycle, avec code couleur : vert = bouclé, orange = en cours, rouge = perdu/stoppé
     const obj=chrono&&chrono.cycleObj?chrono.cycleObj:0;
     let statut="", scls="";
-    if(gr.key===0){ statut="Gestion manuelle"; }
-    else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="pos"; }
-    else if(gain<=-0.01 && Math.abs(gain)>=obj*2){ statut="stoppé"; scls="neg"; }  // grosse perte = SL cycle probable
-    else { statut="en cours"; }
+    if(gr.key===0){ statut="manuel"; scls="idle"; }
+    else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="ok"; }
+    else if(gain<=-0.01){ statut="perdu"; scls="ko"; }
+    else { statut="en cours"; scls="run"; }
     const titre=gr.key===0?"Hors cycle":("Cycle "+gr.key);
     const open=("cyc"+gr.key)===openDay;
-    let row=`<li class="d-row${open?' open':''}" data-d="cyc${gr.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${titre}</span><span class="d-meta">${n} séance${n>1?"s":""}${statut?" · "+statut:""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
+    let row=`<li class="d-row cyc-${scls}${open?' open':''}" data-d="cyc${gr.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${titre} <span class="cyc-badge ${scls}">${statut}</span></span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
     if(open) row+=gr.idx.map(sessionRow).join("");
     return row;
   }).join("");
@@ -1663,11 +1686,11 @@ function render(){
     }
     mscEl.textContent=scoreTxt;
 
-    // bande des 12 dernières boules : se remplit par la droite, cases vides à gauche
+    // bande des 12 dernières boules : la PLUS RÉCENTE à gauche (comme la liste des numéros)
     const strEl=$(id+"-str");
     if(strEl){
-      const w=windowUpto(ch,last), off=12-w.length;
-      let h=""; for(let i=0;i<12;i++){ const v=i<off?null:w[i-off]; h+=`<div class="mdot${v?" "+v:""}"></div>`; }
+      const w=windowUpto(ch,last).slice().reverse();   // du plus récent au plus ancien
+      let h=""; for(let i=0;i<12;i++){ const v=i<w.length?w[i]:null; h+=`<div class="mdot${v?" "+v:""}"></div>`; }
       strEl.innerHTML=h;
     }
   }
@@ -1681,10 +1704,13 @@ function render(){
   // état du pool : quelle chance occupe quelle montante, cumul et palier visé
   let cycHTML="";
   if(S.cycleOn){
-    // Barre bidirectionnelle : axe de cycleSlEur (gauche, rouge) à cycleObjEur (droite, vert).
-    // Le zéro est placé proportionnellement ; le remplissage part du zéro vers la droite (gain)
-    // ou vers la gauche (perte).
-    const obj=S.cycleObjEur||1, slAbs=Math.abs(S.cycleSlEur)||1, span=obj+slAbs;
+    // Barre bidirectionnelle. Borne haute = objectif du cycle. Borne basse = ce que deviendrait le
+    // cumul si la SESSION EN COURS touchait son stop-loss (SL de session en €, à la mise actuelle,
+    // appliqué au cumul du début de session). On borne à 0 minimum pour garder le zéro visible.
+    const obj=S.cycleObjEur||1;
+    const slSessEur=Math.abs(S.sl)*S.pieceEur;                 // SL de session, en euros
+    const low=Math.min(0, round2(S.cycleCumEur-slSessEur));     // plancher affiché sur l'axe
+    const slAbs=Math.abs(low)||1, span=obj+slAbs;
     const zeroPct=slAbs/span*100;                              // position du 0 sur la barre
     const cum=S.cycleCumEur;
     let fillLeft, fillWidth, fillCls;
@@ -1694,14 +1720,14 @@ function render(){
       fillCls="pos";
     } else {
       const p=Math.min(slAbs,-cum)/span*100;
-      fillLeft=zeroPct-p;
+      fillLeft=Math.max(0,zeroPct-p);
       fillWidth=p;
       fillCls="neg";
     }
     cycHTML=`<div class="cyc-box">
       <div class="cyc-top"><span class="cyc-lab">Cycle Triple S</span><span class="cyc-fig mono"><span class="${cum>=0?'pos':'neg'}">${(cum>=0?'+':'−')+fmtEur2(Math.abs(cum)).replace(' €','')}</span> / +${fmtEur2(obj).replace(' €','')} €</span></div>
       <div class="cyc-bar cyc-bar-bi"><div class="cyc-zero" style="left:${zeroPct}%"></div><div class="cyc-fill ${fillCls}" style="left:${fillLeft}%;width:${fillWidth}%"></div></div>
-      <div class="cyc-bar-ends mono"><span class="neg">${fmtEurC(S.cycleSlEur)}</span><span class="pos">+${fmtEurC(obj)}</span></div>
+      <div class="cyc-bar-ends mono"><span class="neg">${fmtEurC(low)}</span><span class="pos">+${fmtEurC(obj)}</span></div>
       <div class="cyc-keys mono">
         <div class="cyc-key"><span class="ck-lab">MISE</span><span class="ck-val">${fmtEurC(S.cycleU||S.cycleBaseEur)}</span></div>
         <div class="cyc-key cyc-key-tp" id="cycTPkey" title="Modifier le take-profit"><span class="ck-lab">TP ✎</span><span class="ck-val pos">+${fmtEurC(S.tpFinal*S.pieceEur)}</span></div>
@@ -1894,15 +1920,10 @@ $("sessionsList").addEventListener("click",e=>{
 // P&L ramené à l'heure. Sous une minute de jeu le ratio n'a aucun sens (1 € en 5 s = 720 €/h),
 // on l'affiche donc seulement passé ce seuil. Rafraîchi à la seconde, indépendamment de render().
 function updateRate(){
-  const d=$("sessDur"), r=$("sessRate"); if(!d||!r) return;
-  if(S.sessionStart==null){ d.textContent="00:00"; r.textContent="—"; r.className=""; return; }
-  const ms=Date.now()-S.sessionStart;
-  d.textContent=fmtDur(ms);
-  const h=ms/3600000;
-  if(h<1/60){ r.textContent="—"; r.className=""; return; }
-  const rate=(S.solde-S.capital)*S.pieceEur/h;
-  r.textContent=(rate>0?"+":rate<0?"−":"")+fmtEur2(Math.abs(rate))+"/h";
-  r.className=rate>0.005?"pos":rate<-0.005?"neg":"";
+  // Pendant la séance on n'affiche que le chronomètre : le €/h en direct n'apporte rien
+  // (il s'affole sur les premières minutes). Il est calculé après coup dans le journal.
+  const d=$("sessDur"); if(!d) return;
+  d.textContent = S.sessionStart==null ? "00:00" : fmtDur(Date.now()-S.sessionStart);
 }
 setInterval(updateRate,1000);
 
