@@ -278,6 +278,9 @@
   .s-spark{width:100%;height:72px;display:block;border-radius:7px}
   .hist-count{font-family:var(--mono);font-size:11px;color:var(--sage-dim)}
   .hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+  /* dernière ligne scindée en deux moitiés égales (rendement % · €/h) */
+  .hsplit{display:flex;gap:7px}
+  .hsplit .hstat{flex:1;min-width:0}
   .hstat{background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:9px 5px;text-align:center}
   .hstat .hv{display:block;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ivory);line-height:1.1}
   .hstat .hv.pos{color:var(--win)} .hstat .hv.neg{color:var(--lose)}
@@ -623,7 +626,7 @@
 </head>
 <body>
   <header>
-    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono">Martingale 1-2-3-5</span></div>
+    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono">Martingale</span></div>
   </header>
 
   <!-- BANNIÈRE FIN DE SÉANCE (TP / SL) -->
@@ -690,7 +693,7 @@
     <div class="set-body">
       <div class="field"><label>Take-profit<span class="hint">calculé automatiquement · verrouillé</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1" readonly></div>
       <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
-      <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-3-5" placeholder="1-2-3-5"></div>
+      <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8"></div>
       <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
         <select id="inCycle"><option value="on">Triple S (automatique)</option><option value="off">Manuelle (TP/SL %)</option></select></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
@@ -710,7 +713,7 @@
   </details>
 
   <footer>
-    Suivi personnel de la méthode « Crésus » (N. Fijeac) · Martingale 1-2-3-5 par chance · cycle Triple S.
+    Suivi personnel de la méthode « Crésus » (N. Fijeac) · une martingale par chance · cycle Triple S.
     Aucune montante ne change l'avantage de la maison — fixe-toi une limite.
   </footer>
 
@@ -729,7 +732,7 @@
         <div class="strat-head">Stratégie</div>
         <div class="strat-row">
           <label class="strat-lab" for="startProg">Montante de session</label>
-          <input type="text" id="startProg" inputmode="text" value="1-2-3-5" placeholder="1-2-3-5">
+          <input type="text" id="startProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8">
         </div>
         <div class="strat-row">
           <label class="strat-lab" for="startObj">Objectif de cycle (× mise départ)</label>
@@ -805,8 +808,8 @@ const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 // Chaque chance simple (R/N, P/I, M/P) porte SA propre montante, indépendante des deux autres.
 // Elle avance d'un palier à chaque perte, revient au palier 0 à chaque gain. La mise = SESSION_PROG[idx].
 // Le SL de session est DÉRIVÉ de la progression : somme de tous les paliers (une montante complète
-// ratée). Changer la progression met à jour le SL automatiquement (1-2-3-5 → 11 ; 1-2-5-10 → 18).
-let SESSION_PROG=[1,2,3,5];
+// ratée). Changer la progression met à jour le SL automatiquement (1-2-4-8 → 15 ; 1-2-5-10 → 18).
+let SESSION_PROG=[1,2,4,8];
 const sessionSL=()=>SESSION_PROG.reduce((a,b)=>a+b,0);   // pertes cumulées d'une montante pleine
 const SESSION_TP=3;                                       // objectif de session, en pièces
 const OG_TARGET=1;                  // (héritage) plus utilisé par la nouvelle montante
@@ -814,7 +817,7 @@ const OG_TARGET=1;                  // (héritage) plus utilisé par la nouvelle
 const CUR_MONT="og";                // montante de l'app (les sessions sont étiquetées avec)
 // libellés pour l'historique : les anciennes montantes n'existent plus dans l'app,
 // mais des sessions enregistrées avant leur retrait peuvent encore les référencer
-const MONT_LABEL={og:"Martingale 1-2-3-5",ts:"Triple S",m4:"Martingale",cresus:"Crésus"};
+const MONT_LABEL={og:"Martingale",ts:"Triple S",m4:"Martingale",cresus:"Crésus"};
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -837,7 +840,7 @@ let S={
   cycleOn:true, cycleStartEur:0, cycleStartMise:1, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1, cycleSlEur:0, tpManualEur:0
 };
 
-// ─── Montante 1-2-3-5 par chance : plus de pool partagé, plus d'attribution dynamique. ───
+// ─── Montante par chance : plus de pool partagé, plus d'attribution dynamique. ───
 // La mise d'une chance = SESSION_PROG[son mIdx]. assignSlots devient inutile (chaque chance a la sienne).
 function assignSlots(){ /* la montante appartient à la chance : rien à distribuer */ }
 
@@ -846,7 +849,7 @@ const SL_PCT=0.25;                                                     // stop-l
 const TP_PCT=0.05;                                                     // take-profit = 5 % du solde, arrondi au supérieur
 function recalcCapital(){
   S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0;
-  // Le SL de session est fixé en pièces par la montante 1-2-3-5 (somme des paliers), en mode cycle
+  // Le SL de session est fixé en pièces par la montante (somme des paliers), en mode cycle
   // comme en manuel — il ne doit pas être ré-dérivé d'un % du capital (sinon chaque recalcul l'écrase).
   if(!S.cycleOn) S.sl = -sessionSL();
 }
@@ -946,7 +949,7 @@ async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
 function countsUpto(ch,idx){ let a=0,b=0,c=0; for(let i=idx;i>=0&&c<12;i--){ const n=S.spins[i]; if(n===0)continue; (memb(n,ch)==="a")?a++:b++; c++; } return [a,b]; }
-// chaque chance porte sa propre montante 1-2-3-5 : mIdx = palier courant (0 = mise de base)
+// chaque chance porte sa propre montante : mIdx = palier courant (0 = mise de base)
 function freshCouple(){ return {pMise:0,pBilan:0,mIdx:0,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 // même fenêtre que countsUpto, mais détaillée : les 12 dernières boules, plus ancienne en tête
@@ -954,9 +957,9 @@ function windowUpto(ch,idx){ const out=[]; for(let i=idx;i>=0&&out.length<12;i--
 function balancedUpto(ch,idx){ const[a,b]=countsUpto(ch,idx); return a===6&&b===6; }
 const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
 
-/* ---- moteur par couple : montante 1-2-3-5 indépendante par chance ---- */
+/* ---- moteur par couple : une montante indépendante par chance ---- */
 function stakeC(C){
-  // mise = palier courant de la montante de CETTE chance (1-2-3-5), en pièces.
+  // mise = palier courant de la montante de CETTE chance, en pièces.
   return SESSION_PROG[Math.min(C.mIdx, SESSION_PROG.length-1)];
 }
 // Mise plafonnée au reste jusqu'au TP : inutile de miser plus que ce qu'il faut pour fermer la
@@ -988,7 +991,7 @@ function advanceC(ch,C,result){
   S.solde-=stake; C.pBilan-=stake;
   C.mIdx++;                                       // palier suivant
   S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
-  // Si la montante a épuisé tous ses paliers (4 pertes sur 1-2-3-5), elle est soldée en perte :
+  // Si la montante a épuisé tous ses paliers, elle est soldée en perte :
   // elle NE rejoue PAS le dernier palier indéfiniment. On la remet à zéro et la chance repasse en
   // veille — une nouvelle montante pourra démarrer sur un prochain signal. (Le SL de session, lui,
   // reste géré à part sur le P&L global.)
@@ -1386,6 +1389,10 @@ function renderHistory(){
   cnt.textContent=n+" session"+(n>1?"s":"")+(S.histFilter==="all"?"":" · "+montLabel(S.histFilter));
   const sg=v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
   const cls=v=>v>=0?"pos":"neg";
+  // €/h global : résultat net de TOUTES les sessions ÷ temps de jeu cumulé.
+  // Sous une minute cumulée, le ratio n'a aucun sens : on n'affiche rien.
+  const hTot=tDur/3600000;
+  const eph=hTot>=1/60 ? tg/hTot : null;
   const grid=`<div class="hgrid">
     <div class="hstat"><span class="hv ${cls(tg)}">${sg(tg)}</span><span class="hl">résultat net</span></div>
     <div class="hstat"><span class="hv">${fmtEur2(tw)}</span><span class="hl">misé total</span></div>
@@ -1393,7 +1400,10 @@ function renderHistory(){
     <div class="hstat"><span class="hv ${cls(avg)}">${sg(avg)}</span><span class="hl">moy./session</span></div>
     <div class="hstat"><span class="hv ${cls(best)}">${sg(best)}</span><span class="hl">meilleure</span></div>
     <div class="hstat"><span class="hv ${cls(worst)}">${sg(worst)}</span><span class="hl">pire</span></div>
-    <div class="hstat" style="grid-column:1/-1"><span class="hv ${cls(tg)}">${tw>0?((tg/tw*100)>=0?"+":"−")+Math.abs(tg/tw*100).toFixed(1)+" %":"—"}</span><span class="hl">rendement · net ÷ misé (l'avantage maison joue contre toi)</span></div>
+    <div class="hsplit" style="grid-column:1/-1">
+      <div class="hstat"><span class="hv ${cls(tg)}">${tw>0?((tg/tw*100)>=0?"+":"−")+Math.abs(tg/tw*100).toFixed(1)+" %":"—"}</span><span class="hl">rendement · net ÷ misé</span></div>
+      <div class="hstat"><span class="hv ${eph==null?"":cls(eph)}">${eph==null?"—":sg(eph)+"/h"}</span><span class="hl">par heure · net ÷ temps de jeu</span></div>
+    </div>
   </div>`;
   el.innerHTML=mig+grid+cumCurveSVG(cum)+
     `<div class="chart-meta"><span>${pos}/${n} positives</span><span>${tCoups} coups</span><span>${fmtDur(tDur)}</span></div>`;
@@ -1493,7 +1503,7 @@ function continueSession(){
 
 /* ═══════════════════ GESTION DE CYCLE « TRIPLE S » (optionnelle) ═══════════════════
    Trois étages emboîtés :
-   • chaque séance se joue à la montante 1-2-3-5 (une par chance simple) ;
+   • chaque séance se joue à la martingale (une montante par chance simple) ;
    • chaque séance vise un partiel (TP/SL fixes en pièces) ; gagnée/perdue, elle fait
      progresser la mise de base selon Triple S : +1€ sur gain, +2€ sur perte ;
    • le cycle vise un objectif global (% du solde de départ, figé) ; atteint, on encaisse
@@ -1581,7 +1591,7 @@ function openHist(ch){
     const echelle=SESSION_PROG.map((v,k)=>k===idx?("<b>["+v+"]</b>"):v).join(" ");
     const active=(C.sig.phase==="play"||C.sig.phase==="await");
     if(active){
-      cur=`<div class="hist-cur">Montante 1-2-3-5 — palier <b>${idx+1}/${SESSION_PROG.length}</b><br>échelle ${echelle}<br>prochaine mise <b>${eur(bet)}</b></div>`;
+      cur=`<div class="hist-cur">Montante ${SESSION_PROG.join("-")} — palier <b>${idx+1}/${SESSION_PROG.length}</b><br>échelle ${echelle}<br>prochaine mise <b>${eur(bet)}</b></div>`;
     } else {
       cur=`<div class="hist-cur">Montante en veille — palier de base<br>échelle ${echelle}<br>mise de départ <b>${eur(SESSION_PROG[0])}</b></div>`;
     }
@@ -1828,7 +1838,7 @@ $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.
 $("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
 
 $("inProg").addEventListener("change",e=>{
-  // parse "1-2-3-5" → [1,2,3,5]. Garde des entiers positifs ; ignore l'entrée invalide.
+  // parse "1-2-4-8" → [1,2,4,8]. Garde des entiers positifs ; ignore l'entrée invalide.
   const parts=(e.target.value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
   if(parts.length){ SESSION_PROG=parts; }
   e.target.value=SESSION_PROG.join("-");
