@@ -914,7 +914,15 @@ function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=
 }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
-async function loadSessions(){ const v=await Store.get(SESS_KEY); if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} } }
+async function loadSessions(){
+  const v=await Store.get(SESS_KEY);
+  if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} }
+  // Nettoyage : purge des séances fantômes (aucun numéro joué, aucun gain, aucune mise) qu'un
+  // arrêt automatique avait pu créer au chargement. Elles faussaient le suivi longue durée.
+  const avant=sessions.length;
+  sessions=sessions.filter(s=>(s.coups||0)>0 || Math.abs(s.gain||0)>1e-9 || (s.wagered||0)>0);
+  if(sessions.length!==avant){ saveSessions(); }
+}
 async function saveSessions(){ lastTs=Date.now(); await Store.set(SESS_KEY, JSON.stringify(sessions)); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 const SHEET_KEY="cresus:sheet:v1";
 const DEFAULT_SHEET_URL="https://script.google.com/macros/s/AKfycbxBW9npMYqDsL6T8y3HMiEPaoihm0v8r1WOvXcsd66E0Qh_gAvlvegg5oFj1Kb-BswHew/exec";
@@ -1252,6 +1260,9 @@ function exportSessions(){
 let openSession=-1, openDay="";
 function downsample(arr,max){ if(arr.length<=max) return arr; const out=[],step=(arr.length-1)/(max-1); for(let i=0;i<max;i++) out.push(arr[Math.round(i*step)]); out[out.length-1]=arr[arr.length-1]; return out; }
 function saveCurrentSession(){
+  // Rien joué ? Il n'y a pas de séance à archiver. Sans ce garde-fou, un arrêt automatique
+  // (stop-loss de cycle au chargement) créait une séance fantôme qui faussait les statistiques.
+  if(!S.log.length && !S.spins.length) return;
   const finEur=S.solde*S.pieceEur, gainEur=finEur-S.capitalEur;
   let bal=S.capital, curve=[bal*S.pieceEur], nG=0,nP=0;
   // résultat par chance simple, pour identifier la meilleure et la pire montante du cycle
@@ -1286,9 +1297,19 @@ function sparkSVG(curve, base){
     <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#sclipD)"/>
   </svg>`;
 }
+function dayKey(ts){ const d=new Date(ts); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function dayLabel(ts){
+  const k=dayKey(ts), now=Date.now();
+  if(k===dayKey(now)) return "Aujourd'hui";
+  if(k===dayKey(now-86400000)) return "Hier";
+  return new Date(ts).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"short"});
+}
 // ─── Fenêtre de détail d'un cycle : tout ce qu'on peut en dire ───
-function openCycleModal(key){
-  const list=sessions.filter(s=>(s.cycleId!=null?s.cycleId:0)===key);
+function openGroupModal(key){
+  const estCycle=String(key).startsWith("cyc");
+  const list=estCycle
+    ? sessions.filter(s=>("cyc"+s.cycleId)===key)
+    : sessions.filter(s=>("j"+dayKey(s.date))===key);
   if(!list.length) return;
   const chrono=list[list.length-1];                       // 1re séance du cycle
   const net=list.reduce((a,s)=>a+(s.gain||0),0);
@@ -1308,7 +1329,7 @@ function openCycleModal(key){
   const soldeDeb=chrono?chrono.debut:0, soldeFin=list[0]?list[0].fin:0;
 
   let statut="en cours", scls="run";
-  if(key===0){ statut="hors cycle"; scls="idle"; }
+  if(!estCycle){ statut="archive"; scls="idle"; }
   else if(obj>0 && net>=obj-0.01){ statut="bouclé"; scls="ok"; }
   else if(net<=-0.01){ statut="perdu"; scls="ko"; }
 
@@ -1349,7 +1370,7 @@ function openCycleModal(key){
     return `<div class="cm-sess ${s.gain>0?'win':s.gain<0?'loss':''}"><span>${d}<span class="cs-m"> · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></span><b style="color:${s.gain>=0?'var(--win)':'var(--lose)'};font-family:var(--mono)">${sgn(s.gain)}</b></div>`;
   }).join("");
 
-  $("cycmTitle").innerHTML=(key===0?"Hors cycle":"Cycle "+key)+` <span class="cyc-badge ${scls}">${statut}</span>`;
+  $("cycmTitle").innerHTML=(estCycle?("Cycle "+String(key).slice(3)):dayLabel(chrono?chrono.date:Date.now()))+` <span class="cyc-badge ${scls}">${statut}</span>`;
   $("cycmBody").innerHTML=html;
   $("cycModal").style.display="flex";
 }
@@ -1366,7 +1387,10 @@ function renderSessions(){
   // regroupement par CYCLE — sessions est déjà trié du plus récent au plus ancien.
   // cycleId = 0 signifie « hors cycle » (gestion manuelle) ; on regroupe tout de même par valeur.
   const groups=[], gmap={};
-  sessions.forEach((s,i)=>{ const k=(s.cycleId!=null?s.cycleId:0);
+  sessions.forEach((s,i)=>{
+    // séances postérieures au suivi par cycle : groupées par cycle.
+    // séances plus anciennes (sans étiquette) : groupées par jour, comme avant.
+    const k = (s.cycleId!=null && s.cycleId>0) ? ("cyc"+s.cycleId) : ("j"+dayKey(s.date));
     if(!gmap[k]){ gmap[k]={key:k,first:s,idx:[]}; groups.push(gmap[k]); }
     gmap[k].idx.push(i); });
 
@@ -1381,14 +1405,14 @@ function renderSessions(){
     const n=list.length;
     // statut du cycle, avec code couleur : vert = bouclé, orange = en cours, rouge = perdu/stoppé
     const obj=chrono&&chrono.cycleObj?chrono.cycleObj:0;
+    const estCycle=String(gr.key).startsWith("cyc");
     let statut="", scls="";
-    if(gr.key===0){ statut="manuel"; scls="idle"; }
+    if(!estCycle){ statut="archive"; scls="idle"; }
     else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="ok"; }
     else if(gain<=-0.01){ statut="perdu"; scls="ko"; }
     else { statut="en cours"; scls="run"; }
-    const titre=gr.key===0?"Hors cycle":("Cycle "+gr.key);
-    const open=("cyc"+gr.key)===openDay;
-    let row=`<li class="d-row cyc-${scls}${open?' open':''}" data-d="cyc${gr.key}"><div class="d-main"><span class="d-date">${titre} <span class="cyc-badge ${scls}">${statut}</span></span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small> <span class="d-go">›</span></span></li>`;
+    const titre=estCycle?("Cycle "+String(gr.key).slice(3)):dayLabel(chrono?chrono.date:Date.now());
+    let row=`<li class="d-row cyc-${scls}${open?' open':''}" data-d="${gr.key}"><div class="d-main"><span class="d-date">${titre} <span class="cyc-badge ${scls}">${statut}</span></span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small> <span class="d-go">›</span></span></li>`;
     return row;
   }).join("");
   renderHistFilter(); renderHistory();
@@ -1721,9 +1745,13 @@ function onCycleSL(){
   const perte=round2(S.cycleCumEur + (S.solde-S.capital)*S.pieceEur);
   saveCurrentSession();                    // fige la session en cours dans le journal
   cycleSeq++;                              // ce cycle est clos (en perte)
+  // Le cycle est terminé : on désarme le seuil et on repart d'un cumul neutre, sinon la
+  // condition reste vraie et se redéclenche à chaque rendu / rechargement de l'app.
+  S.cycleSlEur=0; S.cycleCumEur=0;
   S.capitalEur=Math.max(0, round2(S.solde*S.pieceEur));
   toast("🛑 Stop-loss de cycle atteint ("+plusEur(perte)+") — cycle arrêté");
   goalDismissed=true;
+  save();
   render();
   openStartModal();                        // retour à l'accueil : à toi de décider la suite
 }
@@ -2010,7 +2038,7 @@ $("sessionsList").addEventListener("click",e=>{
   const row=e.target.closest(".s-row");
   if(row){ const i=parseInt(row.dataset.i,10); openSession=(openSession===i?-1:i); renderSessions(); return; }
   const day=e.target.closest(".d-row");
-  if(day){ const k=day.dataset.d; openCycleModal(k.startsWith("cyc")?parseInt(k.slice(3),10):0); }
+  if(day){ openGroupModal(day.dataset.d); }
 });
 // P&L ramené à l'heure. Sous une minute de jeu le ratio n'a aucun sens (1 € en 5 s = 720 €/h),
 // on l'affiche donc seulement passé ce seuil. Rafraîchi à la seconde, indépendamment de render().
