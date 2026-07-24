@@ -925,7 +925,29 @@ const SHEET_KEY="cresus:sheet:v1";
 const DEFAULT_SHEET_URL="https://script.google.com/macros/s/AKfycbxBW9npMYqDsL6T8y3HMiEPaoihm0v8r1WOvXcsd66E0Qh_gAvlvegg5oFj1Kb-BswHew/exec";
 let sheetUrl=DEFAULT_SHEET_URL;
 async function loadSheetUrl(){ const v=await Store.get(SHEET_KEY); if(v) sheetUrl=v; }
-async function saveSheetUrl(v){ const u=(v||"").trim(); const changed=u!==sheetUrl; sheetUrl=u; await Store.set(SHEET_KEY, sheetUrl); updateSyncUI(); if(sheetUrl && changed) cloudSyncNow(false); }
+async function saveSheetUrl(v){
+  const u=(v||"").trim(); const changed=u!==sheetUrl; sheetUrl=u;
+  await Store.set(SHEET_KEY, sheetUrl); updateSyncUI();
+  // On ne synchronise SURTOUT pas tout seul en enregistrant l'URL : c'est exactement là qu'une
+  // copie locale abîmée écrasait la sauvegarde. On regarde ce que contient le cloud et on demande.
+  if(sheetUrl && changed){
+    const data=await cloudPull();
+    if(data===null){ setSync("offline"); toast("Cloud injoignable"); return; }
+    const nb=Array.isArray(data.sessions)?data.sessions.length:0;
+    setSync("ok");
+    if(await ask("Cloud connecté",
+        "Le Sheet contient "+nb+" session"+(nb>1?"s":"")+". Charger cette version maintenant ? (tes données locales actuelles seront remplacées)",
+        "Charger le cloud",false)){
+      if(data.state) hydrateState(data.state);
+      if(Array.isArray(data.sessions)) sessions=data.sessions;
+      lastTs=data.ts||Date.now();
+      await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs}));
+      await Store.set(SESS_KEY, JSON.stringify(sessions));
+      replay(false); renderSessions(); render(); cloudArmed=true;
+      toast("Chargé : "+nb+" session"+(nb>1?"s":""));
+    }
+  }
+}
 /* ---- Google Sheets : base principale (lecture + écriture de l'état complet) ---- */
 let syncState="off", lastSyncAt=0, cloudTimer=null;
 function cloudState(){ return { ts:lastTs, state:stateBlob(), sessions }; }
@@ -934,6 +956,7 @@ function syncPillText(){
   // renvoie {txt, cls} décrivant l'état de synchro courant, partagé par les deux pastilles
   if(!sheetUrl) return {txt:"● non configuré", cls:"off"};
   if(syncState==="pending") return {txt:"● synchro…", cls:"pending"};
+  if(syncState==="hold") return {txt:"● envoi bloqué", cls:"offline"};
   if(syncState==="offline") return {txt:"● hors-ligne", cls:"offline"};
   const t=lastSyncAt?" · "+new Date(lastSyncAt).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
   return {txt:"● cloud ✓"+t, cls:"ok"};
@@ -943,7 +966,8 @@ function updateSyncUI(){
   const el=$("syncStatus"); if(el){ el.textContent=txt; el.className="sync-pill "+cls; }
   const ms=$("startSync"); if(ms){ ms.textContent=txt; ms.className="sync-pill "+cls; }
 }
-function scheduleCloud(){ if(!sheetUrl) return; setSync("pending"); clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,1200); }
+let cloudArmed=false;   // l'envoi automatique reste bloqué tant qu'on n'est pas sûr d'être aligné
+function scheduleCloud(){ if(!sheetUrl) return; if(!cloudArmed){ setSync("hold"); return; } setSync("pending"); clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,1200); }
 async function cloudPush(){
   if(!sheetUrl) return false;
   const body=JSON.stringify({action:"save", data:cloudState()});
@@ -969,9 +993,9 @@ async function cloudSyncNow(silent){
   const data=await cloudPull();
   if(data===null){ setSync("offline"); if(!silent) toast("Cloud injoignable — ouvre l'appli hors de Claude"); return; }
   const cTs=data.ts||0;
-  // Si le cloud est en retard, on ne pousse PAS automatiquement : écraser la sauvegarde
-  // sans que tu l'aies demandé est trop risqué. L'envoi reste possible à la main.
-  if(silent && cTs<=(lastTs||0)){ setSync("ok"); return; }
+  // RÈGLE ABSOLUE : cette fonction n'ÉCRIT JAMAIS dans le cloud. Elle ne fait que lire.
+  // Tout envoi doit être demandé explicitement (« Forcer l'envoi »), sinon une copie locale
+  // abîmée peut écraser une sauvegarde saine.
   if(cTs>(lastTs||0) && data.state){
     hydrateState(data.state);
     if(Array.isArray(data.sessions)) sessions=data.sessions;
@@ -979,10 +1003,20 @@ async function cloudSyncNow(silent){
     await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs}));
     await Store.set(SESS_KEY, JSON.stringify(sessions));
     replay(false); renderSessions(); render();
+    cloudArmed=true;
     setSync("ok"); if(!silent) toast("Rechargé depuis le cloud");
   } else {
-    const ok=await cloudPush();
-    if(!silent) toast(ok?"Cloud à jour":"Cloud injoignable");
+    // Le cloud est en retard. Cas normal : tu as joué ici en dernier → on autorise l'envoi.
+    // Cas suspect : le cloud contient PLUS de séances que la copie locale → on bloque et on
+    // prévient, car pousser détruirait la sauvegarde la plus complète.
+    const nbCloud=Array.isArray(data.sessions)?data.sessions.length:0;
+    if(nbCloud>sessions.length){
+      cloudArmed=false; setSync("hold");
+      toast("⚠️ Le cloud a "+nbCloud+" séances, cet appareil "+sessions.length+" — envoi bloqué");
+      return;
+    }
+    cloudArmed=true;
+    if(!silent) toast("Cloud plus ancien — utilise « Restaurer » ou « Forcer l'envoi »");
   }
 }
 // Restauration : on récupère le contenu du Sheet TEL QUEL, sans comparer les dates.
@@ -1002,7 +1036,7 @@ async function cloudRestore(){
   lastTs=data.ts||Date.now();
   await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs}));
   await Store.set(SESS_KEY, JSON.stringify(sessions));
-  replay(false); renderSessions(); render(); setSync("ok");
+  replay(false); renderSessions(); render(); cloudArmed=true; setSync("ok");
   toast("Restauré : "+nb+" session"+(nb>1?"s":""));
 }
 // Sauvegarde de secours : un fichier JSON que tu gardes chez toi, indépendant du cloud.
@@ -1015,7 +1049,7 @@ function backupToFile(){
   a.click(); URL.revokeObjectURL(a.href);
   toast("Sauvegarde de "+sessions.length+" session"+(sessions.length>1?"s":"")+" téléchargée");
 }
-async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; } setSync("pending"); const ok=await cloudPush(); toast(ok?"Envoyé au cloud":"Cloud injoignable — ouvre hors de Claude"); }
+async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; } cloudArmed=true; setSync("pending"); const ok=await cloudPush(); toast(ok?"Envoyé au cloud":"Cloud injoignable — ouvre hors de Claude"); }
 
 /* ---- appartenance / comptage ---- */
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
