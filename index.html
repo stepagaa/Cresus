@@ -917,11 +917,7 @@ async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=J
 async function loadSessions(){
   const v=await Store.get(SESS_KEY);
   if(v){ try{ sessions=JSON.parse(v)||[]; }catch(e){} }
-  // Nettoyage : purge des séances fantômes (aucun numéro joué, aucun gain, aucune mise) qu'un
-  // arrêt automatique avait pu créer au chargement. Elles faussaient le suivi longue durée.
-  const avant=sessions.length;
-  sessions=sessions.filter(s=>(s.coups||0)>0 || Math.abs(s.gain||0)>1e-9 || (s.wagered||0)>0);
-  if(sessions.length!==avant){ saveSessions(); }
+  // Aucune purge automatique : les données ne sont modifiées que par toi, depuis le journal.
 }
 async function saveSessions(){ lastTs=Date.now(); await Store.set(SESS_KEY, JSON.stringify(sessions)); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 const SHEET_KEY="cresus:sheet:v1";
@@ -1380,39 +1376,48 @@ function renderSessions(){
   const el=$("sessionsList");
   if(!sessions.length){ el.innerHTML='<li class="log-empty">Aucune session enregistrée.</li>'; openSession=-1; renderHistFilter(); renderHistory(); return; }
   const num2=v=>(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
-  // à l'euro près, une journée nulle ne doit être ni verte ni signée
   const sg=v=>(Math.abs(v)<0.005?"":(v>0?"+":"−"))+num2(Math.abs(v))+" €";
   const cls=v=>Math.abs(v)<0.005?"":(v>0?"pos":"neg");
 
-  // regroupement par CYCLE — sessions est déjà trié du plus récent au plus ancien.
-  // cycleId = 0 signifie « hors cycle » (gestion manuelle) ; on regroupe tout de même par valeur.
-  const groups=[], gmap={};
-  sessions.forEach((s,i)=>{
-    // séances postérieures au suivi par cycle : groupées par cycle.
-    // séances plus anciennes (sans étiquette) : groupées par jour, comme avant.
-    const k = (s.cycleId!=null && s.cycleId>0) ? ("cyc"+s.cycleId) : ("j"+dayKey(s.date));
-    if(!gmap[k]){ gmap[k]={key:k,first:s,idx:[]}; groups.push(gmap[k]); }
-    gmap[k].idx.push(i); });
+  // regroupement par JOUR (fonctionnement d'origine) — sessions est trié du plus récent au plus ancien
+  const days=[], map={};
+  sessions.forEach((s,i)=>{ const k=dayKey(s.date);
+    if(!map[k]){ map[k]={key:k,date:s.date,idx:[]}; days.push(map[k]); }
+    map[k].idx.push(i); });
 
+  const sessionRow=i=>{
+    const s=sessions[i], d=new Date(s.date);
+    const hs=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const g=sg(s.gain), pct=(s.gain>=0?"+":"−")+Math.abs(s.pct||0).toFixed(1)+"%";
+    const open=i===openSession;
+    const cyc=(s.cycleId!=null&&s.cycleId>0)?` · cycle ${s.cycleId}`:"";
+    let row=`<li class="s-row s-sub ${s.gain>0?'win':s.gain<0?'loss':''}${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${hs}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n°${cyc} · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
+    if(open){
+      const w=s.wins, l=s.losses, tot=(w!=null&&l!=null)?w+l:null, rate=tot?Math.round(w/tot*100):null;
+      const wagered=s.wagered!=null?num2(s.wagered)+" €":"—";
+      const hh=(s.duree||0)/3600000, eph=hh>=1/60?(s.gain/hh):null;
+      const ephTxt=eph==null?"—":((eph>0?"+":eph<0?"−":"")+num2(Math.abs(eph))+" €");
+      const ephCls=eph==null?"":(eph>0.005?"win":eph<-0.005?"lose":"");
+      row+=`<li class="s-detail-row s-sub"><div class="sd-stats">
+        <div class="sd-stat"><span class="sd-v win">${w!=null?w:"—"}</span><span class="sd-l">gains</span></div>
+        <div class="sd-stat"><span class="sd-v lose">${l!=null?l:"—"}</span><span class="sd-l">pertes</span></div>
+        <div class="sd-stat"><span class="sd-v">${rate!=null?rate+" %":"—"}</span><span class="sd-l">réussite</span></div>
+        <div class="sd-stat"><span class="sd-v ${ephCls}">${ephTxt}</span><span class="sd-l">par heure</span></div>
+        <div class="sd-stat"><span class="sd-v">${wagered}</span><span class="sd-l">misé</span></div>
+      </div>${sparkSVG(s.curve,s.debut)}</li>`;
+    }
+    return row;
+  };
 
-  el.innerHTML=groups.map(gr=>{
-    const list=gr.idx.map(i=>sessions[i]);            // du plus récent au plus ancien
+  el.innerHTML=days.map(d=>{
+    const list=d.idx.map(i=>sessions[i]);
     const gain=list.reduce((a,s)=>a+(s.gain||0),0);
     const wag =list.reduce((a,s)=>a+(s.wagered||0),0);
     const dur =list.reduce((a,s)=>a+(s.duree||0),0);
-    const chrono=list[list.length-1];                 // 1re séance du cycle (chronologiquement)
-    const pct=chrono&&chrono.debut? gain/chrono.debut*100 : 0;
-    const n=list.length;
-    // statut du cycle, avec code couleur : vert = bouclé, orange = en cours, rouge = perdu/stoppé
-    const obj=chrono&&chrono.cycleObj?chrono.cycleObj:0;
-    const estCycle=String(gr.key).startsWith("cyc");
-    let statut="", scls="";
-    if(!estCycle){ statut="archive"; scls="idle"; }
-    else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="ok"; }
-    else if(gain<=-0.01){ statut="perdu"; scls="ko"; }
-    else { statut="en cours"; scls="run"; }
-    const titre=estCycle?("Cycle "+String(gr.key).slice(3)):dayLabel(chrono?chrono.date:Date.now());
-    let row=`<li class="d-row cyc-${scls}${open?' open':''}" data-d="${gr.key}"><div class="d-main"><span class="d-date">${titre} <span class="cyc-badge ${scls}">${statut}</span></span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small> <span class="d-go">›</span></span></li>`;
+    const first=list[list.length-1], pct=first&&first.debut? gain/first.debut*100 : 0;
+    const open=d.key===openDay, n=list.length;
+    let row=`<li class="d-row${open?' open':''}" data-d="${d.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${dayLabel(d.date)}</span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
+    if(open) row+=d.idx.map(sessionRow).join("");
     return row;
   }).join("");
   renderHistFilter(); renderHistory();
@@ -1743,7 +1748,6 @@ function openCoup(idx){
 // On enregistre la session en cours, on solde le cycle en perte, on revient à l'accueil.
 function onCycleSL(){
   const perte=round2(S.cycleCumEur + (S.solde-S.capital)*S.pieceEur);
-  saveCurrentSession();                    // fige la session en cours dans le journal
   cycleSeq++;                              // ce cycle est clos (en perte)
   // Le cycle est terminé : on désarme le seuil et on repart d'un cumul neutre, sinon la
   // condition reste vraie et se redéclenche à chaque rendu / rechargement de l'app.
@@ -2038,7 +2042,7 @@ $("sessionsList").addEventListener("click",e=>{
   const row=e.target.closest(".s-row");
   if(row){ const i=parseInt(row.dataset.i,10); openSession=(openSession===i?-1:i); renderSessions(); return; }
   const day=e.target.closest(".d-row");
-  if(day){ openGroupModal(day.dataset.d); }
+  if(day){ const k=day.dataset.d; openDay=(openDay===k?"":k); openSession=-1; renderSessions(); }
 });
 // P&L ramené à l'heure. Sous une minute de jeu le ratio n'a aucun sens (1 € en 5 s = 720 €/h),
 // on l'affiche donc seulement passé ce seuil. Rafraîchi à la seconde, indépendamment de render().
