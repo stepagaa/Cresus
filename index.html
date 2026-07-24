@@ -733,8 +733,9 @@
         <div class="sheet-h">Sauvegarde Google Sheets <span id="syncStatus" class="sync-pill off">● non configuré</span></div>
         <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
         <div class="sheet-btns">
-          <button id="sheetTest" class="sheet-b">↓ Recharger du cloud</button>
+          <button id="sheetTest" class="sheet-b">↓ Restaurer depuis le cloud</button>
           <button id="sheetSyncAll" class="sheet-b">↑ Forcer l'envoi</button>
+          <button id="sheetBackup" class="sheet-b">💾 Sauvegarde fichier</button>
         </div>
         <p class="sheet-help">Le Google Sheet devient ta base principale : solde, piste, réglages et historique y sont sauvegardés et rechargés automatiquement à l'ouverture, sur tous tes appareils. Déploie le script en « application web », accès « Tout le monde ». Le stockage local sert juste de secours hors-ligne. Laisse vide pour rester en local uniquement.</p>
       </div>
@@ -968,6 +969,9 @@ async function cloudSyncNow(silent){
   const data=await cloudPull();
   if(data===null){ setSync("offline"); if(!silent) toast("Cloud injoignable — ouvre l'appli hors de Claude"); return; }
   const cTs=data.ts||0;
+  // Si le cloud est en retard, on ne pousse PAS automatiquement : écraser la sauvegarde
+  // sans que tu l'aies demandé est trop risqué. L'envoi reste possible à la main.
+  if(silent && cTs<=(lastTs||0)){ setSync("ok"); return; }
   if(cTs>(lastTs||0) && data.state){
     hydrateState(data.state);
     if(Array.isArray(data.sessions)) sessions=data.sessions;
@@ -980,6 +984,36 @@ async function cloudSyncNow(silent){
     const ok=await cloudPush();
     if(!silent) toast(ok?"Cloud à jour":"Cloud injoignable");
   }
+}
+// Restauration : on récupère le contenu du Sheet TEL QUEL, sans comparer les dates.
+// C'est le seul moyen de revenir en arrière quand la copie locale a écrasé la bonne version.
+async function cloudRestore(){
+  if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; }
+  setSync("pending");
+  const data=await cloudPull();
+  if(data===null){ setSync("offline"); toast("Cloud injoignable"); return; }
+  const nb=Array.isArray(data.sessions)?data.sessions.length:0;
+  const ok=await ask("Restaurer depuis le cloud ?",
+    "Le Sheet contient "+nb+" session"+(nb>1?"s":"")+". Cette copie remplacera tes données locales actuelles.",
+    "Restaurer",true);
+  if(!ok){ updateSyncUI(); return; }
+  if(data.state) hydrateState(data.state);
+  if(Array.isArray(data.sessions)) sessions=data.sessions;
+  lastTs=data.ts||Date.now();
+  await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs}));
+  await Store.set(SESS_KEY, JSON.stringify(sessions));
+  replay(false); renderSessions(); render(); setSync("ok");
+  toast("Restauré : "+nb+" session"+(nb>1?"s":""));
+}
+// Sauvegarde de secours : un fichier JSON que tu gardes chez toi, indépendant du cloud.
+function backupToFile(){
+  const blob=new Blob([JSON.stringify({ts:Date.now(), state:stateBlob(), sessions}, null, 2)],
+    {type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="cresus-sauvegarde-"+new Date().toISOString().slice(0,10)+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("Sauvegarde de "+sessions.length+" session"+(sessions.length>1?"s":"")+" téléchargée");
 }
 async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps Script"); return; } setSync("pending"); const ok=await cloudPush(); toast(ok?"Envoyé au cloud":"Cloud injoignable — ouvre hors de Claude"); }
 
@@ -2000,8 +2034,9 @@ $("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); })
 $("saveSessionBtn").addEventListener("click",saveCurrentSession);
 $("exportBtn").addEventListener("click",exportSessions);
 $("sheetUrl").addEventListener("change",e=>saveSheetUrl(e.target.value));
-$("sheetTest").addEventListener("click",()=>cloudSyncNow(false));
+$("sheetTest").addEventListener("click",cloudRestore);
 $("sheetSyncAll").addEventListener("click",cloudForce);
+$("sheetBackup").addEventListener("click",backupToFile);
 $("newSessionBtn").addEventListener("click",openStartModal);
 $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ closeStartModal(); });
