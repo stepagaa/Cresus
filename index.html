@@ -440,7 +440,7 @@
   .mb-row.on .mb-c{border-color:var(--sage-dim);color:var(--ivory)}
   .mb-v{font-variant-numeric:tabular-nums;flex:none}
   .mb-row.neg .mb-v{color:var(--lose)}
-  /* état du cycle Triple S (au-dessus du pool de montantes) */
+  /* carte de séance : mise, TP, SL */
   .cyc-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 7px;margin-bottom:0;
     box-shadow:var(--shadow-card);flex:1 1 auto;min-height:0;min-width:0;width:100%;box-sizing:border-box;
     display:flex;flex-direction:column;overflow:hidden}
@@ -456,7 +456,7 @@
   .cyc-vbar{position:relative;width:9px;flex:1;min-height:64px;background:var(--line);border-radius:5px}
   .cyc-vfill{position:absolute;left:0;right:0;border-radius:5px;transition:top .3s,height .3s}
   .cyc-vfill.pos{background:var(--win)} .cyc-vfill.neg{background:var(--lose)}
-  .cyc-vzero{position:absolute;left:-3px;right:-3px;height:1px;background:var(--sage-dim)}
+  .cyc-vzero{position:absolute;left:-3px;right:-3px;height:1px;background:var(--sage-dim);transform:translateY(-50%)}
   .cyc-bar-bi{position:relative;overflow:visible}
   .cyc-bar-bi .cyc-fill{position:absolute;top:0;transition:left .3s,width .3s}
   .cyc-bar-bi .cyc-fill.pos{background:var(--win)}
@@ -543,10 +543,9 @@
     body.cycle-on #leftcol .cyc-bar{height:3px;margin-bottom:3px}
     body.cycle-on #leftcol .cyc-fig{font-size:9.5px}
     body.cycle-on #leftcol .cyc-keys{flex-direction:column;gap:3px}
-    body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:5px 6px;gap:4px;min-width:0}
+    body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:center;align-items:center;padding:6px 6px;min-width:0}
     body.cycle-on #leftcol .cyc-key .ck-lab{font-size:8.5px}
-    body.cycle-on #leftcol .cyc-key .ck-val{font-size:12.5px}
-    body.cycle-on #leftcol .cyc-key .ck-val{font-size:13px}
+    body.cycle-on #leftcol .cyc-key .ck-val{font-size:15px}
     /* cartes de détection compactées en mode cycle pour laisser la place au solde en bas de colonne */
     body.cycle-on #leftcol .mcell{padding:6px 8px}
     body.cycle-on #leftcol .mcell .mname{font-size:11px;min-height:0}
@@ -589,7 +588,7 @@
     #leftcol .cyc-bar{height:3px;margin-bottom:4px}
     #leftcol .cyc-fig{font-size:9.5px}
     #leftcol .cyc-keys{flex-direction:column;gap:3px}
-    #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:4px 6px;gap:4px;min-width:0}
+    #leftcol .cyc-key{flex-direction:row;justify-content:center;align-items:center;padding:5px 6px;min-width:0}
     #leftcol .cyc-key .ck-val{font-size:12px}
     #leftcol .cyc-key .ck-lab{font-size:9.5px}
     #leftcol .mb-lab{margin-bottom:6px}
@@ -645,12 +644,29 @@
     .num{min-width:0;min-height:0;border-radius:8px;font-size:17px;aspect-ratio:1.2}
     /* En paysage la largeur est abondante : montantes et solde côte à côte plutôt qu'empilés
        sur toute la largeur, où ils s'étirent pour trois lignes de texte. */
-    #leftcol{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
-    #leftcol #mini{grid-column:1 / -1}
     .num.z0{grid-column:1;grid-row:1 / span 3;aspect-ratio:auto;font-size:19px}
     .num:nth-child(3n+2){grid-row:1}   /* 1, 4, 7 … 34  → rangée du haut */
     .num:nth-child(3n+3){grid-row:2}   /* 2, 5, 8 … 35  → rangée du milieu */
     .num:nth-child(3n+4){grid-row:3}   /* 3, 6, 9 … 36  → rangée du bas */
+
+    /* Colonne gauche : les 3 cartes de détection en haut, le solde dessous. Colonne droite :
+       la carte de séance, étirée sur toute la hauteur des deux (align-items:stretch). */
+    #leftcol{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:11px;align-items:stretch}
+    #leftcol #mini{grid-column:1;grid-row:1}
+    #leftcol .solde-box{grid-column:1;grid-row:2}
+    #leftcol .mont-box{grid-column:2;grid-row:1 / span 2}
+
+    /* La barre passe à l'horizontale : SL à gauche, TP à droite, comme une jauge qu'on lit
+       de gauche à droite. Les fractions sont les mêmes qu'en vertical (--hl/--hw), seule
+       l'orientation d'affichage change. La carte étant plus haute qu'avant (elle occupe toute
+       la hauteur de la colonne), on centre bar+cases dans l'espace disponible. */
+    .cyc-body{flex-direction:column;flex:1;justify-content:center;gap:14px}
+    .cyc-vwrap{flex-direction:row;width:100%;gap:8px}
+    .cv-end.neg{order:-1}
+    .cv-end.pos{order:2}
+    .cyc-vbar{width:auto;height:9px;flex:1;min-height:0}
+    .cyc-vzero{top:-3px;bottom:-3px;left:var(--hl);right:auto;width:1px;height:auto;transform:translateX(-50%)}
+    .cyc-vfill{top:0;bottom:0;height:auto;left:var(--hl);width:var(--hw);right:auto}
   }
 
   /* ===== FORMAT PAYSAGE — 2/2 : compactage vertical =====
@@ -720,8 +736,8 @@
   @media (max-width:380px){
     body.cycle-on #leftcol .cyc-box{padding:8px 4px}
     body.cycle-on #leftcol .cyc-body{gap:3px}
-    body.cycle-on #leftcol .cyc-key{padding:4px 4px;gap:2px}
-    body.cycle-on #leftcol .cyc-key .ck-val{font-size:10.5px}
+    body.cycle-on #leftcol .cyc-key{padding:5px 4px}
+    body.cycle-on #leftcol .cyc-key .ck-val{font-size:12.5px}
     body.cycle-on #leftcol .cyc-key .ck-lab{font-size:7.5px}
     body.cycle-on #leftcol .cyc-slc{font-size:8.5px}
     body.cycle-on #leftcol .cyc-fig{font-size:10.5px}
@@ -803,10 +819,8 @@
         </div>
       </div>
       <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8"></div>
-      <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
-        <select id="inCycle"><option value="on">Triple S (automatique)</option><option value="off">Manuelle (TP/SL %)</option></select></div>
+      <div class="field"><label>Risque par séance<span class="hint">% du solde risqué · mise déduite (palier 0,50 €)</span></label><input type="number" id="inRisk" inputmode="decimal" value="10" step="1" min="1" max="100"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
-      <div class="field"><label>Mise de départ<span class="hint">en € · solde ÷ 200, palier 0,50 €, min 1 €</span></label><input type="number" id="inPiece" inputmode="decimal" value="1.00" step="0.5"></div>
       <div class="sheet-sync">
         <div class="sheet-h">Sauvegarde Google Sheets <span id="syncStatus" class="sync-pill off">● non configuré</span></div>
         <input type="url" id="sheetUrl" inputmode="url" autocomplete="off" placeholder="URL Apps Script (se termine par /exec)">
@@ -823,7 +837,7 @@
   </details>
 
   <footer>
-    Suivi personnel de la méthode « Crésus » (N. Fijeac) · une martingale par chance · cycle Triple S.
+    Suivi personnel de la méthode « Crésus » (N. Fijeac) · une martingale par chance, sans rattrapage entre séances.
     Aucune montante ne change l'avantage de la maison — fixe-toi une limite.
   </footer>
 
@@ -845,14 +859,13 @@
           <input type="text" id="startProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8">
         </div>
         <div class="strat-row">
-          <label class="strat-lab" for="startObj">Objectif de cycle (× mise départ)</label>
-          <input type="number" id="startObj" inputmode="decimal" step="1" min="1" value="9">
+          <label class="strat-lab" for="startRisk">Risque par séance (% du solde)</label>
+          <input type="number" id="startRisk" inputmode="decimal" step="1" min="1" max="100" value="10">
         </div>
         <div class="strat-figs" id="startStratFigs"></div>
       </div>
 
       <button class="modal-resume" id="startResume" style="display:none">Reprendre la séance en cours</button>
-      <button class="modal-resume" id="startResumeCycle" style="display:none">Reprendre le cycle · piste neuve</button>
       <button class="modal-go" id="startNew">Démarrer la séance</button>
     </div>
   </div>
@@ -928,12 +941,14 @@ const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 // ratée). Changer la progression met à jour le SL automatiquement (1-2-4-8 → 15 ; 1-2-5-10 → 18).
 let SESSION_PROG=[1,2,4,8];
 const sessionSL=()=>SESSION_PROG.reduce((a,b)=>a+b,0);   // pertes cumulées d'une montante pleine
-const SESSION_TP=3;                                       // objectif de session, en pièces
+const SESSION_TP=5;                                       // objectif de session, en pièces (3 séances gagnées = 1 SL rattrapé)
+const RISK_PCT_DEFAULT=0.10;                              // % du solde risqué par séance, par défaut
+let RISK_PCT=RISK_PCT_DEFAULT;                            // réglable depuis l'accueil
 // Palier dynamique : un cycle qui a creusé doit rapporter davantage avant d'être soldé.
 const CUR_MONT="og";                // montante de l'app (les sessions sont étiquetées avec)
 // libellés pour l'historique : les anciennes montantes n'existent plus dans l'app,
 // mais des sessions enregistrées avant leur retrait peuvent encore les référencer
-const MONT_LABEL={og:"Martingale",ts:"Triple S",m4:"Martingale",cresus:"Crésus"};
+const MONT_LABEL={og:"Martingale",m4:"Martingale",cresus:"Crésus"};
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -945,15 +960,14 @@ const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
 let jview="chart";
-let sessions=[]; let goalDismissed=false; let cycleSLfired=false; let cycleSeq=1;
+let sessions=[]; let goalDismissed=false;
 const SESS_KEY="cresus:sessions:v1";
 let S={
   capitalEur:200, pieceEur:1, capital:200, sessionStart:null,   // démarre au 1er équilibre 6-6
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  tpFinal:10, sl:-50, ctx:0, histFilter:CUR_MONT,
-  cycleOn:true, cycleStartEur:0, cycleStartMise:1, cycleObjEur:0, cycleCapEur:0, cycleCumEur:0, cycleBaseEur:1, cycleU:1, cycleSlEur:0, tpManualEur:0
+  tpFinal:5, sl:-15, ctx:0, histFilter:CUR_MONT
 };
 
 // ─── Montante par chance : plus de pool partagé, plus d'attribution dynamique. ───
@@ -961,12 +975,9 @@ let S={
 
 function recalcCapital(){
   S.capital = S.pieceEur>0 ? S.capitalEur/S.pieceEur : 0;
-  // Le SL de session est fixé en pièces par la montante (somme des paliers), en mode cycle
-  // comme en manuel — il ne doit pas être ré-dérivé d'un % du capital (sinon chaque recalcul l'écrase).
-  if(!S.cycleOn) S.sl = -sessionSL();
+  S.sl = -sessionSL();                              // SL de session = somme des paliers de la montante
 }
 function autoTP(){ return SESSION_TP; }   // TP de session = objectif de la montante (en pièces)
-function baseMise(soldeEur){ return Math.max(1, round2(Math.floor((soldeEur/200)/0.5)*0.5)); } // solde ÷ 200, palier de 0,50 €, minimum 1 €
 const Store={
   async get(k){
     if(window.storage){ try{ const r=await window.storage.get(k); return (r&&r.value!=null)?r.value:null; }catch(e){ return null; } }
@@ -978,18 +989,12 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,cycleOn:S.cycleOn,cycleStartEur:S.cycleStartEur,cycleStartMise:S.cycleStartMise,cycleObjEur:S.cycleObjEur,cycleCapEur:S.cycleCapEur,cycleCumEur:S.cycleCumEur,cycleBaseEur:S.cycleBaseEur,cycleU:S.cycleU,cycleSlEur:S.cycleSlEur,tpManualEur:S.tpManualEur,sessionProg:SESSION_PROG,cycleObjMult:CYCLE_OBJ_MULT,cycleSeq:cycleSeq}; }
-function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:10; S.ctx=o.ctx||0; S.histFilter=o.histFilter||CUR_MONT;
-  S.cycleOn=!!o.cycleOn; S.cycleStartEur=o.cycleStartEur||0; S.cycleStartMise=o.cycleStartMise||baseMise(o.cycleStartEur||200); S.cycleObjEur=o.cycleObjEur||0; S.cycleCapEur=o.cycleCapEur||0;
-  S.cycleCumEur=o.cycleCumEur||0; S.cycleBaseEur=o.cycleBaseEur||1; S.cycleU=o.cycleU||1; S.cycleSlEur=o.cycleSlEur||0; S.tpManualEur=o.tpManualEur||0;
-  // restaurer la config réglable : progression de session et objectif de cycle
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT}; }
+function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:SESSION_TP; S.ctx=o.ctx||0; S.histFilter=o.histFilter||CUR_MONT;
+  // restaurer la config réglable : progression de session et % de risque
   if(Array.isArray(o.sessionProg) && o.sessionProg.length) SESSION_PROG=o.sessionProg.filter(x=>x>0);
-  if(o.cycleObjMult>0) CYCLE_OBJ_MULT=o.cycleObjMult;
-  if(o.cycleSeq>0) cycleSeq=o.cycleSeq;
+  if(o.riskPct>0) RISK_PCT=o.riskPct;
   recalcCapital();                                  // le SL de session dépend de SESSION_PROG
-  // en mode cycle, re-fixer mise jouée / TP partiel / SL depuis l'état du cycle restauré
-  // (recalcCapital seul ne suffit pas : pieceEur et le SL fixe doivent suivre cycleU)
-  if(S.cycleOn && S.cycleObjEur>0) configureSessionFromCycle();
 }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
@@ -1417,7 +1422,7 @@ function saveCurrentSession(){
   const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
     pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:S.sessionStart?Date.now()-S.sessionStart:0,
     coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:CUR_MONT,
-    cycleId:(S.cycleOn?cycleSeq:0), cycleObj:S.cycleObjEur, parCh, miseMax:S.pieceEur, curve:downsample(curve,140) };
+    parCh, miseMax:S.pieceEur, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
   saveSessions(); renderSessions(); render();
@@ -1449,16 +1454,13 @@ function dayLabel(ts){
   if(k===dayKey(now-86400000)) return "Hier";
   return new Date(ts).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"short"});
 }
-// ─── Fenêtre de détail d'un cycle : tout ce qu'on peut en dire ───
+// ─── Fenêtre de détail d'une journée : tout ce qu'on peut en dire ───
 let cycModalKey=null;
 function openGroupModal(key){
   cycModalKey=key;
-  const estCycle=String(key).startsWith("cyc");
-  const list=estCycle
-    ? sessions.filter(s=>("cyc"+s.cycleId)===key)
-    : sessions.filter(s=>("j"+dayKey(s.date))===key);
+  const list=sessions.filter(s=>("j"+dayKey(s.date))===key);
   if(!list.length) return;
-  const chrono=list[list.length-1];                       // 1re séance du cycle
+  const chrono=list[list.length-1];                       // 1re séance du jour
   const net=list.reduce((a,s)=>a+(s.gain||0),0);
   const wag=list.reduce((a,s)=>a+(s.wagered||0),0);
   const dur=list.reduce((a,s)=>a+(s.duree||0),0);
@@ -1468,19 +1470,16 @@ function openGroupModal(key){
   const gagnees=list.filter(s=>s.gain>0).length, perdues=list.filter(s=>s.gain<0).length;
   const best=list.reduce((m,s)=>s.gain>(m?m.gain:-Infinity)?s:m,null);
   const worst=list.reduce((m,s)=>s.gain<(m?m.gain:Infinity)?s:m,null);
-  const obj=chrono&&chrono.cycleObj?chrono.cycleObj:0;
   const miseMax=list.reduce((m,s)=>Math.max(m,s.miseMax||s.base||0),0);
   const h=dur/3600000, eph=h>=1/60?net/h:null;
   const rdt=wag>0?net/wag*100:null;
   const tauxCoups=(wins+loss)>0?Math.round(wins/(wins+loss)*100):null;
   const soldeDeb=chrono?chrono.debut:0, soldeFin=list[0]?list[0].fin:0;
 
-  let statut="en cours", scls="run";
-  if(!estCycle){ statut="archive"; scls="idle"; }
-  else if(obj>0 && net>=obj-0.01){ statut="bouclé"; scls="ok"; }
-  else if(net<=-0.01){ statut="perdu"; scls="ko"; }
+  const scls = net>0.01?"ok":net<-0.01?"ko":"idle";
+  const statut = net>0.01?"positive":net<-0.01?"négative":"neutre";
 
-  // agrégat par chance simple : quelle montante a porté le cycle, laquelle a coûté
+  // agrégat par chance simple : quelle montante a le mieux/le moins bien performé
   const agg={}; let aucun=true;
   for(const s of list){ if(!s.parCh) continue; aucun=false;
     for(const k in s.parCh){ if(!agg[k]) agg[k]={g:0,n:0}; agg[k].g+=s.parCh[k].g; agg[k].n+=s.parCh[k].n; } }
@@ -1493,10 +1492,9 @@ function openGroupModal(key){
   let html=`<div class="cm-sub">${list.length} séance${list.length>1?"s":""} · ${statut} · ${fmtEur2(soldeDeb)} → ${fmtEur2(soldeFin)}</div>`;
   html+=`<div class="cm-grid">
     ${cell(sgn(net),"résultat net",net>=0?"pos":"neg")}
-    ${cell(obj>0?"+"+fmtEurC(obj):"—","objectif")}
+    ${cell(fmtEur2(wag),"misé")}
     ${cell(fmtDur(dur),"durée")}
     ${cell(gagnees+" / "+perdues,"séances G / P")}
-    ${cell(fmtEur2(wag),"misé")}
     ${cell(rdt==null?"—":((rdt>=0?"+":"−")+Math.abs(rdt).toFixed(1)+" %"),"rendement",rdt==null?"":(rdt>=0?"pos":"neg"))}
     ${cell(eph==null?"—":sgn(eph)+"/h","par heure",eph==null?"":(eph>=0?"pos":"neg"))}
     ${cell(coups,"numéros")}
@@ -1518,7 +1516,7 @@ function openGroupModal(key){
     return `<div class="cm-sess ${s.gain>0?'win':s.gain<0?'loss':''}"><span>${d}<span class="cs-m"> · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></span><span><b style="color:${s.gain>=0?'var(--win)':'var(--lose)'};font-family:var(--mono)">${sgn(s.gain)}</b><button class="cm-del s-del" data-i="${idx}" aria-label="supprimer">🗑</button></span></div>`;
   }).join("");
 
-  $("cycmTitle").innerHTML=(estCycle?("Cycle "+String(key).slice(3)):dayLabel(chrono?chrono.date:Date.now()))+` <span class="cyc-badge ${scls}">${statut}</span>`;
+  $("cycmTitle").innerHTML=dayLabel(chrono?chrono.date:Date.now())+` <span class="cyc-badge ${scls}">${statut}</span>`;
   $("cycmBody").innerHTML=html;
   $("cycModal").style.display="flex";
 }
@@ -1531,14 +1529,12 @@ function renderSessions(){
   const sg=v=>(Math.abs(v)<0.005?"":(v>0?"+":"−"))+num2(Math.abs(v))+" €";
   const cls=v=>Math.abs(v)<0.005?"":(v>0?"pos":"neg");
 
-  // regroupement par JOUR (fonctionnement d'origine) — sessions est trié du plus récent au plus ancien
-  // regroupement par CYCLE ; les séances antérieures au suivi par cycle restent groupées par jour
+  // regroupement par JOUR — sessions est trié du plus récent au plus ancien
   const days=[], map={};
   sessions.forEach((s,i)=>{
-    const k=(s.cycleId!=null && s.cycleId>0) ? ("cyc"+s.cycleId) : ("j"+dayKey(s.date));
+    const k="j"+dayKey(s.date);
     if(!map[k]){ map[k]={key:k,date:s.date,idx:[]}; days.push(map[k]); }
     map[k].idx.push(i); });
-
 
   el.innerHTML=days.map(d=>{
     const list=d.idx.map(i=>sessions[i]);
@@ -1547,14 +1543,9 @@ function renderSessions(){
     const dur =list.reduce((a,s)=>a+(s.duree||0),0);
     const first=list[list.length-1], pct=first&&first.debut? gain/first.debut*100 : 0;
     const n=list.length;
-    const estCycle=String(d.key).startsWith("cyc");
-    const obj=first&&first.cycleObj?first.cycleObj:0;
-    let statut="en cours", scls="run";
-    if(!estCycle){ statut="archive"; scls="idle"; }
-    else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="ok"; }
-    else if(gain<=-0.01){ statut="perdu"; scls="ko"; }
-    const titre=estCycle?("Cycle "+String(d.key).slice(3)):dayLabel(d.date);
-    return `<li class="d-row cyc-${scls}" data-d="${d.key}"><div class="d-main"><span class="d-date">${titre} <span class="cyc-badge ${scls}">${statut}</span></span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small> <span class="d-go">›</span></span></li>`;
+    const scls = gain>0.01?"ok":gain<-0.01?"ko":"idle";
+    const titre=dayLabel(d.date);
+    return `<li class="d-row cyc-${scls}" data-d="${d.key}"><div class="d-main"><span class="d-date">${titre}</span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small> <span class="d-go">›</span></span></li>`;
   }).join("");
   renderHistFilter(); renderHistory();
 }
@@ -1644,181 +1635,91 @@ function renderHistory(){
 function openStartModal(){
   $("startSolde").value=S.capitalEur||200;
   if($("startProg")) $("startProg").value=SESSION_PROG.join("-");
-  if($("startObj")) $("startObj").value=CYCLE_OBJ_MULT;
+  if($("startRisk")) $("startRisk").value=Math.round(RISK_PCT*100);
   updateStartMise(); updateSyncUI();
   const has=S.spins&&S.spins.length>0;
   const rb=$("startResume"); rb.style.display=has?"":"none";
   if(has) rb.textContent="Reprendre la séance en cours ("+S.spins.length+" n°)";
-  // si un cycle Triple S est en cours (cumul entamé), on le signale et on protège le bouton Démarrer
-  const ci=$("startCycInfo");
-  const cycleEnCours = S.cycleOn && S.cycleObjEur>0 && (S.cycleCumEur!==0 || S.cycleBaseEur!==S.cycleStartMise);
-  $("startResumeCycle").style.display = cycleEnCours ? "" : "none";
-  if(cycleEnCours){
-    ci.style.display="";
-    ci.innerHTML="🔶 <b>Cycle Triple S en cours</b> · cumul "+plusEur(S.cycleCumEur)+" / "+fmtEur2(S.cycleObjEur)
-      +" · mise "+fmtEur2(S.cycleU||S.cycleBaseEur)
-      +"<br><b>Reprendre le cycle · piste neuve</b> : continue le cycle avec des numéros vierges (recommandé si la table a tourné)."
-      +"<br>« Démarrer » repart un nouveau cycle (l'en-cours sera perdu).";
-    $("startNew").textContent="Démarrer un nouveau cycle";
-  } else {
-    ci.style.display="none";
-    $("startNew").textContent="Démarrer la séance";
-  }
+  $("startCycInfo").style.display="none";
+  $("startNew").textContent="Démarrer la séance";
   $("startModal").style.display="flex";
 }
 function closeStartModal(){ $("startModal").style.display="none"; }
 function updateStartMise(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v>0){
-    const p=baseMise(v);
+    const p=miseFromRisk(v);
     $("startMise").textContent="Mise de base : "+fmtEur2(p)+" · "+Math.round(v/p)+" pièces";
   } else {
     $("startMise").textContent="Mise de base : —";
   }
   updateStratFigs();
 }
+// Mise déduite du % de risque accepté pour une séance : mise = (solde × risque%) ÷ somme des
+// paliers, arrondie au palier de 0,5 €. Le SL réel qui en résulte vaut alors très exactement
+// ce % du solde.
+// Arrondit la mise déduite du risque. En dessous de 150 € de solde, un palier de 0,50 € est trop
+// grossier (il peut à lui seul représenter une grosse part du budget de risque) : on descend à
+// un palier de 0,10 € pour rester proche du % demandé. Au-dessus, on garde le palier de 0,50 €.
+function roundMise(budget, slUnites, solde){
+  const step = solde<150 ? 0.1 : 0.5;
+  const mini = solde<150 ? 0.1 : 0.5;
+  return Math.max(mini, round2(Math.round((budget/slUnites)/step)*step));
+}
+function miseFromRisk(solde){
+  const slUnites=SESSION_PROG.reduce((a,b)=>a+b,0);
+  const riskPct=Math.max(1,Math.min(100,parseFloat($("startRisk")&&$("startRisk").value)||RISK_PCT_DEFAULT*100))/100;
+  const budget=solde*riskPct;
+  return roundMise(budget, slUnites, solde);
+}
 // Récapitule la stratégie active en euros, d'après le solde de départ et la config éditable.
 function updateStratFigs(){
   const el=$("startStratFigs"); if(!el) return;
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
-  const p=v>0?baseMise(v):1;                       // mise de base (= mise de départ du cycle)
+  const p=v>0?miseFromRisk(v):1;                   // mise de base, déduite du % de risque
   const slPieces=SESSION_PROG.reduce((a,b)=>a+b,0);// SL session = somme des paliers
-  const objMult=Math.max(1,parseInt($("startObj")&&$("startObj").value,10)||CYCLE_OBJ_MULT);
   el.innerHTML=
     `<div class="strat-fig"><span class="sf-lab">TP SÉANCE</span><span class="sf-val pos">+${fmtEurC(SESSION_TP*p)}</span></div>`
    +`<div class="strat-fig"><span class="sf-lab">SL SÉANCE</span><span class="sf-val neg">−${fmtEurC(slPieces*p)}</span></div>`
-   +`<div class="strat-fig"><span class="sf-lab">OBJ. CYCLE</span><span class="sf-val">+${fmtEurC(objMult*p)}</span></div>`;
+   +`<div class="strat-fig"><span class="sf-lab">MISE</span><span class="sf-val">${fmtEurC(p)}</span></div>`;
 }
-// Reprendre le cycle Triple S sur une PISTE NEUVE : la table de roulette a tourné pendant
 // l'interruption, on repart donc sur des numéros vierges, mais le cycle (cumul, mise de base,
 // objectif) est conservé — c'est la gestion de mises qui continue, pas la séance de roulette.
-function resumeCycleFreshTrack(){
-  S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false; setRev(false);
-  if(S.cycleOn) configureSessionFromCycle();   // ré-applique mise/TP/SL du cycle en cours
-  replay(false); save(); render(); closeStartModal();
-  toast("Cycle repris — nouvelle piste, mise "+fmtEur2(S.cycleU||S.pieceEur));
-}
 async function startNewSession(){
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   if(v<=0){ toast("Indique un solde valide"); return; }
-  // garde-fou : si un cycle Triple S est entamé, confirmer avant de le réinitialiser
-  const cycleEnCours = S.cycleOn && S.cycleObjEur>0 && (S.cycleCumEur!==0 || S.cycleBaseEur!==S.cycleStartMise);
-  if(cycleEnCours){
-    if(!await ask("Repartir un nouveau cycle ?","Le cycle Triple S en cours (cumul "+plusEur(S.cycleCumEur)+" / "+fmtEur2(S.cycleObjEur)+", mise "+fmtEur2(S.cycleU||S.cycleBaseEur)+") sera abandonné et repart de zéro. Pour le garder, choisis plutôt « Reprendre ».","Nouveau cycle",true)) return;
-  }
   // appliquer la config choisie sur l'accueil
   const parts=($("startProg").value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
   if(parts.length){ SESSION_PROG=parts; }
-  const objM=Math.max(1,parseInt($("startObj").value,10)||CYCLE_OBJ_MULT); CYCLE_OBJ_MULT=objM;
-  // garde-fou : le solde doit pouvoir encaisser plusieurs stop-loss de séance, sinon la
-  // stratégie est intenable (on serait ruiné avant même de toucher le SL).
-  const miseD=baseMise(v), slSess=SESSION_PROG.reduce((a,b)=>a+b,0)*miseD, mini=3*slSess;
-  if(v<mini){
-    if(!await ask("Solde trop faible ?",
-      "Avec une mise de "+fmtEur2(miseD)+", un stop-loss de séance coûte "+fmtEur2(slSess)+
-      ". Ton solde de "+fmtEur2(v)+" n'en couvre pas trois ("+fmtEur2(mini)+" conseillés) : une mauvaise série peut t'épuiser avant que les garde-fous jouent.",
-      "Démarrer quand même",true)) return;
-  }
-  S.capitalEur=v; S.pieceEur=baseMise(v); recalcCapital();
-  if(S.cycleOn){ startCycle(); } else { S.tpFinal=SESSION_TP; }
+  const riskPct=Math.max(1,Math.min(100,parseFloat($("startRisk").value)||RISK_PCT_DEFAULT*100))/100;
+  RISK_PCT=riskPct;
+  S.capitalEur=v; setMiseFromRisk(); recalcCapital(); S.tpFinal=SESSION_TP;
 
   setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
   replay(false); save(); render(); closeStartModal();
 }
 
+// Calcule la mise de base à partir du solde courant et du % de risque accepté par séance :
+// mise = (solde × RISK_PCT) ÷ somme des paliers, arrondie au palier de 0,5 €. Le SL réel qui en
+// résulte (somme des paliers × mise) vaut alors très exactement RISK_PCT du solde.
+function setMiseFromRisk(){
+  const slUnites=sessionSL();                       // somme des paliers de la montante
+  const budget=S.capitalEur*RISK_PCT;                // ce qu'on accepte de perdre sur une séance
+  S.pieceEur=roundMise(budget, slUnites, S.capitalEur);
+}
+
 function continueSession(){
   saveCurrentSession();                        // « Continuer » enregistre d'abord automatiquement
-  // reporte le solde de fin de séance comme nouveau capital, garde les derniers numéros comme contexte
-  const finEur=Math.max(round2(S.solde*S.pieceEur), S.pieceEur);
-  // IMPORTANT : le résultat du cycle se lit AVANT d'écraser le capital (sinon solde==capital → gain 0,
-  // le cumul ne bougeait pas et une séance gagnée était comptée comme perdue → mise +2 au lieu de +1).
-  const cycleGainEur = S.cycleOn ? round2((S.solde-S.capital)*S.pieceEur) : 0;
+  // reporte le solde de fin de séance comme nouveau capital ; AUCUN rattrapage entre séances —
+  // chaque nouvelle séance recalcule sa propre mise sur le solde du moment, indépendamment du
+  // résultat de la précédente. On gagne ou on perd, on accepte, on repart.
+  const finEur=Math.max(round2(S.solde*S.pieceEur), 0.5);
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
-  S.tpManualEur=0;                              // le TP manuel ne vaut que pour la séance qui vient de finir
-  S.capitalEur=finEur; recalcCapital();
-  if(S.cycleOn) applyCycleSession(cycleGainEur); else S.tpFinal=autoTP();
+  S.capitalEur=finEur; setMiseFromRisk(); recalcCapital(); S.tpFinal=SESSION_TP;
   S.log=[]; S.sessionStart=null; goalDismissed=false;                        // chrono armé au 1er 6-6
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
-}
-
-/* ═══════════════════ GESTION DE CYCLE « TRIPLE S » (optionnelle) ═══════════════════
-   Trois étages emboîtés :
-   • chaque séance se joue à la martingale (une montante par chance simple) ;
-   • chaque séance vise un partiel (TP/SL fixes en pièces) ; gagnée/perdue, elle fait
-     progresser la mise de base selon Triple S : +1€ sur gain, +2€ sur perte ;
-   • le cycle vise un objectif global (% du solde de départ, figé) ; atteint, on encaisse
-     le dépassement et on repart mise de base 1€, objectif recalculé sur le nouveau solde.
-   Tous les montants sont proportionnels au solde de DÉPART DU CYCLE, figés jusqu'au reset. */
-let CYCLE_OBJ_MULT=9;   // réglable depuis l'accueil (× mise de départ)       // TP cycle = 9 × mise de départ (= 3 sessions pleines, multiple de 3)
-const CYCLE_CAP_MULT=20;      // plafond de mise = 20 × mise de départ
-const CYCLE_SL_PCT=0.50;      // SL de cycle = 50 % du solde de départ du cycle (arrêt immédiat)
-
-// démarre un nouveau cycle sur le solde courant. La mise de DÉPART découle du solde (baseMise) et
-// partiel/objectif/plafond en sont des multiples exacts → 3 partiels pleins ferment le cycle,
-// plus jamais de dernière session pour un résidu (ex. 1,35 €).
-function startCycle(){
-  const soldeEur=S.capitalEur;
-  const startMise=baseMise(soldeEur);              // 200€→1€, 300€→1,5€
-  S.cycleStartEur=soldeEur;
-  S.cycleStartMise=startMise;                      // mise de départ, figée pour tout le cycle
-  S.cycleObjEur=round2(CYCLE_OBJ_MULT*startMise);  // 15× : 200€→15€, 300€→22,5€
-  S.cycleSlEur=-round2(soldeEur*CYCLE_SL_PCT);     // SL de cycle : −50 % du solde de départ
-  S.cycleCapEur=round2(CYCLE_CAP_MULT*startMise);  // 20× : plafond de mise
-  S.cycleCumEur=0;                                 // cumul gagné dans le cycle
-  S.cycleBaseEur=startMise;                        // mise de base (u), démarre à la mise de départ
-  S.tpManualEur=0;                                 // pas de TP manuel au démarrage d'un cycle
-  cycleSLfired=false;                              // réarme le garde-fou du SL de cycle
-  configureSessionFromCycle();
-}
-// règle la séance courante d'après l'état du cycle : mise = u (plafonnée / réduite pour finir pile)
-function configureSessionFromCycle(){
-  const startMise=S.cycleStartMise||baseMise(S.cycleStartEur||S.capitalEur);
-  const resteEur=S.cycleObjEur-S.cycleCumEur;             // ce qu'il reste à gagner pour boucler
-  // Mise par défaut = mise de base de la progression Triple S, bornée par le plafond.
-  let u=Math.min(S.cycleBaseEur, S.cycleCapEur);
-  // ─── Ajustement de fin de cycle ───
-  // Une session gagnante rapporte au plus SESSION_TP pièces (× mise). Si une session pleine à la
-  // mise Triple S peut DÉJÀ boucler le cycle (SESSION_TP × u ≥ reste), inutile de miser autant :
-  // on prend la PLUS PETITE mise (multiple de la mise de départ) telle que SESSION_TP × mise ≥ reste.
-  // La mise peut ainsi DESCENDRE (reste 20€, TP×5 → mise 4€), pour ne risquer que le nécessaire.
-  if(SESSION_TP*u >= resteEur - 1e-9){
-    const needed = resteEur/SESSION_TP;                   // mise minimale en € pour couvrir le reste
-    const steps  = Math.max(1, Math.ceil(needed/startMise - 1e-9));
-    u = Math.min(u, steps*startMise);                     // on ne monte jamais, on peut descendre
-  }
-  S.cycleU=round2(u);
-  S.pieceEur=S.cycleU; recalcCapital();
-  // TP de session : TOUJOURS SESSION_TP pièces (= SESSION_TP × mise). On ne le réduit JAMAIS pour
-  // finir pile — si le gain dépasse l'objectif du cycle, l'excédent est encaissé en bonus (géré au
-  // bouclage). Un TP manuel (en €) peut le remplacer ponctuellement (réglable dans la bannière).
-  if(S.tpManualEur>0){
-    S.tpFinal=S.tpManualEur/S.cycleU;             // TP manuel en € → seuil en pièces (peut être fractionnaire)
-  } else {
-    S.tpFinal=SESSION_TP;
-  }
-  S.sl=-sessionSL();                                       // SL session = somme des paliers (dérivé)
-}
-// appelée à la clôture d'une séance en mode cycle : enregistre gain/perte, progresse, reset si bouclé.
-// gainEur est fourni par l'appelant (mesuré AVANT que le capital soit reporté), voir continueSession.
-function applyCycleSession(gainEur){
-  if(gainEur==null) gainEur=round2((S.solde-S.capital)*S.pieceEur);
-  S.cycleCumEur=round2(S.cycleCumEur+gainEur);
-  const step=S.cycleStartMise||1;                          // pas = 1 mise de départ (commensurable)
-  // La progression repart de la mise RÉELLEMENT jouée (S.cycleU) : si elle a été ajustée à la baisse
-  // en fin de cycle, une perte reprend le +2 depuis cette mise ajustée (règle validée), pas depuis
-  // une mise théorique. Gain → +1 mise de départ, perte → +2.
-  const played=S.cycleU||S.cycleBaseEur;
-  if(gainEur>0) S.cycleBaseEur=round2(played+step);
-  else          S.cycleBaseEur=round2(played+2*step);
-  if(S.cycleCumEur>=S.cycleObjEur-1e-9){                    // objectif atteint → encaisse, reset
-    if(EMIT) toast("Cycle bouclé "+plusEur(S.cycleCumEur)+" — nouveau cycle");
-    cycleSeq++;                                             // le prochain cycle a un nouvel identifiant
-    startCycle();
-  } else {
-    configureSessionFromCycle();
-  }
 }
 
 /* ---- historique d'une chance simple (où j'en suis sur la montante) ---- */
@@ -1880,35 +1781,12 @@ function openCoup(idx){
 }
 
 /* ---- rendu ---- */
-// Déclenché quand le cumul de cycle atteint le SL (−50 % du solde de départ) : arrêt immédiat.
-// On enregistre la session en cours, on solde le cycle en perte, on revient à l'accueil.
-function onCycleSL(){
-  const perte=round2(S.cycleCumEur + (S.solde-S.capital)*S.pieceEur);
-  cycleSeq++;                              // ce cycle est clos (en perte)
-  // Le cycle est terminé : on désarme le seuil et on repart d'un cumul neutre, sinon la
-  // condition reste vraie et se redéclenche à chaque rendu / rechargement de l'app.
-  S.cycleSlEur=0; S.cycleCumEur=0;
-  S.capitalEur=Math.max(0, round2(S.solde*S.pieceEur));
-  toast("🛑 Stop-loss de cycle atteint ("+plusEur(perte)+") — cycle arrêté");
-  goalDismissed=true;
-  save();
-  render();
-  openStartModal();                        // retour à l'accueil : à toi de décider la suite
-}
 function render(){
-  document.body.classList.toggle("cycle-on", !!S.cycleOn);
+  document.body.classList.toggle("cycle-on", true);
   const last=S.spins.length-1;
   const gainPieces=S.solde-S.capital;
   const hitTP=gainPieces>=(S.tpFinal)-1e-9;
   const hitSL=gainPieces<=(S.sl)+1e-9;
-  // SL de cycle (arrêt immédiat) : cumul du cycle + perte de la session EN COURS ≤ −50 % du solde.
-  // Se surveille en temps réel, sans attendre la fin de session.
-  // Cumul du cycle EN DIRECT : ce qui est déjà acquis + le résultat de la session en cours.
-  // C'est cette valeur qui pilote la barre, pour qu'elle bouge à chaque coup joué.
-  const cumLive = S.cycleOn ? round2(S.cycleCumEur + gainPieces*S.pieceEur) : 0;
-  let hitCycleSL=false;
-  if(S.cycleOn && S.cycleSlEur<0) hitCycleSL = cumLive <= S.cycleSlEur + 1e-9;
-  if(hitCycleSL && !cycleSLfired){ cycleSLfired=true; onCycleSL(); return; }
   const ended=(hitTP||hitSL)&&!goalDismissed;
   for(const ch of COUPLES){
     const C=S.cpl[ch], id=CID[ch];
@@ -1955,58 +1833,43 @@ function render(){
     +`<div class="sb-stat"><span class="v lose">${nP}</span><span class="k">pertes</span></div>`
     +`<div class="sb-stat"><span class="v">${eur(S.wagered)}</span><span class="k">misé</span></div>`;
 
-  // état du pool : quelle chance occupe quelle montante, cumul et palier visé
-  let cycHTML="";
-  if(S.cycleOn){
-    // Barre bidirectionnelle. Borne haute = objectif du cycle. Borne basse = ce que deviendrait le
-    // cumul si la SESSION EN COURS touchait son stop-loss (SL de session en €, à la mise actuelle,
-    // appliqué au cumul du début de session). On borne à 0 minimum pour garder le zéro visible.
-    const obj=S.cycleObjEur||1;
-    const slSessEur=Math.abs(S.sl)*S.pieceEur;                 // SL de session, en euros
-    const low=Math.min(0, round2(S.cycleCumEur-slSessEur));     // plancher = SL de la session en cours
-    const slAbs=Math.abs(low)||1, span=obj+slAbs;
-    const zeroPct=slAbs/span*100;                              // position du 0 sur la barre
-    const cum=cumLive;                                       // évolue à chaque coup
-    const capped=S.cycleBaseEur>S.cycleCapEur+1e-9;          // mise bridée par le plafond du cycle
-    const marge=round2(cum-S.cycleSlEur);                    // ce qu'il reste avant le stop-loss de cycle
-    const ratio=S.cycleSlEur<0 ? marge/Math.abs(S.cycleSlEur) : 1;
-    const slcCls = ratio<=0.15 ? "danger" : ratio<=0.35 ? "warn" : "";
-    // Barre VERTICALE : l'objectif en haut, le stop-loss de séance en bas, le zéro entre les deux.
-    // Le remplissage part du zéro et monte (gain) ou descend (perte).
-    const zeroTop=obj/span*100;                 // position du 0, mesurée depuis le haut
-    let vTop, vHeight, fillCls;
-    if(cum>=0){
-      vHeight=Math.min(obj,cum)/span*100;
-      vTop=zeroTop-vHeight;                     // il monte vers l'objectif
-      fillCls="pos";
-    } else {
-      vHeight=Math.min(slAbs,-cum)/span*100;
-      vTop=zeroTop;                             // il descend vers le stop-loss
-      fillCls="neg";
-    }
-    cycHTML=`<div class="cyc-box">
-      <div class="cyc-top"><span class="cyc-fig mono"><span class="${cum>=0?'pos':'neg'}">${(cum>=0?'+':'−')+fmtEur2(Math.abs(cum)).replace(' €','')}</span> / +${fmtEur2(obj).replace(' €','')} €</span></div>
+  // carte de séance : mise, TP, SL — la barre va du stop-loss au take-profit. On calcule les deux
+  // jeux de coordonnées (verticale pour le portrait, horizontale pour le paysage) à partir des
+  // mêmes fractions : ça évite de dupliquer la logique, seule la mise en page CSS choisit laquelle
+  // s'affiche selon l'orientation.
+  const tpAbs=S.tpFinal, slAbs=Math.abs(S.sl), span=tpAbs+slAbs;
+  const zeroTop=tpAbs/span*100;                 // position du 0 verticale, mesurée depuis le haut
+  const zeroLeft=slAbs/span*100;                // position du 0 horizontale, mesurée depuis la gauche
+  let vTop, vHeight, hLeft, hWidth, fillCls;
+  if(gainPieces>=0){
+    vHeight=Math.min(tpAbs,gainPieces)/span*100; vTop=zeroTop-vHeight;
+    hWidth=vHeight; hLeft=zeroLeft;
+    fillCls="pos";
+  } else {
+    vHeight=Math.min(slAbs,-gainPieces)/span*100; vTop=zeroTop;
+    hWidth=vHeight; hLeft=zeroLeft-hWidth;
+    fillCls="neg";
+  }
+  const cycHTML=`<div class="cyc-box">
+      <div class="cyc-top"><span class="cyc-fig mono ${gainPieces>=0?'pos':'neg'}">${(gainPieces>=0?'+':'−')+fmtEur2(Math.abs(gainPieces)*S.pieceEur).replace(' €','')} €</span></div>
       <div class="cyc-body">
         <div class="cyc-vwrap mono">
-          <span class="cv-end pos" title="objectif du cycle">+${Math.round(obj)}</span>
+          <span class="cv-end pos" title="take-profit de la séance">+${Math.round(tpAbs*S.pieceEur)}</span>
           <div class="cyc-vbar">
-            <div class="cyc-vzero" style="top:${zeroTop}%"></div>
-            <div class="cyc-vfill ${fillCls}" style="top:${vTop}%;height:${vHeight}%"></div>
+            <div class="cyc-vzero" style="top:${zeroTop}%;--hl:${zeroLeft}%"></div>
+            <div class="cyc-vfill ${fillCls}" style="top:${vTop}%;height:${vHeight}%;--hl:${hLeft}%;--hw:${hWidth}%"></div>
           </div>
-          <span class="cv-end neg" title="stop-loss de la séance">${Math.round(low)}</span>
+          <span class="cv-end neg" title="stop-loss de la séance">−${Math.round(slAbs*S.pieceEur)}</span>
         </div>
       <div class="cyc-keys mono">
-        <div class="cyc-key"><span class="ck-lab">MISE${capped?" ⊤":""}</span><span class="ck-val">${fmtEurC(S.cycleU||S.cycleBaseEur)}</span></div>
-        <div class="cyc-key cyc-key-tp" id="cycTPkey" title="Modifier le take-profit"><span class="ck-lab">TP ✎</span><span class="ck-val pos">+${fmtEurC(S.tpFinal*S.pieceEur)}</span></div>
-        <div class="cyc-key"><span class="ck-lab">SL</span><span class="ck-val neg">−${fmtEurC(Math.abs(S.sl)*S.pieceEur)}</span></div>
+        <div class="cyc-key" title="Mise"><span class="ck-val">${fmtEurC(S.pieceEur)}</span></div>
+        <div class="cyc-key" title="Take-profit"><span class="ck-val pos">+${fmtEurC(tpAbs*S.pieceEur)}</span></div>
+        <div class="cyc-key" title="Stop-loss"><span class="ck-val neg">−${fmtEurC(slAbs*S.pieceEur)}</span></div>
       </div>
       </div>
-      <div class="cyc-slc ${slcCls}"><span title="stop-loss de cycle : ${fmtEur2(S.cycleSlEur)}">marge SL ${Math.round(marge)} €</span></div>
+      <div class="cyc-slc"><span title="risque accepté par séance">${Math.round(RISK_PCT*100)}% du solde en jeu</span></div>
     </div>`;
-  }
   $("mbList").innerHTML=cycHTML;
-  // la boîte n'a de sens qu'avec un cycle en cours : on la masque sinon (plus de cadre vide)
-  const mbBox=document.querySelector(".mont-box"); if(mbBox) mbBox.style.display=S.cycleOn?"":"none";
 
   $("solde").textContent=eur(S.solde);
   const pnl=round2(S.solde-S.capital);
@@ -2024,8 +1887,8 @@ function render(){
         const cpl=CNAME[e.ch]; const sign=e.r==="G"?"+":"−";
         return `<li class="${cls}" data-li="${it.idx}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
 
-  $("inBank").value=S.capitalEur; $("inPiece").value=S.pieceEur; if($("inProg"))$("inProg").value=SESSION_PROG.join("-");
-  $("inTP").value=S.tpFinal; $("inSL").value=S.sl; if($("inCycle")) $("inCycle").value=S.cycleOn?"on":"off";
+  $("inBank").value=S.capitalEur; if($("inProg"))$("inProg").value=SESSION_PROG.join("-");
+  $("inTP").value=S.tpFinal; $("inSL").value=S.sl; if($("inRisk")) $("inRisk").value=Math.round(RISK_PCT*100);
 
   // fin de séance : take-profit ou stop-loss
   const banner=$("goalBanner");
@@ -2033,17 +1896,7 @@ function render(){
   banner.className="banner"+(hitSL?" banner-sl":"");
   if(ended){
     const gEur=gainPieces*S.pieceEur;
-    let main = hitTP ? "🎯 Take-profit · "+plusEur(gEur) : "🛑 Stop-loss · "+fmtEur2(gEur);
-    if(S.cycleOn){
-      // projette l'état du cycle APRÈS cette séance : cumul, prochaine mise, reste
-      const cumApres=round2(S.cycleCumEur+gEur);
-      const nextBase=S.cycleBaseEur+(gEur>0?1:2);
-      const reste=round2(S.cycleObjEur-cumApres);
-      const boucle = cumApres>=S.cycleObjEur-1e-9;
-      main += boucle
-        ? " · <b>cycle bouclé "+plusEur(cumApres)+"</b> → nouveau cycle"
-        : " · cycle "+plusEur(cumApres)+"/"+fmtEur2(S.cycleObjEur)+" · reste "+fmtEur2(reste)+" · mise suiv. "+fmtEur2(Math.min(nextBase,S.cycleCapEur));
-    }
+    const main = hitTP ? "🎯 Take-profit · "+plusEur(gEur) : "🛑 Stop-loss · "+fmtEur2(gEur);
     $("goalTxt").innerHTML=main;
   }
   updateRate();
@@ -2104,18 +1957,6 @@ $("askModal").addEventListener("click",e=>{ if(e.target===$("askModal")) askClos
 /* ---- events ---- */
 $("numGrid").addEventListener("click",e=>{ const t=e.target.closest("[data-n]"); if(!t)return; addSpin(parseInt(t.dataset.n,10)); });
 $("undo").addEventListener("click",undoSpin);
-// TP modifiable en euros : tap sur la case TP de la carte cycle
-$("mbList").addEventListener("click",e=>{
-  if(!e.target.closest("#cycTPkey")) return;
-  if(!S.cycleOn){ toast("Le TP se règle en mode Triple S"); return; }
-  const actuel=round2(S.tpFinal*S.pieceEur);
-  const saisie=prompt("Take-profit de la séance en € (défaut : "+fmtEur2(SESSION_TP*S.cycleU)+")", String(actuel));
-  if(saisie==null) return;                       // annulé
-  const v=parseFloat(String(saisie).replace(",","."));
-  if(!(v>0)){ S.tpManualEur=0; toast("TP remis au défaut ("+SESSION_TP+"× mise)"); }
-  else { S.tpManualEur=round2(v); toast("TP fixé à "+fmtEur2(v)); }
-  configureSessionFromCycle(); replay(false); save(); render();
-});
 $("revInput").addEventListener("click",()=>{
   if(revMode){ setRev(false); return; }
   if(S.spins.length>=12){ toast("Piste déjà remplie — vide-la d'abord"); return; }
@@ -2132,29 +1973,27 @@ $("clearTrack").addEventListener("click",async()=>{
   setRev(false); S.spins=[]; S.ctx=0; S.sessionStart=null; replay(false); render(); save(); toastUndo("Piste vidée",snap);
 });
 $("inBank").addEventListener("change",e=>{ S.capitalEur=Math.max(0,parseFloat(e.target.value)||0); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
-$("inPiece").addEventListener("change",e=>{ S.pieceEur=Math.max(1,parseFloat(e.target.value)||1); recalcCapital(); S.tpFinal=autoTP(); replay(false); render(); save(); });
 
 $("inProg").addEventListener("change",e=>{
   // parse "1-2-4-8" → [1,2,4,8]. Garde des entiers positifs ; ignore l'entrée invalide.
   const parts=(e.target.value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
   if(parts.length){ SESSION_PROG=parts; }
   e.target.value=SESSION_PROG.join("-");
-  recalcCapital();                       // met à jour le SL (somme des paliers)
-  if(S.cycleOn) configureSessionFromCycle();
+  setMiseFromRisk(); recalcCapital();    // met à jour la mise et le SL (somme des paliers)
   replay(false); render(); save();
   toast("Montante "+SESSION_PROG.join("-")+" · SL "+sessionSL()+" pièces");
 });
-$("inCycle").addEventListener("change",e=>{
-  const on=e.target.value==="on"; S.cycleOn=on;
-  if(on){ startCycle(); toast("Gestion Triple S activée — objectif "+fmtEur2(S.cycleObjEur)); }
-  else { S.pieceEur=baseMise(S.capitalEur); recalcCapital(); S.tpFinal=autoTP(); toast("Gestion manuelle rétablie"); }
-  replay(false); render(); save();
+$("inRisk").addEventListener("change",e=>{
+  const pct=Math.max(1,Math.min(100,parseFloat(e.target.value)||10));
+  RISK_PCT=pct/100; e.target.value=pct;
+  setMiseFromRisk(); recalcCapital(); replay(false); render(); save();
+  toast("Risque par séance : "+pct+"% du solde — mise "+fmtEur2(S.pieceEur));
 });
 $("clearSessions").addEventListener("click",async()=>{
   const n=sessions.length;
   if(!n){ toast("Aucune session à effacer"); return; }
   const cloud = sheetUrl ? " (y compris sur le Google Sheet synchronisé)" : "";
-  if(!await ask("Effacer l'historique ?","Les "+n+" session"+(n>1?"s":"")+" enregistrée"+(n>1?"s":"")+", les courbes et les statistiques long terme seront définitivement supprimées"+cloud+". Ton solde, ta piste et le mode Triple S sont conservés. Action irréversible.","Effacer",true)) return;
+  if(!await ask("Effacer l'historique ?","Les "+n+" session"+(n>1?"s":"")+" enregistrée"+(n>1?"s":"")+", les courbes et les statistiques long terme seront définitivement supprimées"+cloud+". Ton solde et ta piste sont conservés. Action irréversible.","Effacer",true)) return;
   sessions=[]; openDay=""; openSession=-1;
   await saveSessions();                 // écrase le journal local + propage au cloud
   renderSessions(); render();
@@ -2186,7 +2025,6 @@ $("sheetBackup").addEventListener("click",backupToFile);
 $("newSessionBtn").addEventListener("click",openStartModal);
 $("startNew").addEventListener("click",startNewSession);
 $("startResume").addEventListener("click",()=>{ closeStartModal(); });
-$("startResumeCycle").addEventListener("click",resumeCycleFreshTrack);
 $("startSolde").addEventListener("input",updateStartMise);
 $("startProg").addEventListener("input",()=>{
   const parts=($("startProg").value||"").split(/[-,\s]+/).map(x=>parseInt(x,10)).filter(x=>x>0);
@@ -2194,7 +2032,7 @@ $("startProg").addEventListener("input",()=>{
   updateStratFigs();
 });
 $("startProg").addEventListener("change",()=>{ $("startProg").value=SESSION_PROG.join("-"); if($("inProg"))$("inProg").value=SESSION_PROG.join("-"); recalcCapital(); updateStratFigs(); });
-$("startObj").addEventListener("input",updateStratFigs);
+$("startRisk").addEventListener("input",updateStratFigs);
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
 $("histBody").addEventListener("click",async e=>{
   const b=e.target.closest("[data-mig]"); if(!b) return;
