@@ -3,7 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0f1e">
+<meta name="theme-color" content="#0d0e10">
+<script>
+// Thème appliqué AVANT le rendu pour éviter un flash. Préférence : "auto" (suit le téléphone),
+// "light" ou "dark" si tu forces depuis les réglages.
+(function(){
+  var pref="auto";
+  try{ pref=localStorage.getItem("cresus:theme")||"auto"; }catch(e){}
+  var sysLight=window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches;
+  var light = pref==="light" || (pref==="auto" && sysLight);
+  document.documentElement.dataset.theme = light?"light":"dark";
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m) m.setAttribute("content", light?"#f3f1ed":"#0d0e10");
+})();
+</script>
 <title>Crésus — chances simples</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,12 +34,46 @@
     --zero:#2a4f43; --zero-2:#2a4f43;
     --ivory:#e8e6e1; --sage:#9a9691; --sage-dim:#6a6763;
     --win:#6aa585; --lose:#b8635b; --warn:#c8934e;
+    /* teintes dérivées, déclarées ici pour pouvoir basculer d'un thème à l'autre */
+    --wash:var(--wash);      /* voile clair posé sur le fond */
+    --on-accent:#0d0e10;               /* texte posé sur un aplat doré ou coloré */
+    --ivory-2:#c9c6c0;                 /* texte secondaire (numéros du tapis) */
+    --scrim:var(--scrim);         /* fond des fenêtres modales */
+    --rn-b:#33363a;                    /* points : noir */
+    --pi-a:#5b8fa3; --pi-b:#2c4550;    /* points : pair / impair */
+    --mp-a:#9179a6; --mp-b:#463a52;    /* points : 1-18 / 19-36 */
+    --nm-rn-a:#c07268; --nm-rn-b:#8c9298;   /* noms de chance, accordés aux points */
+    --nm-pi-a:#7fb3c8; --nm-pi-b:#5a7f91;
+    --nm-mp-a:#b49ac9; --nm-mp-b:#8271a0;
     --shadow-card:0 1px 2px rgba(0,0,0,.4);
-    --padh:max(calc(100dvh - 186px), 690px);   /* hauteur du tapis : cases cliquables au doigt */
+    --padh:max(calc(100dvh - 186px), 480px);   /* le tapis tient dans l'écran, sans défilement */
     --mono:"DM Mono",ui-monospace,monospace;
     --disp:"Bricolage Grotesque",system-ui,sans-serif;
     --body:"Inter",system-ui,sans-serif;
-  }  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  }
+  /* PALETTE JOUR — même grammaire, valeurs inversées : fond papier chaud, texte sombre, accents
+     assombris pour rester lisibles sur clair. Appliquée quand le téléphone est en mode clair. */
+  :root[data-theme="light"]{
+    --felt:#f3f1ed; --felt2:#eae7e1; --card:#ffffff; --card2:#f7f5f1;
+    --line:#dcd7cf; --line-soft:rgba(0,0,0,.06);
+    --gold:#9a7b33; --gold-2:#7d6228; --gold-dim:#d6c79c; --gold-soft:rgba(154,123,51,.10);
+    --rouge:#a8443a; --rouge-2:#a8443a; --rouge-d:#8c352c; --noir:#33373b; --noir-edge:#565b60;
+    --zero:#1f6b52; --zero-2:#1f6b52;
+    --ivory:#1b1d1f; --sage:#54575a; --sage-dim:#676a6d;
+    --win:#276b4d; --lose:#a0372f; --warn:#8a5a15;
+    --wash:rgba(0,0,0,.035);
+    --on-accent:#ffffff;
+    --ivory-2:#3a3d40;
+    --scrim:rgba(28,30,34,.42);
+    --rn-b:#3a3e42;
+    --pi-a:#33718c; --pi-b:#9dbcc9;
+    --mp-a:#6b4f88; --mp-b:#b9a8cb;
+    --nm-rn-a:#a8443a; --nm-rn-b:#55595c;
+    --nm-pi-a:#2c6a85; --nm-pi-b:#6f96a8;
+    --nm-mp-a:#65488a; --nm-mp-b:#8f7aa8;
+    --shadow-card:0 1px 2px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--felt);color:var(--ivory);font-family:var(--body)}
   body{max-width:520px;margin:0 auto;padding:max(env(safe-area-inset-top,0px),12px) 14px 44px;background:var(--felt);min-height:100vh}
   h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:-.015em}
@@ -84,28 +131,28 @@
      Le cœur de la méthode : donner à voir l'équilibre se construire vers le 6-6,
      au lieu de le résumer par un score. La bande se remplit par la droite. */
   .mstrip{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:9px}
-  .mdot{height:7px;border-radius:2px;background:rgba(255,255,255,.06)}
+  .mdot{height:7px;border-radius:2px;background:var(--wash)}
   /* Une TEINTE par chance simple, deux tons par côté : clair = côté A, foncé = côté B.
      On reconnaît ainsi d'un coup d'œil à quelle chance appartient une bande de points. */
   .rn .mdot.a{background:var(--rouge)}          /* rouge      */
-  .rn .mdot.b{background:#33363a}               /* noir       */
-  .pi .mdot.a{background:#5b8fa3}               /* pair   — bleu ardoise clair */
-  .pi .mdot.b{background:#2c4550}               /* impair — bleu ardoise foncé */
-  .mp .mdot.a{background:#9179a6}               /* 1-18   — mauve clair */
-  .mp .mdot.b{background:#463a52}               /* 19-36  — mauve foncé */
+  .rn .mdot.b{background:var(--rn-b)}               /* noir       */
+  .pi .mdot.a{background:var(--pi-a)}               /* pair   — bleu ardoise clair */
+  .pi .mdot.b{background:var(--pi-b)}               /* impair — bleu ardoise foncé */
+  .mp .mdot.a{background:var(--mp-a)}               /* 1-18   — mauve clair */
+  .mp .mdot.b{background:var(--mp-b)}               /* 19-36  — mauve foncé */
   .mcell.bal .mdot.a,.mcell.bal .mdot.b{opacity:1}
   /* Le nom de chaque côté reprend la teinte de ses points : on relie d'un coup d'œil
      la bande de points à la chance concernée. En phase de jeu, l'or/rouge reprend la main. */
-  .mcell:not(.play) .rn .sa,.mcell.rn:not(.play) .sa{color:#c07268}
-  .mcell.rn:not(.play) .sb{color:#8c9298}
-  .mcell.pi:not(.play) .sa{color:#7fb3c8}
-  .mcell.pi:not(.play) .sb{color:#5a7f91}
-  .mcell.mp:not(.play) .sa{color:#b49ac9}
-  .mcell.mp:not(.play) .sb{color:#8271a0}
+  .mcell:not(.play) .rn .sa,.mcell.rn:not(.play) .sa{color:var(--nm-rn-a)}
+  .mcell.rn:not(.play) .sb{color:var(--nm-rn-b)}
+  .mcell.pi:not(.play) .sa{color:var(--nm-pi-a)}
+  .mcell.pi:not(.play) .sb{color:var(--nm-pi-b)}
+  .mcell.mp:not(.play) .sa{color:var(--nm-mp-a)}
+  .mcell.mp:not(.play) .sb{color:var(--nm-mp-b)}
   .mcell.play .mstrip{opacity:.95}
   .mdetail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)}
   .mside{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.02em;line-height:1.1}
-  .mside.rouge{color:#c98379} .mside.noir{color:var(--ivory)} .mside.neutre{color:var(--gold)}
+  .mside.rouge{color:var(--nm-rn-a)} .mside.noir{color:var(--ivory)} .mside.neutre{color:var(--gold)}
   .mmise{font-family:var(--mono);font-size:18px;color:var(--gold);margin-top:9px;font-weight:500;letter-spacing:.01em}
   .mwait{font-size:10px;color:var(--gold);line-height:1.35;margin-top:6px;letter-spacing:.02em}
   .mwait.won{color:var(--win);font-weight:600}
@@ -126,20 +173,20 @@
   /* Tapis : nappe unie découpée par des filets d'1px (le gap laisse voir le fond),
      pas une grille de pastilles. Seul le contour du bloc est arrondi. */
   .num-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--ivory);border:none;transition:filter .1s,transform .1s;font-weight:500}
-  .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#c9c6c0}
-  .num.z0{background:var(--zero);color:#cfe0d8}
+  .num{aspect-ratio:1;border-radius:9px;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;color:#f2efe9;border:none;transition:filter .1s,transform .1s;font-weight:500}
+  .num.r{background:var(--rouge)} .num.n{background:var(--noir);color:#ded9d1}
+  .num.z0{background:var(--zero);color:#f2efe9}
   .num:active{filter:brightness(1.45);transform:scale(.93)}
   .track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;min-height:28px;margin:18px 0 6px}
   .chip{height:28px;min-width:0;padding:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
-  .chip.r{background:var(--rouge);color:var(--ivory)}.chip.n{background:var(--noir);color:#c9c6c0;border-color:var(--noir-edge)}.chip.z{background:var(--zero);border-color:transparent;color:#cfe0d8}
+  .chip.r{background:var(--rouge);color:var(--ivory)}.chip.n{background:var(--noir);color:var(--ivory-2);border-color:var(--noir-edge)}.chip.z{background:var(--zero);border-color:transparent;color:var(--ivory)}
   .chip.last{box-shadow:0 0 0 2px var(--ivory)}
   .empty-note{grid-column:1/-1;text-align:center;align-self:center;color:var(--sage-dim);font-size:12.5px}
   .pad-actions{display:flex;gap:8px;margin-top:12px}
   .pad-actions button{flex:1;padding:11px;border-radius:11px;font-size:12px;font-weight:500;background:var(--felt2);border:1px solid var(--line);color:var(--sage);transition:transform .12s,border-color .15s,color .15s}
   .pad-actions button:active{transform:scale(.97);border-color:var(--sage-dim);color:var(--ivory)}
   /* saisie inversée active : bouton mis en avant, aide visible sous le pavé */
-  .pad-actions button.on{border-color:var(--ivory);color:var(--ivory);background:rgba(232,230,225,.04)}
+  .pad-actions button.on{border-color:var(--ivory);color:var(--ivory);background:var(--wash)}
   .rev-hint{margin-top:8px;font-size:10.5px;color:var(--sage);text-align:center;line-height:1.4;display:none}
   .rev-hint.show{display:block}
   .rev-hint b{color:var(--ivory);font-family:var(--mono)}
@@ -181,11 +228,11 @@
   .cp-side{display:inline-block;padding:3px 11px;border-radius:9px;font-size:12px;font-weight:800;letter-spacing:.02em}
   .cp-side.rouge{background:var(--rouge);color:var(--ivory)}
   .cp-side.noir{background:var(--noir);color:var(--ivory);border:1px solid var(--noir-edge)}
-  .cp-side.neutre{background:var(--gold);color:#0d0e10}
+  .cp-side.neutre{background:var(--gold);color:var(--on-accent)}
   .rl-strip{display:flex;justify-content:center;align-items:center;gap:6px;margin:2px 0 0}
   .rl-cell{width:18%;max-width:48px;aspect-ratio:.85;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ivory);opacity:.5;transform:scale(.9)}
   .rl-cell.r{background:var(--rouge)}
-  .rl-cell.n{background:var(--noir);border:1px solid var(--noir-edge);color:#c9c6c0}
+  .rl-cell.n{background:var(--noir);border:1px solid var(--noir-edge);color:var(--ivory-2)}
   .rl-cell.z{background:var(--zero)}
   .rl-cell.cur{opacity:1;transform:scale(1.1);box-shadow:0 0 0 2px var(--gold)}
   .rl-cap{text-align:center;font-size:10.5px;color:var(--sage-dim);margin-top:9px}
@@ -218,21 +265,21 @@
   .tp-row input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:11px;color:var(--ivory);font-family:var(--mono);font-size:16px;text-align:center}
 
   footer{text-align:center;font-size:10.5px;color:var(--sage-dim);line-height:1.7;padding:8px 16px 0}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#0d0e10;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:90;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:var(--on-accent);padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:90;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
   .toast.with-undo{pointer-events:auto}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.with-undo{display:flex;align-items:center;gap:12px;padding:9px 9px 9px 18px}
-  .toast.with-undo #toastUndo{background:#0d0e10;color:var(--gold);border:none;border-radius:22px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit}
+  .toast.with-undo #toastUndo{background:var(--felt);color:var(--gold);border:none;border-radius:22px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit}
 
   /* bannière fin de séance (TP / SL) */
   .banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(51,192,141,.12);border:1px solid var(--win)}
   .banner-txt{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--win)}
   .banner-act{display:flex;align-items:center;gap:8px;flex:none}
-  .banner-act #goalSave{font-size:12px;font-weight:600;color:#0d1f18;background:var(--win);border-radius:9px;padding:7px 11px}
+  .banner-act #goalSave{font-size:12px;font-weight:600;color:var(--on-accent);background:var(--win);border-radius:9px;padding:7px 11px}
   .banner-act #goalDismiss{font-size:18px;color:var(--sage);padding:0 4px;line-height:1}
   .banner.banner-sl{background:rgba(224,71,63,.12);border-color:var(--lose)}
   .banner.banner-sl .banner-txt{color:var(--lose)}
-  .banner.banner-sl #goalSave{background:var(--lose);color:#1f0d0c}
+  .banner.banner-sl #goalSave{background:var(--lose);color:var(--on-accent)}
 
   @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 
@@ -251,7 +298,7 @@
   .slist li.s-row{cursor:pointer}
   /* lignes de jour : agrégat misé / P&L, dépliables sur les séances du jour */
   .slist li.d-row{cursor:pointer}
-  .slist li.d-row.open{background:rgba(255,255,255,.03)}
+  .slist li.d-row.open{background:var(--wash)}
   .d-main{display:flex;flex-direction:column;gap:2px}
   .d-date{font-size:12.5px;color:var(--ivory);font-weight:600}
   .d-meta{font-size:10.5px;color:var(--sage-dim);font-family:var(--mono)}
@@ -297,13 +344,17 @@
   .histsvg{width:100%;height:140px;display:block;border-radius:8px}
   .hfilter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
   .hfilter button{font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:var(--felt2);color:var(--sage);transition:border-color .15s,background .15s,color .15s}
-  .hfilter button.on{border-color:rgba(238,241,250,.4);background:rgba(238,241,250,.06);color:var(--ivory)}
+  .hfilter button.on{border-color:rgba(238,241,250,.4);background:var(--wash);color:var(--ivory)}
   .hfilter button small{font-family:var(--mono);font-size:9.5px;opacity:.65;margin-left:3px}
   .hmig{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:11px;border:1px solid var(--gold-dim);border-radius:11px;background:var(--gold-soft);font-size:11.5px;color:var(--sage);line-height:1.45}
-  .hmig button{flex:none;font-size:11px;font-weight:600;padding:6px 11px;border-radius:9px;background:var(--gold);color:#0d0e10}
+  .hmig button{flex:none;font-size:11px;font-weight:600;padding:6px 11px;border-radius:9px;background:var(--gold);color:var(--on-accent)}
 
   /* modal */
   .d-go{color:var(--sage-dim);font-size:14px;margin-left:4px}
+  .seg{display:flex;gap:4px;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg button{flex:1;padding:8px 4px;border:none;background:none;color:var(--sage);font-family:var(--body);
+    font-size:12px;font-weight:600;border-radius:8px;cursor:pointer}
+  .seg button.on{background:var(--card);color:var(--ivory);box-shadow:var(--shadow-card)}
   .cm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
   .cm-x{background:var(--felt2);border:1px solid var(--line);color:var(--sage);border-radius:50%;
     width:30px;height:30px;flex:none;font-size:14px;cursor:pointer}
@@ -321,7 +372,8 @@
     border-left:2px solid var(--line);background:var(--felt2);border-radius:0 9px 9px 0;margin-bottom:4px;font-size:11.5px}
   .cm-sess.win{border-left-color:var(--win)} .cm-sess.loss{border-left-color:var(--lose)}
   .cm-sess .cs-m{color:var(--sage-dim);font-size:10.5px}
-  .modal-bg{position:fixed;inset:0;background:rgba(6,10,20,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80;overflow-y:auto}
+  .cm-del{background:none;border:none;color:var(--sage-dim);font-size:13px;margin-left:8px;cursor:pointer;padding:2px 4px}
+  .modal-bg{position:fixed;inset:0;background:var(--scrim);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:80;overflow-y:auto}
   .modal{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-height:calc(100vh - 36px);overflow-y:auto}
   .modal-title{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--ivory)}
   .modal-sub{font-size:12.5px;color:var(--sage);line-height:1.5;margin:8px 0 16px}
@@ -347,7 +399,7 @@
   .strat-fig .sf-val.pos{color:var(--win)} .strat-fig .sf-val.neg{color:var(--lose)}
   .modal input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--ivory);font-family:var(--mono);font-size:20px;text-align:center}
   .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
-  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:#0d0e10;font-size:15px;font-weight:700;margin-top:6px}
+  .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:var(--on-accent);font-size:15px;font-weight:700;margin-top:6px}
   .modal-go.danger{background:var(--lose);color:var(--ivory)}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
   /* libellés majuscules + surbrillance du côté à jouer (pastille pleine) */
@@ -357,7 +409,7 @@
   .mname .w.hi{font-weight:800;font-size:13px;padding:5px 12px;border-radius:10px;transform:scale(1.12);letter-spacing:.03em}
   .mname .w.hi.rouge{background:var(--rouge);color:var(--ivory)}
   .mname .w.hi.noir{background:var(--noir);color:var(--ivory);border:1px solid var(--noir-edge)}
-  .mname .w.hi.neutre{background:var(--gold);color:#0d0e10}
+  .mname .w.hi.neutre{background:var(--gold);color:var(--on-accent)}
   .mcell{cursor:pointer}
   .mhist-hint{margin-top:8px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim)}
   .mcell.play .mhist-hint{color:var(--gold)}
@@ -375,8 +427,7 @@
   .sb-stats{display:flex;gap:7px;margin-top:14px}
 
   /* carte « où en est chaque montante du pool Oscar » */
-  .mont-box{background:var(--card);border:1px solid var(--line);border-radius:16px;
-    padding:10px 12px;box-shadow:var(--shadow-card)}
+  .mont-box{background:none;border:none;border-radius:0;padding:0;box-shadow:none}
   .mb-lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:8px}
   .mb-list{display:flex;flex-direction:column;gap:5px}
   .mb-row{display:flex;align-items:center;justify-content:space-between;gap:5px;
@@ -389,12 +440,20 @@
   .mb-v{font-variant-numeric:tabular-nums;flex:none}
   .mb-row.neg .mb-v{color:var(--lose)}
   /* état du cycle Triple S (au-dessus du pool de montantes) */
-  .cyc-box{background:rgba(232,230,225,.03);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px}
+  .cyc-box{background:var(--wash);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-bottom:7px}
   .cyc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
   .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
   .cyc-bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:5px}
   .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
   /* barre bidirectionnelle : perte (rouge) à gauche du zéro, gain (vert) à droite */
+  .cyc-body{display:flex;gap:9px;align-items:stretch;margin-top:2px}
+  .cyc-vwrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none}
+  .cv-end{font-size:8.5px;line-height:1;white-space:nowrap}
+  .cv-end.pos{color:var(--win)} .cv-end.neg{color:var(--lose)}
+  .cyc-vbar{position:relative;width:9px;flex:1;min-height:64px;background:var(--line);border-radius:5px}
+  .cyc-vfill{position:absolute;left:0;right:0;border-radius:5px;transition:top .3s,height .3s}
+  .cyc-vfill.pos{background:var(--win)} .cyc-vfill.neg{background:var(--lose)}
+  .cyc-vzero{position:absolute;left:-3px;right:-3px;height:1px;background:var(--sage-dim)}
   .cyc-bar-bi{position:relative;overflow:visible}
   .cyc-bar-bi .cyc-fill{position:absolute;top:0;transition:left .3s,width .3s}
   .cyc-bar-bi .cyc-fill.pos{background:var(--win)}
@@ -405,14 +464,15 @@
   .cyc-fig{font-size:10.5px;color:var(--sage-dim);font-variant-numeric:tabular-nums}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
   /* trois repères clés bien lisibles : MISE · TP · SL */
-  .cyc-keys{display:flex;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
+  .cyc-keys{display:flex;flex:1;min-width:0;gap:5px}
   .cyc-key{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;
     background:var(--felt2);border:1px solid var(--line);border-radius:8px;padding:6px 3px}
   .cyc-key .ck-lab{font-size:9.5px;letter-spacing:.1em;color:var(--sage-dim)}
   .cyc-key .ck-val{font-size:11.5px;font-weight:600;color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
   .cyc-key .ck-val.pos{color:var(--win)} .cyc-key .ck-val.neg{color:var(--lose)}
   .cyc-slc{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);
-    font-size:9.5px;font-family:var(--mono);color:var(--sage-dim);text-align:center}
+    font-size:9.5px;font-family:var(--mono);color:var(--sage-dim);
+    display:flex;justify-content:center;white-space:nowrap}
   .cyc-slc.warn{color:var(--warn)}
   .cyc-slc.danger{color:var(--lose);font-weight:600}
   .cyc-key-tp{cursor:pointer;transition:border-color .15s}
@@ -481,7 +541,7 @@
     body.cycle-on #leftcol .cyc-top{margin-bottom:3px}
     body.cycle-on #leftcol .cyc-bar{height:3px;margin-bottom:3px}
     body.cycle-on #leftcol .cyc-fig{font-size:9.5px}
-    body.cycle-on #leftcol .cyc-keys{flex-direction:column;margin-top:5px;padding-top:5px;gap:3px}
+    body.cycle-on #leftcol .cyc-keys{flex-direction:column;gap:3px}
     body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:5px 8px}
     body.cycle-on #leftcol .cyc-key .ck-lab{font-size:8.5px}
     body.cycle-on #leftcol .cyc-key .ck-val{font-size:12.5px}
@@ -500,7 +560,6 @@
     body.cycle-on #leftcol .solde-box{flex:0 0 auto}
     /* écrans courts (SE, mini) : compacter davantage pour que le solde tienne sans défiler */
     @media (max-height:700px){
-    :root{--padh:max(calc(100dvh - 186px), 620px)}
       body.cycle-on #leftcol{gap:6px}
       body.cycle-on #leftcol .mcell{padding:5px 7px}
       body.cycle-on #leftcol .mcell .mscore{font-size:12px;margin-top:2px}
@@ -520,14 +579,14 @@
     /* colonne étroite : solde et P&L l'un sous l'autre plutôt que côte à côte */
     #leftcol .solde-box{flex:none;padding:8px 10px;border-radius:12px}
     #leftcol .sb-top{flex-direction:column;align-items:flex-start;gap:2px}  /* trop étroit pour 2 montants côte à côte */
-    #leftcol .mont-box{flex:none;padding:8px 10px;border-radius:12px}
+    #leftcol .mont-box{flex:none;padding:0}
     /* carte cycle compacte en colonne étroite : évite que le contenu déborde et se fasse rogner */
     #leftcol .cyc-box{padding:6px 8px;margin-bottom:6px}
     #leftcol .cyc-top{margin-bottom:4px}
     #leftcol .cyc-lab{font-size:10px}
     #leftcol .cyc-bar{height:3px;margin-bottom:4px}
     #leftcol .cyc-fig{font-size:9.5px}
-    #leftcol .cyc-keys{flex-direction:column;gap:3px;margin-top:5px;padding-top:5px}
+    #leftcol .cyc-keys{flex-direction:column;gap:3px}
     #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:4px 8px}
     #leftcol .cyc-key .ck-val{font-size:12px}
     #leftcol .cyc-key .ck-lab{font-size:9.5px}
@@ -543,7 +602,7 @@
     .num-grid{
       grid-template-columns:repeat(3,minmax(0,1fr));
       /* rangées avec un plancher : une case ne descend jamais sous 44 px (cible tactile confortable) */
-      grid-template-rows:minmax(34px,0.7fr) repeat(12,minmax(44px,1fr));
+      grid-template-rows:minmax(26px,0.7fr) repeat(12,minmax(32px,1fr));
       gap:5px;
       height:var(--padh);
     }
@@ -632,7 +691,7 @@
     .solde-box{padding:8px 10px}
     .solde-box .sb-solde{font-size:21px}
     .solde-box .sb-pnl{font-size:15px}
-    .mont-box{padding:8px 10px}
+    .mont-box{padding:0}
     .chartsvg{height:120px}
     .histsvg{height:110px}
     .log{max-height:150px}
@@ -724,6 +783,11 @@
     <div class="set-body">
       <div class="field"><label>Take-profit<span class="hint">calculé automatiquement · verrouillé</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1" readonly></div>
       <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
+      <div class="field"><label>Apparence<span class="hint">suit le réglage du téléphone par défaut</span></label>
+        <div class="seg" id="themeSeg">
+          <button data-t="auto" class="on">Auto</button><button data-t="light">Jour</button><button data-t="dark">Nuit</button>
+        </div>
+      </div>
       <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8"></div>
       <div class="field"><label>Gestion des cycles<span class="hint">Triple S : mise qui progresse entre séances vers un objectif</span></label>
         <select id="inCycle"><option value="on">Triple S (automatique)</option><option value="off">Manuelle (TP/SL %)</option></select></div>
@@ -1015,8 +1079,11 @@ async function cloudSyncNow(silent){
       toast("⚠️ Le cloud a "+nbCloud+" séances, cet appareil "+sessions.length+" — envoi bloqué");
       return;
     }
+    // Contrôle passé : cet appareil est au moins aussi complet que le cloud. On réactive la
+    // synchro automatique et on met le cloud à jour, comme avant.
     cloudArmed=true;
-    if(!silent) toast("Cloud plus ancien — utilise « Restaurer » ou « Forcer l'envoi »");
+    const ok=await cloudPush();
+    if(!silent) toast(ok?"Cloud à jour":"Cloud injoignable");
   }
 }
 // Restauration : on récupère le contenu du Sheet TEL QUEL, sans comparer les dates.
@@ -1369,7 +1436,9 @@ function dayLabel(ts){
   return new Date(ts).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"short"});
 }
 // ─── Fenêtre de détail d'un cycle : tout ce qu'on peut en dire ───
+let cycModalKey=null;
 function openGroupModal(key){
+  cycModalKey=key;
   const estCycle=String(key).startsWith("cyc");
   const list=estCycle
     ? sessions.filter(s=>("cyc"+s.cycleId)===key)
@@ -1430,15 +1499,16 @@ function openGroupModal(key){
 
   html+=`<div class="cm-h">Séances</div>`;
   html+=list.map(s=>{
+    const idx=sessions.indexOf(s);
     const d=new Date(s.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-    return `<div class="cm-sess ${s.gain>0?'win':s.gain<0?'loss':''}"><span>${d}<span class="cs-m"> · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></span><b style="color:${s.gain>=0?'var(--win)':'var(--lose)'};font-family:var(--mono)">${sgn(s.gain)}</b></div>`;
+    return `<div class="cm-sess ${s.gain>0?'win':s.gain<0?'loss':''}"><span>${d}<span class="cs-m"> · ${s.coups} n° · ${fmtDur(s.duree||0)}</span></span><span><b style="color:${s.gain>=0?'var(--win)':'var(--lose)'};font-family:var(--mono)">${sgn(s.gain)}</b><button class="cm-del s-del" data-i="${idx}" aria-label="supprimer">🗑</button></span></div>`;
   }).join("");
 
   $("cycmTitle").innerHTML=(estCycle?("Cycle "+String(key).slice(3)):dayLabel(chrono?chrono.date:Date.now()))+` <span class="cyc-badge ${scls}">${statut}</span>`;
   $("cycmBody").innerHTML=html;
   $("cycModal").style.display="flex";
 }
-function closeCycleModal(){ $("cycModal").style.display="none"; }
+function closeCycleModal(){ $("cycModal").style.display="none"; cycModalKey=null; }
 
 function renderSessions(){
   const el=$("sessionsList");
@@ -1448,34 +1518,13 @@ function renderSessions(){
   const cls=v=>Math.abs(v)<0.005?"":(v>0?"pos":"neg");
 
   // regroupement par JOUR (fonctionnement d'origine) — sessions est trié du plus récent au plus ancien
+  // regroupement par CYCLE ; les séances antérieures au suivi par cycle restent groupées par jour
   const days=[], map={};
-  sessions.forEach((s,i)=>{ const k=dayKey(s.date);
+  sessions.forEach((s,i)=>{
+    const k=(s.cycleId!=null && s.cycleId>0) ? ("cyc"+s.cycleId) : ("j"+dayKey(s.date));
     if(!map[k]){ map[k]={key:k,date:s.date,idx:[]}; days.push(map[k]); }
     map[k].idx.push(i); });
 
-  const sessionRow=i=>{
-    const s=sessions[i], d=new Date(s.date);
-    const hs=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-    const g=sg(s.gain), pct=(s.gain>=0?"+":"−")+Math.abs(s.pct||0).toFixed(1)+"%";
-    const open=i===openSession;
-    const cyc=(s.cycleId!=null&&s.cycleId>0)?` · cycle ${s.cycleId}`:"";
-    let row=`<li class="s-row s-sub ${s.gain>0?'win':s.gain<0?'loss':''}${open?' open':''}" data-i="${i}"><div class="s-main"><span class="s-date"><span class="s-caret">▶</span> ${hs}</span><span class="s-meta">${fmtEur2(s.debut)} → ${fmtEur2(s.fin)} · ${s.coups} n°${cyc} · ${fmtDur(s.duree||0)}</span></div><span class="s-gain ${s.gain>=0?'pos':'neg'}">${g} <small style="font-size:10px;opacity:.75">${pct}</small></span><button class="s-del" data-i="${i}" aria-label="supprimer">🗑</button></li>`;
-    if(open){
-      const w=s.wins, l=s.losses, tot=(w!=null&&l!=null)?w+l:null, rate=tot?Math.round(w/tot*100):null;
-      const wagered=s.wagered!=null?num2(s.wagered)+" €":"—";
-      const hh=(s.duree||0)/3600000, eph=hh>=1/60?(s.gain/hh):null;
-      const ephTxt=eph==null?"—":((eph>0?"+":eph<0?"−":"")+num2(Math.abs(eph))+" €");
-      const ephCls=eph==null?"":(eph>0.005?"win":eph<-0.005?"lose":"");
-      row+=`<li class="s-detail-row s-sub"><div class="sd-stats">
-        <div class="sd-stat"><span class="sd-v win">${w!=null?w:"—"}</span><span class="sd-l">gains</span></div>
-        <div class="sd-stat"><span class="sd-v lose">${l!=null?l:"—"}</span><span class="sd-l">pertes</span></div>
-        <div class="sd-stat"><span class="sd-v">${rate!=null?rate+" %":"—"}</span><span class="sd-l">réussite</span></div>
-        <div class="sd-stat"><span class="sd-v ${ephCls}">${ephTxt}</span><span class="sd-l">par heure</span></div>
-        <div class="sd-stat"><span class="sd-v">${wagered}</span><span class="sd-l">misé</span></div>
-      </div>${sparkSVG(s.curve,s.debut)}</li>`;
-    }
-    return row;
-  };
 
   el.innerHTML=days.map(d=>{
     const list=d.idx.map(i=>sessions[i]);
@@ -1483,10 +1532,15 @@ function renderSessions(){
     const wag =list.reduce((a,s)=>a+(s.wagered||0),0);
     const dur =list.reduce((a,s)=>a+(s.duree||0),0);
     const first=list[list.length-1], pct=first&&first.debut? gain/first.debut*100 : 0;
-    const open=d.key===openDay, n=list.length;
-    let row=`<li class="d-row${open?' open':''}" data-d="${d.key}"><div class="d-main"><span class="d-date"><span class="d-caret">▶</span> ${dayLabel(d.date)}</span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small></span></li>`;
-    if(open) row+=d.idx.map(sessionRow).join("");
-    return row;
+    const n=list.length;
+    const estCycle=String(d.key).startsWith("cyc");
+    const obj=first&&first.cycleObj?first.cycleObj:0;
+    let statut="en cours", scls="run";
+    if(!estCycle){ statut="archive"; scls="idle"; }
+    else if(obj>0 && gain>=obj-0.01){ statut="bouclé"; scls="ok"; }
+    else if(gain<=-0.01){ statut="perdu"; scls="ko"; }
+    const titre=estCycle?("Cycle "+String(d.key).slice(3)):dayLabel(d.date);
+    return `<li class="d-row cyc-${scls}" data-d="${d.key}"><div class="d-main"><span class="d-date">${titre} <span class="cyc-badge ${scls}">${statut}</span></span><span class="d-meta">${n} séance${n>1?"s":""} · ${fmtEur2(wag)} misés · ${fmtDur(dur)}</span></div><span class="d-gain ${cls(gain)}">${sg(gain)} <small style="font-size:10px;opacity:.75">${(Math.abs(pct)<0.05?"":(pct>0?"+":"−"))+Math.abs(pct).toFixed(1)}%</small> <span class="d-go">›</span></span></li>`;
   }).join("");
   renderHistFilter(); renderHistory();
 }
@@ -1903,27 +1957,37 @@ function render(){
     const marge=round2(cum-S.cycleSlEur);                    // ce qu'il reste avant le stop-loss de cycle
     const ratio=S.cycleSlEur<0 ? marge/Math.abs(S.cycleSlEur) : 1;
     const slcCls = ratio<=0.15 ? "danger" : ratio<=0.35 ? "warn" : "";
-    let fillLeft, fillWidth, fillCls;
+    // Barre VERTICALE : l'objectif en haut, le stop-loss de séance en bas, le zéro entre les deux.
+    // Le remplissage part du zéro et monte (gain) ou descend (perte).
+    const zeroTop=obj/span*100;                 // position du 0, mesurée depuis le haut
+    let vTop, vHeight, fillCls;
     if(cum>=0){
-      fillLeft=zeroPct;
-      fillWidth=Math.min(obj,cum)/span*100;
+      vHeight=Math.min(obj,cum)/span*100;
+      vTop=zeroTop-vHeight;                     // il monte vers l'objectif
       fillCls="pos";
     } else {
-      const p=Math.min(slAbs,-cum)/span*100;
-      fillLeft=Math.max(0,zeroPct-p);
-      fillWidth=p;
+      vHeight=Math.min(slAbs,-cum)/span*100;
+      vTop=zeroTop;                             // il descend vers le stop-loss
       fillCls="neg";
     }
     cycHTML=`<div class="cyc-box">
       <div class="cyc-top"><span class="cyc-lab">Cycle</span><span class="cyc-fig mono"><span class="${cum>=0?'pos':'neg'}">${(cum>=0?'+':'−')+fmtEur2(Math.abs(cum)).replace(' €','')}</span> / +${fmtEur2(obj).replace(' €','')} €</span></div>
-      <div class="cyc-bar cyc-bar-bi"><div class="cyc-zero" style="left:${zeroPct}%"></div><div class="cyc-fill ${fillCls}" style="left:${fillLeft}%;width:${fillWidth}%"></div></div>
-      <div class="cyc-bar-ends mono"><span class="neg">${fmtEurC(low)}</span><span class="pos">+${fmtEurC(obj)}</span></div>
+      <div class="cyc-body">
+        <div class="cyc-vwrap mono">
+          <span class="cv-end pos">+${fmtEurC(obj)}</span>
+          <div class="cyc-vbar">
+            <div class="cyc-vzero" style="top:${zeroTop}%"></div>
+            <div class="cyc-vfill ${fillCls}" style="top:${vTop}%;height:${vHeight}%"></div>
+          </div>
+          <span class="cv-end neg">${fmtEurC(low)}</span>
+        </div>
       <div class="cyc-keys mono">
         <div class="cyc-key"><span class="ck-lab">MISE${capped?" ⊤":""}</span><span class="ck-val">${fmtEurC(S.cycleU||S.cycleBaseEur)}</span></div>
         <div class="cyc-key cyc-key-tp" id="cycTPkey" title="Modifier le take-profit"><span class="ck-lab">TP ✎</span><span class="ck-val pos">+${fmtEurC(S.tpFinal*S.pieceEur)}</span></div>
         <div class="cyc-key"><span class="ck-lab">SL</span><span class="ck-val neg">−${fmtEurC(Math.abs(S.sl)*S.pieceEur)}</span></div>
       </div>
-      <div class="cyc-slc ${slcCls}">SL cycle ${fmtEurC(S.cycleSlEur)} · marge ${fmtEurC(marge)}</div>
+      </div>
+      <div class="cyc-slc ${slcCls}"><span title="stop-loss de cycle : ${fmtEur2(S.cycleSlEur)}">marge SL ${Math.round(marge)} €</span></div>
     </div>`;
   }
   $("mbList").innerHTML=cycHTML;
@@ -1983,6 +2047,40 @@ function ask(title,msg,okLabel,danger){
   });
 }
 function askClose(v){ $("askModal").style.display="none"; if(askResolve){ askResolve(v); askResolve=null; } }
+$("cycmBody").addEventListener("click",e=>{
+  const del=e.target.closest(".cm-del"); if(!del) return;
+  const i=parseInt(del.dataset.i,10), s=sessions[i]; if(!s) return;
+  const d=new Date(s.date).toLocaleDateString("fr-FR",{day:"2-digit",month:"long"});
+  ask("Supprimer cette séance ?","Séance du "+d+" · "+(s.gain>=0?"+":"−")+fmtEur2(Math.abs(s.gain))+
+      ". Elle sera retirée du suivi longue durée.","Supprimer",true).then(ok=>{
+    if(!ok) return;
+    sessions.splice(i,1); saveSessions(); renderSessions();
+    const reste=cycModalKey && sessions.some(x=>(String(cycModalKey).startsWith("cyc")
+      ? ("cyc"+x.cycleId)===cycModalKey : ("j"+dayKey(x.date))===cycModalKey));
+    if(reste) openGroupModal(cycModalKey); else closeCycleModal();
+    toast("Séance supprimée");
+  });
+});
+// ─── Apparence : auto (réglage du téléphone), jour ou nuit ───
+const themeMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
+function themePref(){ try{ return localStorage.getItem("cresus:theme")||"auto"; }catch(e){ return "auto"; } }
+function applyTheme(){
+  const pref=themePref();
+  const light = pref==="light" || (pref==="auto" && themeMQ && themeMQ.matches);
+  document.documentElement.dataset.theme = light?"light":"dark";
+  const m=document.querySelector('meta[name="theme-color"]');
+  if(m) m.setAttribute("content", light?"#f3f1ed":"#0d0e10");
+  const seg=$("themeSeg");
+  if(seg) [...seg.children].forEach(b=>b.classList.toggle("on", b.dataset.t===pref));
+}
+if(themeMQ && themeMQ.addEventListener) themeMQ.addEventListener("change",()=>{ if(themePref()==="auto") applyTheme(); });
+$("themeSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-t]"); if(!b) return;
+  try{ localStorage.setItem("cresus:theme", b.dataset.t); }catch(e){}
+  applyTheme();
+  toast(b.dataset.t==="auto"?"Apparence : réglage du téléphone":("Apparence : "+(b.dataset.t==="light"?"jour":"nuit")));
+});
+applyTheme();
 $("cycmClose").addEventListener("click",closeCycleModal);
 $("cycModal").addEventListener("click",e=>{ if(e.target===$("cycModal")) closeCycleModal(); });
 $("askOk").addEventListener("click",()=>askClose(true));
@@ -2111,7 +2209,7 @@ $("sessionsList").addEventListener("click",e=>{
   const row=e.target.closest(".s-row");
   if(row){ const i=parseInt(row.dataset.i,10); openSession=(openSession===i?-1:i); renderSessions(); return; }
   const day=e.target.closest(".d-row");
-  if(day){ const k=day.dataset.d; openDay=(openDay===k?"":k); openSession=-1; renderSessions(); }
+  if(day){ openGroupModal(day.dataset.d); }
 });
 // P&L ramené à l'heure. Sous une minute de jeu le ratio n'a aucun sens (1 € en 5 s = 720 €/h),
 // on l'affiche donc seulement passé ce seuil. Rafraîchi à la seconde, indépendamment de render().
