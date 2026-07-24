@@ -179,7 +179,7 @@
   .num:active{filter:brightness(1.45);transform:scale(.93)}
   .track{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;min-height:28px;margin:18px 0 6px}
   .chip{height:28px;min-width:0;padding:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;border:1px solid transparent}
-  .chip.r{background:var(--rouge);color:var(--ivory)}.chip.n{background:var(--noir);color:var(--ivory-2);border-color:var(--noir-edge)}.chip.z{background:var(--zero);border-color:transparent;color:var(--ivory)}
+  .chip.r{background:var(--rouge);color:#f2efe9}.chip.n{background:var(--noir);color:#ece8e1;border-color:var(--noir-edge)}.chip.z{background:var(--zero);border-color:transparent;color:#f2efe9}
   .chip.last{box-shadow:0 0 0 2px var(--ivory)}
   .empty-note{grid-column:1/-1;text-align:center;align-self:center;color:var(--sage-dim);font-size:12.5px}
   .pad-actions{display:flex;gap:8px;margin-top:12px}
@@ -226,7 +226,7 @@
   .cp-v{font-size:13px;color:var(--ivory);font-weight:600;text-align:right}
   .cp-v.pos{color:var(--win)} .cp-v.neg{color:var(--lose)}
   .cp-side{display:inline-block;padding:3px 11px;border-radius:9px;font-size:12px;font-weight:800;letter-spacing:.02em}
-  .cp-side.rouge{background:var(--rouge);color:var(--ivory)}
+  .cp-side.rouge{background:var(--rouge);color:#f2efe9}
   .cp-side.noir{background:var(--noir);color:#ece8e1;border:1px solid var(--noir-edge)}
   .cp-side.neutre{background:var(--gold);color:var(--on-accent)}
   .rl-strip{display:flex;justify-content:center;align-items:center;gap:6px;margin:2px 0 0}
@@ -400,14 +400,14 @@
   .modal input{width:100%;background:var(--felt2);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--ivory);font-family:var(--mono);font-size:20px;text-align:center}
   .modal-mise{font-family:var(--mono);font-size:12px;color:var(--gold);text-align:center;margin:11px 0 4px}
   .modal-go{width:100%;padding:14px;border-radius:12px;background:var(--gold);color:var(--on-accent);font-size:15px;font-weight:700;margin-top:6px}
-  .modal-go.danger{background:var(--lose);color:var(--ivory)}
+  .modal-go.danger{background:var(--lose);color:#f7f3ee}
   .modal-resume{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid var(--line);color:var(--sage);font-size:13px;margin-top:9px}
   /* libellés majuscules + surbrillance du côté à jouer (pastille pleine) */
   .mname{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:nowrap;white-space:nowrap;min-height:28px}
   .mname .w{transition:all .2s ease;border-radius:9px;display:inline-block}
   .mname .sep{color:var(--sage-dim);opacity:.5}
   .mname .w.hi{font-weight:800;font-size:13px;padding:5px 12px;border-radius:10px;transform:scale(1.12);letter-spacing:.03em}
-  .mname .w.hi.rouge{background:var(--rouge);color:var(--ivory)}
+  .mname .w.hi.rouge{background:var(--rouge);color:#f2efe9}
   .mname .w.hi.noir{background:var(--noir);color:#ece8e1;border:1px solid var(--noir-edge)}
   .mname .w.hi.neutre{background:var(--gold);color:var(--on-accent)}
   .mcell{cursor:pointer}
@@ -428,9 +428,9 @@
   .sb-stats{display:flex;gap:7px;margin-top:14px}
 
   /* carte « où en est chaque montante du pool Oscar » */
-  .mont-box{background:none;border:none;border-radius:0;padding:0;box-shadow:none}
+  .mont-box{background:none;border:none;border-radius:0;padding:0;box-shadow:none;display:flex;flex-direction:column;min-width:0}
   .mb-lab{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-dim);margin-bottom:8px}
-  .mb-list{display:flex;flex-direction:column;gap:5px}
+  .mb-list{display:flex;flex-direction:column;gap:5px;flex:1 1 auto;min-height:0;min-width:0;width:100%}
   .mb-row{display:flex;align-items:center;justify-content:space-between;gap:5px;
     font-family:var(--mono);font-size:11px;color:var(--sage-dim)}
   .mb-row.on{color:var(--ivory)}
@@ -441,16 +441,17 @@
   .mb-v{font-variant-numeric:tabular-nums;flex:none}
   .mb-row.neg .mb-v{color:var(--lose)}
   /* état du cycle Triple S (au-dessus du pool de montantes) */
-  .cyc-box{background:var(--wash);border:1px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:0;
-    flex:1;min-height:0;display:flex;flex-direction:column}
-  .cyc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .cyc-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 7px;margin-bottom:0;
+    box-shadow:var(--shadow-card);flex:1 1 auto;min-height:0;min-width:0;width:100%;box-sizing:border-box;
+    display:flex;flex-direction:column;overflow:hidden}
+  .cyc-top{display:flex;justify-content:center;align-items:baseline;margin-bottom:5px}
   .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
   .cyc-bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:5px}
   .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
   /* barre bidirectionnelle : perte (rouge) à gauche du zéro, gain (vert) à droite */
-  .cyc-body{display:flex;gap:9px;align-items:stretch;margin-top:4px;flex:1;min-height:0}
-  .cyc-vwrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none}
-  .cv-end{font-size:8.5px;line-height:1;white-space:nowrap}
+  .cyc-body{display:flex;gap:6px;align-items:stretch;margin-top:4px;flex:1;min-height:0;min-width:0}
+  .cyc-vwrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;min-width:0}
+  .cv-end{font-size:8px;line-height:1;white-space:nowrap;letter-spacing:-.02em}
   .cv-end.pos{color:var(--win)} .cv-end.neg{color:var(--lose)}
   .cyc-vbar{position:relative;width:9px;flex:1;min-height:64px;background:var(--line);border-radius:5px}
   .cyc-vfill{position:absolute;left:0;right:0;border-radius:5px;transition:top .3s,height .3s}
@@ -463,10 +464,10 @@
   .cyc-zero{position:absolute;top:-2px;width:1px;height:8px;background:var(--sage-dim);z-index:1}
   .cyc-bar-ends{display:flex;justify-content:space-between;font-size:9.5px;margin:-1px 0 5px}
   .cyc-bar-ends .neg{color:var(--lose)} .cyc-bar-ends .pos{color:var(--win)}
-  .cyc-fig{font-size:10.5px;color:var(--sage-dim);font-variant-numeric:tabular-nums}
+  .cyc-fig{font-size:12px;color:var(--sage);font-variant-numeric:tabular-nums;white-space:nowrap}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
   /* trois repères clés bien lisibles : MISE · TP · SL */
-  .cyc-keys{display:flex;flex:1;min-width:0;gap:5px}
+  .cyc-keys{display:flex;flex:1 1 auto;min-width:0;gap:5px}
   .cyc-key{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;
     background:var(--felt2);border:1px solid var(--line);border-radius:8px;padding:6px 3px}
   .cyc-key .ck-lab{font-size:9.5px;letter-spacing:.1em;color:var(--sage-dim)}
@@ -535,14 +536,14 @@
        dans la hauteur de la grille, sans défilement ni rognage du solde. */
     body.cycle-on #leftcol #mini{flex:0 0 auto;grid-template-rows:repeat(3,minmax(clamp(80px,12dvh,112px),auto))}
     body.cycle-on #leftcol #mini .mcell{min-height:clamp(80px,12dvh,112px);overflow:hidden}
-    body.cycle-on #leftcol .mont-box{flex:1 1 auto;min-height:0;display:flex}
+    body.cycle-on #leftcol .mont-box{flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column}
     /* carte cycle plus plate en colonne étroite */
-    body.cycle-on #leftcol .cyc-box{padding:5px 8px;margin-bottom:5px}
+    body.cycle-on #leftcol .cyc-box{padding:8px 7px;margin-bottom:0;border-radius:12px}
     body.cycle-on #leftcol .cyc-top{margin-bottom:3px}
     body.cycle-on #leftcol .cyc-bar{height:3px;margin-bottom:3px}
     body.cycle-on #leftcol .cyc-fig{font-size:9.5px}
     body.cycle-on #leftcol .cyc-keys{flex-direction:column;gap:3px}
-    body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:5px 8px}
+    body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:5px 6px;gap:4px;min-width:0}
     body.cycle-on #leftcol .cyc-key .ck-lab{font-size:8.5px}
     body.cycle-on #leftcol .cyc-key .ck-val{font-size:12.5px}
     body.cycle-on #leftcol .cyc-key .ck-val{font-size:13px}
@@ -580,7 +581,7 @@
     #leftcol .solde-box{flex:none;padding:8px 10px;border-radius:12px}
     #leftcol .sb-top{flex-direction:column;align-items:stretch;gap:3px}   /* trop étroit pour 2 montants côte à côte */
     #leftcol .sb-side{flex-direction:row;align-items:baseline;justify-content:space-between;gap:6px}
-    #leftcol .mont-box{flex:1 1 auto;min-height:0;padding:0;display:flex}
+    #leftcol .mont-box{flex:1 1 auto;min-height:0;min-width:0;padding:0;display:flex;flex-direction:column}
     /* carte cycle compacte en colonne étroite : évite que le contenu déborde et se fasse rogner */
     #leftcol .cyc-box{padding:6px 8px;margin-bottom:6px}
     #leftcol .cyc-top{margin-bottom:4px}
@@ -588,7 +589,7 @@
     #leftcol .cyc-bar{height:3px;margin-bottom:4px}
     #leftcol .cyc-fig{font-size:9.5px}
     #leftcol .cyc-keys{flex-direction:column;gap:3px}
-    #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:4px 8px}
+    #leftcol .cyc-key{flex-direction:row;justify-content:space-between;align-items:center;padding:4px 6px;gap:4px;min-width:0}
     #leftcol .cyc-key .ck-val{font-size:12px}
     #leftcol .cyc-key .ck-lab{font-size:9.5px}
     #leftcol .mb-lab{margin-bottom:6px}
@@ -714,6 +715,19 @@
     footer{padding-top:6px;line-height:1.5}
   }
 
+  /* Écrans étroits : dernier cran de resserrage. Placé en fin de feuille pour primer sur
+     les réglages portrait déclarés plus haut. */
+  @media (max-width:380px){
+    body.cycle-on #leftcol .cyc-box{padding:8px 4px}
+    body.cycle-on #leftcol .cyc-body{gap:3px}
+    body.cycle-on #leftcol .cyc-key{padding:4px 4px;gap:2px}
+    body.cycle-on #leftcol .cyc-key .ck-val{font-size:10.5px}
+    body.cycle-on #leftcol .cyc-key .ck-lab{font-size:7.5px}
+    body.cycle-on #leftcol .cyc-slc{font-size:8.5px}
+    body.cycle-on #leftcol .cyc-fig{font-size:10.5px}
+    /* colonne trop étroite : les bornes de la barre font doublon avec les cases TP et SL */
+    body.cycle-on #leftcol .cv-end{display:none}
+  }
 </style>
 </head>
 <body>
@@ -1971,15 +1985,15 @@ function render(){
       fillCls="neg";
     }
     cycHTML=`<div class="cyc-box">
-      <div class="cyc-top"><span class="cyc-lab">Cycle</span><span class="cyc-fig mono"><span class="${cum>=0?'pos':'neg'}">${(cum>=0?'+':'−')+fmtEur2(Math.abs(cum)).replace(' €','')}</span> / +${fmtEur2(obj).replace(' €','')} €</span></div>
+      <div class="cyc-top"><span class="cyc-fig mono"><span class="${cum>=0?'pos':'neg'}">${(cum>=0?'+':'−')+fmtEur2(Math.abs(cum)).replace(' €','')}</span> / +${fmtEur2(obj).replace(' €','')} €</span></div>
       <div class="cyc-body">
         <div class="cyc-vwrap mono">
-          <span class="cv-end pos">+${fmtEurC(obj)}</span>
+          <span class="cv-end pos" title="objectif du cycle">+${Math.round(obj)}</span>
           <div class="cyc-vbar">
             <div class="cyc-vzero" style="top:${zeroTop}%"></div>
             <div class="cyc-vfill ${fillCls}" style="top:${vTop}%;height:${vHeight}%"></div>
           </div>
-          <span class="cv-end neg">${fmtEurC(low)}</span>
+          <span class="cv-end neg" title="stop-loss de la séance">${Math.round(low)}</span>
         </div>
       <div class="cyc-keys mono">
         <div class="cyc-key"><span class="ck-lab">MISE${capped?" ⊤":""}</span><span class="ck-val">${fmtEurC(S.cycleU||S.cycleBaseEur)}</span></div>
