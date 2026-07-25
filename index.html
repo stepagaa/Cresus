@@ -465,10 +465,17 @@
   .cyc-vwrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;min-width:0}
   .cv-end{font-size:8px;line-height:1;white-space:nowrap;letter-spacing:-.02em}
   .cv-end.pos{color:var(--win)} .cv-end.neg{color:var(--lose)}
-  .cyc-vbar{position:relative;width:9px;flex:1;min-height:64px;background:var(--line);border-radius:5px}
-  .cyc-vfill{position:absolute;left:0;right:0;border-radius:5px;transition:top .3s,height .3s}
-  .cyc-vfill.pos{background:var(--win)} .cyc-vfill.neg{background:var(--lose)}
-  .cyc-vzero{position:absolute;left:-3px;right:-3px;height:1px;background:var(--sage-dim);transform:translateY(-50%)}
+  /* jauge à crans : chaque cran = 1 pièce. Neutre par défaut, coloré une fois "acquis". */
+  .cr-wrap{position:relative;flex:1;min-height:0;min-width:0;display:flex}
+  .cr-strip{display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;width:16px}
+  .cr-notch{flex:1;min-height:4px;width:100%;border-radius:2px;background:var(--line);transition:background .2s}
+  .cr-notch.on.pos{background:var(--win)}
+  .cr-notch.on.neg{background:var(--lose)}
+  .cr-zero{flex:none;height:2px;margin:1px 0;border-radius:1px;background:var(--sage-dim);opacity:.6}
+  /* étiquette flottante du P&L courant, positionnée face au cran atteint sur l'échelle */
+  .cr-pl{position:absolute;left:100%;margin-left:5px;top:0;transform:translateY(-50%);
+    font-size:11px;font-weight:700;white-space:nowrap;transition:top .25s}
+  .cr-pl.pos{color:var(--win)} .cr-pl.neg{color:var(--lose)}
   .cyc-bar-bi{position:relative;overflow:visible}
   .cyc-bar-bi .cyc-fill{position:absolute;top:0;transition:left .3s,width .3s}
   .cyc-bar-bi .cyc-fill.pos{background:var(--win)}
@@ -476,22 +483,15 @@
   .cyc-zero{position:absolute;top:-2px;width:1px;height:8px;background:var(--sage-dim);z-index:1}
   .cyc-bar-ends{display:flex;justify-content:space-between;font-size:9.5px;margin:-1px 0 5px}
   .cyc-bar-ends .neg{color:var(--lose)} .cyc-bar-ends .pos{color:var(--win)}
-  .cyc-fig{font-size:12px;color:var(--sage);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cyc-top-lab{font-size:9.5px;letter-spacing:.1em;color:var(--sage-dim)}
+  .cyc-fig{font-size:14px;font-weight:600;color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
   /* trois repères clés bien lisibles : MISE · TP · SL */
-  .cyc-keys{display:flex;flex:1 1 auto;min-width:0;gap:5px}
-  .cyc-key{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;
-    background:var(--felt2);border:1px solid var(--line);border-radius:8px;padding:6px 3px}
-  .cyc-key .ck-lab{font-size:9.5px;letter-spacing:.1em;color:var(--sage-dim)}
-  .cyc-key .ck-val{font-size:11.5px;font-weight:600;color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
-  .cyc-key .ck-val.pos{color:var(--win)} .cyc-key .ck-val.neg{color:var(--lose)}
   .cyc-slc{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);
     font-size:9.5px;font-family:var(--mono);color:var(--sage-dim);
     display:flex;justify-content:center;white-space:nowrap}
   .cyc-slc.warn{color:var(--warn)}
   .cyc-slc.danger{color:var(--lose);font-weight:600}
-  .cyc-key-tp{cursor:pointer;transition:border-color .15s}
-  .cyc-key-tp:active{border-color:var(--gold)}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -554,10 +554,6 @@
     body.cycle-on #leftcol .cyc-top{margin-bottom:3px}
     body.cycle-on #leftcol .cyc-bar{height:3px;margin-bottom:3px}
     body.cycle-on #leftcol .cyc-fig{font-size:9.5px}
-    body.cycle-on #leftcol .cyc-keys{flex-direction:column;gap:3px}
-    body.cycle-on #leftcol .cyc-key{flex-direction:row;justify-content:center;align-items:center;padding:6px 6px;min-width:0}
-    body.cycle-on #leftcol .cyc-key .ck-lab{font-size:8.5px}
-    body.cycle-on #leftcol .cyc-key .ck-val{font-size:15px}
     /* cartes de détection compactées en mode cycle pour laisser la place au solde en bas de colonne */
     body.cycle-on #leftcol .mcell{padding:6px 8px}
     body.cycle-on #leftcol .mcell .mname{font-size:11px;min-height:0}
@@ -599,10 +595,6 @@
     #leftcol .cyc-lab{font-size:10px}
     #leftcol .cyc-bar{height:3px;margin-bottom:4px}
     #leftcol .cyc-fig{font-size:9.5px}
-    #leftcol .cyc-keys{flex-direction:column;gap:3px}
-    #leftcol .cyc-key{flex-direction:row;justify-content:center;align-items:center;padding:5px 6px;min-width:0}
-    #leftcol .cyc-key .ck-val{font-size:12px}
-    #leftcol .cyc-key .ck-lab{font-size:9.5px}
     #leftcol .mb-lab{margin-bottom:6px}
     #leftcol .sb-solde{font-size:17px}
     #leftcol .sb-pnl{font-size:13px}
@@ -676,9 +668,13 @@
     .cyc-vwrap{flex-direction:row;width:100%;gap:8px}
     .cv-end.neg{order:-1}
     .cv-end.pos{order:2}
-    .cyc-vbar{width:auto;height:9px;flex:1;min-height:0}
-    .cyc-vzero{top:-3px;bottom:-3px;left:var(--hl);right:auto;width:1px;height:auto;transform:translateX(-50%)}
-    .cyc-vfill{top:0;bottom:0;height:auto;left:var(--hl);width:var(--hw);right:auto}
+    /* rangée de crans : l'ordre DOM va du TP (haut en portrait) vers le SL ; en row-reverse le
+       dernier élément (borne SL) passe à gauche et le premier (borne TP) à droite — lecture
+       naturelle perte→gain, gauche→droite, sans dupliquer la logique de remplissage. */
+    .cr-strip{flex-direction:row-reverse;width:auto;height:16px;flex:1;gap:2px}
+    .cr-notch{height:100%;width:auto;min-height:0;min-width:4px}
+    .cr-zero{width:2px;height:auto;margin:0 1px}
+    .cr-pl{left:var(--pll);top:0;margin-left:0;transform:translate(-50%,-140%)}
   }
 
   /* ===== FORMAT PAYSAGE — 2/2 : compactage vertical =====
@@ -748,9 +744,6 @@
   @media (max-width:380px){
     body.cycle-on #leftcol .cyc-box{padding:8px 4px}
     body.cycle-on #leftcol .cyc-body{gap:3px}
-    body.cycle-on #leftcol .cyc-key{padding:5px 4px}
-    body.cycle-on #leftcol .cyc-key .ck-val{font-size:12.5px}
-    body.cycle-on #leftcol .cyc-key .ck-lab{font-size:7.5px}
     body.cycle-on #leftcol .cyc-slc{font-size:8.5px}
     body.cycle-on #leftcol .cyc-fig{font-size:10.5px}
     /* colonne trop étroite : les bornes de la barre font doublon avec les cases TP et SL */
@@ -1849,35 +1842,31 @@ function render(){
   // jeux de coordonnées (verticale pour le portrait, horizontale pour le paysage) à partir des
   // mêmes fractions : ça évite de dupliquer la logique, seule la mise en page CSS choisit laquelle
   // s'affiche selon l'orientation.
-  const tpAbs=S.tpFinal, slAbs=Math.abs(S.sl), span=tpAbs+slAbs;
-  const zeroTop=tpAbs/span*100;                 // position du 0 verticale, mesurée depuis le haut
-  const zeroLeft=slAbs/span*100;                // position du 0 horizontale, mesurée depuis la gauche
-  let vTop, vHeight, hLeft, hWidth, fillCls;
-  if(gainPieces>=0){
-    vHeight=Math.min(tpAbs,gainPieces)/span*100; vTop=zeroTop-vHeight;
-    hWidth=vHeight; hLeft=zeroLeft;
-    fillCls="pos";
-  } else {
-    vHeight=Math.min(slAbs,-gainPieces)/span*100; vTop=zeroTop;
-    hWidth=vHeight; hLeft=zeroLeft-hWidth;
-    fillCls="neg";
-  }
+  // ─── crans (1 cran = 1 pièce) ───
+  const tpAbs=S.tpFinal, slAbs=Math.abs(S.sl);
+  const tpUnits=Math.round(tpAbs), slUnits=Math.round(slAbs), total=tpUnits+slUnits;
+  const filled=Math.max(-slUnits, Math.min(tpUnits, Math.round(gainPieces)));
+  let topNotches="", botNotches="";
+  for(let v=tpUnits; v>=1; v--) topNotches+=`<div class="cr-notch${(filled>0&&v<=filled)?' on pos':''}"></div>`;
+  for(let v=1; v<=slUnits; v++) botNotches+=`<div class="cr-notch${(filled<0&&v<=-filled)?' on neg':''}"></div>`;
+  // position du P&L courant sur l'échelle : la même graduation que le dernier cran acquis.
+  // Calculée pour les deux orientations (top% en portrait, left% en paysage) ; la carte n'affiche
+  // que celle pertinente selon l'orientation, via CSS.
+  const boundaryTop=Math.max(3,Math.min(97,(tpUnits-filled)/total*100));
+  const boundaryLeft=Math.max(3,Math.min(97,(slUnits+filled)/total*100));
+  const plCls=gainPieces>=0?"pos":"neg";
+  const plTxt=(gainPieces>=0?"+":"−")+fmtEur2(Math.abs(gainPieces)*S.pieceEur);
   const cycHTML=`<div class="cyc-box">
-      <div class="cyc-top"><span class="cyc-fig mono ${gainPieces>=0?'pos':'neg'}">${(gainPieces>=0?'+':'−')+fmtEur2(Math.abs(gainPieces)*S.pieceEur).replace(' €','')} €</span></div>
+      <div class="cyc-top"><span class="cyc-top-lab">MISE</span> <span class="cyc-fig mono">${fmtEurC(S.pieceEur)}</span></div>
       <div class="cyc-body">
         <div class="cyc-vwrap mono">
-          <span class="cv-end pos" title="take-profit de la séance">+${Math.round(tpAbs*S.pieceEur)}</span>
-          <div class="cyc-vbar">
-            <div class="cyc-vzero" style="top:${zeroTop}%;--hl:${zeroLeft}%"></div>
-            <div class="cyc-vfill ${fillCls}" style="top:${vTop}%;height:${vHeight}%;--hl:${hLeft}%;--hw:${hWidth}%"></div>
+          <span class="cv-end pos" title="take-profit de la séance">+${fmtEurC(tpAbs*S.pieceEur)}</span>
+          <div class="cr-wrap">
+            <div class="cr-strip">${topNotches}<div class="cr-zero"></div>${botNotches}</div>
+            <span class="cr-pl ${plCls}" style="top:${boundaryTop}%;--pll:${boundaryLeft}%">${plTxt}</span>
           </div>
-          <span class="cv-end neg" title="stop-loss de la séance">−${Math.round(slAbs*S.pieceEur)}</span>
+          <span class="cv-end neg" title="stop-loss de la séance">−${fmtEurC(slAbs*S.pieceEur)}</span>
         </div>
-      <div class="cyc-keys mono">
-        <div class="cyc-key" title="Mise"><span class="ck-val">${fmtEurC(S.pieceEur)}</span></div>
-        <div class="cyc-key" title="Take-profit"><span class="ck-val pos">+${fmtEurC(tpAbs*S.pieceEur)}</span></div>
-        <div class="cyc-key" title="Stop-loss"><span class="ck-val neg">−${fmtEurC(slAbs*S.pieceEur)}</span></div>
-      </div>
       </div>
       <div class="cyc-slc"><span title="risque accepté par séance">${Math.round(RISK_PCT*100)}% du solde en jeu</span></div>
     </div>`;
