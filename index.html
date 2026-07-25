@@ -35,16 +35,22 @@
     --ivory:#e8e6e1; --sage:#9a9691; --sage-dim:#6a6763;
     --win:#6aa585; --lose:#b8635b; --warn:#c8934e;
     /* teintes dérivées, déclarées ici pour pouvoir basculer d'un thème à l'autre */
-    --wash:var(--wash);      /* voile clair posé sur le fond */
+    --wash:rgba(232,230,225,.05);      /* voile clair posé sur le fond */
     --on-accent:#0d0e10;               /* texte posé sur un aplat doré ou coloré */
     --ivory-2:#c9c6c0;                 /* texte secondaire (numéros du tapis) */
-    --scrim:var(--scrim);         /* fond des fenêtres modales */
+    --scrim:rgba(6,10,20,.82);         /* fond des fenêtres modales */
     --rn-b:#33363a;                    /* points : noir */
     --pi-a:#5b8fa3; --pi-b:#2c4550;    /* points : pair / impair */
     --mp-a:#9179a6; --mp-b:#463a52;    /* points : 1-18 / 19-36 */
     --nm-rn-a:#c07268; --nm-rn-b:#8c9298;   /* noms de chance, accordés aux points */
     --nm-pi-a:#7fb3c8; --nm-pi-b:#5a7f91;
     --nm-mp-a:#b49ac9; --nm-mp-b:#8271a0;
+    /* tuples RGB, pour composer des rgba() théme-conscients dans les animations et badges */
+    --gold-rgb:201,168,106; --lose-rgb:184,99,91; --win-rgb:106,165,133; --warn-rgb:200,147,78;
+    /* alpha des lueurs animées (détection / signal de jeu) — assez discrètes ici car le fond
+       est déjà sombre : la bordure opaque fait l'essentiel du travail de contraste. */
+    --glow-a1:.1; --glow-a2:.14;
+    --rglow-a1:.4; --rglow-a2:.14; --rglow-a3:.2;
     --shadow-card:0 1px 2px rgba(0,0,0,.4);
     --padh:max(calc(100dvh - 186px), 480px);   /* le tapis tient dans l'écran, sans défilement */
     --mono:"DM Mono",ui-monospace,monospace;
@@ -56,7 +62,7 @@
   :root[data-theme="light"]{
     --felt:#f3f1ed; --felt2:#eae7e1; --card:#ffffff; --card2:#f7f5f1;
     --line:#dcd7cf; --line-soft:rgba(0,0,0,.06);
-    --gold:#9a7b33; --gold-2:#7d6228; --gold-dim:#d6c79c; --gold-soft:rgba(154,123,51,.10);
+    --gold:#9a7b33; --gold-2:#7d6228; --gold-dim:#d6c79c; --gold-soft:rgba(154,123,51,.25);
     --rouge:#a8443a; --rouge-2:#a8443a; --rouge-d:#8c352c; --noir:#41464b; --noir-edge:#6a7076;
     --zero:#1f6b52; --zero-2:#1f6b52;
     --ivory:#1b1d1f; --sage:#54575a; --sage-dim:#676a6d;
@@ -71,6 +77,12 @@
     --nm-rn-a:#a8443a; --nm-rn-b:#55595c;
     --nm-pi-a:#2c6a85; --nm-pi-b:#6f96a8;
     --nm-mp-a:#65488a; --nm-mp-b:#8f7aa8;
+    /* fond clair : il faut une opacité bien plus forte pour que le voile et la lueur restent
+       visibles sur du blanc (un fond sombre laisse voir la même teinte à une opacité bien
+       moindre — vérifié : 10 % de voile sur blanc ne donne qu'un contraste de 1,12:1). */
+    --gold-rgb:154,123,51; --lose-rgb:160,55,47; --win-rgb:39,107,77; --warn-rgb:138,90,21;
+    --glow-a1:.22; --glow-a2:.32;
+    --rglow-a1:.55; --rglow-a2:.30; --rglow-a3:.42;
     --shadow-card:0 1px 2px rgba(0,0,0,.08);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -158,8 +170,8 @@
   .mwait.won{color:var(--win);font-weight:600}
   @keyframes playpulse{0%,100%{box-shadow:0 0 0 1px var(--gold)}50%{box-shadow:0 0 0 1px var(--gold)}}
   @keyframes awaitblink{0%,100%{border-color:var(--gold-dim)}50%{border-color:var(--gold)}}
-  @keyframes goldshimmer{0%,100%{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(201,168,106,.1)}50%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,106,.14)}}
-  @keyframes redshimmer{0%,100%{border-color:rgba(184,99,91,.4);box-shadow:0 0 0 1px rgba(184,99,91,.14)}50%{border-color:var(--lose);box-shadow:0 0 0 3px rgba(184,99,91,.2)}}
+  @keyframes goldshimmer{0%,100%{border-color:var(--gold-dim);box-shadow:0 0 0 1px rgba(var(--gold-rgb),var(--glow-a1))}50%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(var(--gold-rgb),var(--glow-a2))}}
+  @keyframes redshimmer{0%,100%{border-color:rgba(var(--lose-rgb),var(--rglow-a1));box-shadow:0 0 0 1px rgba(var(--lose-rgb),var(--rglow-a2))}50%{border-color:var(--lose);box-shadow:0 0 0 3px rgba(var(--lose-rgb),var(--rglow-a3))}}
   @media (prefers-reduced-motion:reduce){
     .mcell.play{box-shadow:0 0 0 1px var(--gold)}
     .mcell.await{animation:none}
@@ -317,9 +329,9 @@
   /* code couleur des cycles : vert bouclé · orange en cours · rouge perdu */
   .cyc-badge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:20px;
     border:1px solid var(--line);color:var(--sage-dim);margin-left:5px;vertical-align:middle}
-  .cyc-badge.ok{color:var(--win);border-color:rgba(106,165,133,.4);background:rgba(106,165,133,.08)}
-  .cyc-badge.run{color:var(--warn);border-color:rgba(200,147,78,.4);background:rgba(200,147,78,.08)}
-  .cyc-badge.ko{color:var(--lose);border-color:rgba(184,99,91,.4);background:rgba(184,99,91,.08)}
+  .cyc-badge.ok{color:var(--win);border-color:rgba(var(--win-rgb),.4);background:rgba(var(--win-rgb),.08)}
+  .cyc-badge.run{color:var(--warn);border-color:rgba(var(--warn-rgb),.4);background:rgba(var(--warn-rgb),.08)}
+  .cyc-badge.ko{color:var(--lose);border-color:rgba(var(--lose-rgb),.4);background:rgba(var(--lose-rgb),.08)}
   .d-row.cyc-ok{border-left:2px solid var(--win)}
   .d-row.cyc-run{border-left:2px solid var(--warn)}
   .d-row.cyc-ko{border-left:2px solid var(--lose)}
