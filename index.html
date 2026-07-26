@@ -288,15 +288,23 @@
   .toast.with-undo{display:flex;align-items:center;gap:12px;padding:9px 9px 9px 18px}
   .toast.with-undo #toastUndo{background:var(--felt);color:var(--gold);border:none;border-radius:22px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit}
 
-  /* bannière fin de séance (TP / SL) */
-  .banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 14px;border-radius:12px;background:rgba(51,192,141,.12);border:1px solid var(--win)}
-  .banner-txt{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--win)}
-  .banner-act{display:flex;align-items:center;gap:8px;flex:none}
-  .banner-act #goalSave{font-size:12px;font-weight:600;color:var(--on-accent);background:var(--win);border-radius:9px;padding:7px 11px}
-  .banner-act #goalDismiss{font-size:18px;color:var(--sage);padding:0 4px;line-height:1}
-  .banner.banner-sl{background:rgba(224,71,63,.12);border-color:var(--lose)}
-  .banner.banner-sl .banner-txt{color:var(--lose)}
-  .banner.banner-sl #goalSave{background:var(--lose);color:var(--on-accent)}
+  /* bannière fin de séance : carte sobre alignée sur le reste de l'app (fond de carte, liseré
+     de couleur), plutôt qu'un pavé teinté qui jurait avec la palette et gardait du CSS mort. */
+  .banner{display:flex;flex-direction:column;gap:9px;margin-top:12px;padding:12px 14px;
+    border-radius:12px;background:var(--card);border:1px solid var(--line);
+    border-left:3px solid var(--win);box-shadow:var(--shadow-card)}
+  .banner-main{display:flex;align-items:center;gap:9px;min-width:0}
+  .banner-ico{font-size:19px;flex:none;line-height:1}
+  .banner-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .banner-lab{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage-dim)}
+  .banner-val{font-size:17px;font-weight:700;white-space:nowrap;color:var(--win)}
+  .banner-act{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+  .banner-act #goalContinue{font-size:12px;font-weight:600;color:var(--on-accent);background:var(--gold);
+    border:1px solid var(--gold);border-radius:9px;padding:7px 11px;white-space:nowrap}
+  .banner-act #goalStop{font-size:12px;font-weight:600;color:var(--sage);background:transparent;
+    border:1px solid var(--line);border-radius:9px;padding:7px 11px;white-space:nowrap}
+  .banner.banner-sl{border-left-color:var(--lose)}
+  .banner.banner-sl .banner-val{color:var(--lose)}
 
   @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 
@@ -518,11 +526,6 @@
   .hist-sig{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--sage);margin-bottom:10px}
   .hist-close{font-size:22px;color:var(--sage);padding:0 4px;line-height:1}
 
-  /* bannière fin de séance : empilée + bouton continuer */
-  .banner{flex-direction:column;align-items:stretch}
-  .banner-act{justify-content:flex-end;flex-wrap:wrap}
-  #goalContinue{font-size:12px;font-weight:600;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);border-radius:9px;padding:7px 11px}
-
   /* ===== FORMAT PORTRAIT : tapis vertical à droite, détections à gauche =====
      Le pavé reprend la disposition d'un vrai tapis vu en hauteur : le 0 en tête
      sur toute la largeur, puis 12 rangées de 3 numéros (1·2·3 / 4·5·6 … 34·35·36).
@@ -728,8 +731,9 @@
     .log{max-height:150px}
     .slist{max-height:170px}
 
-    .banner{margin-top:8px;padding:8px 12px}
-    .banner-txt{font-size:12.5px}
+    .banner{margin-top:8px;padding:8px 12px;gap:7px}
+    .banner-val{font-size:15px}
+    .banner-lab{font-size:10px}
 
     /* fenêtres : l'écran est bas, on les rend défilables et compactes */
     .modal-bg{padding:8px}
@@ -763,10 +767,16 @@
 
   <!-- BANNIÈRE FIN DE SÉANCE (TP / SL) -->
   <div class="banner" id="goalBanner" style="display:none">
-    <div class="banner-txt" id="goalTxt">🎯 Take-profit atteint</div>
+    <div class="banner-main">
+      <span class="banner-ico" id="goalIco">🎯</span>
+      <div class="banner-copy">
+        <span class="banner-lab" id="goalLab">Take-profit atteint</span>
+        <span class="banner-val mono" id="goalVal">+0,00 €</span>
+      </div>
+    </div>
     <div class="banner-act">
-      <button id="goalContinue">Enregistrer &amp; continuer ▸</button>
-      <button id="goalDismiss" aria-label="fermer">×</button>
+      <button id="goalStop" class="banner-stop">Arrêter là</button>
+      <button id="goalContinue">Nouvelle séance ▸</button>
     </div>
   </div>
 
@@ -970,7 +980,7 @@ const $=id=>document.getElementById(id);
 
 let EMIT=false, CUR_I=-1;
 let jview="chart";
-let sessions=[]; let goalDismissed=false;
+let sessions=[]; let goalDismissed=false; let autoSavedThisEnd=false;
 const SESS_KEY="cresus:sessions:v1";
 let S={
   capitalEur:200, pieceEur:1, capital:200, sessionStart:null,   // démarre au 1er équilibre 6-6
@@ -999,8 +1009,9 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT}; }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT,autoSavedThisEnd:autoSavedThisEnd}; }
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:SESSION_TP; S.ctx=o.ctx||0; S.histFilter=o.histFilter||CUR_MONT;
+  autoSavedThisEnd=!!o.autoSavedThisEnd;
   // restaurer la config réglable : progression de session et % de risque
   if(Array.isArray(o.sessionProg) && o.sessionProg.length) SESSION_PROG=o.sessionProg.filter(x=>x>0);
   if(o.riskPct>0) RISK_PCT=o.riskPct;
@@ -1168,8 +1179,11 @@ function stakeC(C){
 // Le coup plafonné reste un coup normal de la montante : perdu, elle avance au palier suivant.
 function cappedStake(C){
   const base=stakeC(C);
-  const resteTP=S.tpFinal-(S.solde-S.capital);          // pièces restantes avant le take-profit
+  const cum=S.solde-S.capital;                           // P&L courant, en pièces
+  const resteTP=S.tpFinal-cum;                            // pièces restantes avant le take-profit
+  const resteSL=cum-S.sl;                                 // pièces de perte encore permises avant le stop-loss
   if(resteTP>0 && resteTP<base) return Math.max(1e-9, round2(resteTP));
+  if(resteSL>0 && resteSL<base) return Math.max(1e-9, round2(resteSL));
   return base;
 }
 function phaseLabel(C){
@@ -1265,7 +1279,13 @@ function feedCouple(ch){
 function replay(emitLast){
   S.solde=S.capital; S.wagered=0; S.log=[]; freshAll();
   const N=S.spins.length; const ctx=S.ctx||0;
-  for(let i=0;i<N;i++){ CUR_I=i; if(i<ctx) continue; EMIT=!!emitLast&&(i===N-1);
+  for(let i=0;i<N;i++){ CUR_I=i; if(i<ctx) continue;
+    // Séance déjà conclue (TP ou SL déjà atteint sur un coup précédent) : on arrête d'y toucher.
+    // Sans ce garde-fou, rejouer les numéros suivants continuait de miser indéfiniment et pouvait
+    // faire dériver le résultat très au-delà du TP/SL nominal.
+    const cumSoFar=S.solde-S.capital;
+    if(cumSoFar>=S.tpFinal-1e-9 || cumSoFar<=S.sl+1e-9) break;
+    EMIT=!!emitLast&&(i===N-1);
     // les paris sont posés AVANT la boule : on fige les mises pour que la résolution
     // d'une chance ne modifie pas la mise déjà engagée d'une autre (plafond TP)
     for(const ch of COUPLES){ const C=S.cpl[ch]; C.pending=(C.sig.phase==="play")?cappedStake(C):0; }
@@ -1423,7 +1443,7 @@ function exportSessions(){
 /* ---- sessions & fenêtre d'ouverture ---- */
 let openSession=-1, openDay="";
 function downsample(arr,max){ if(arr.length<=max) return arr; const out=[],step=(arr.length-1)/(max-1); for(let i=0;i<max;i++) out.push(arr[Math.round(i*step)]); out[out.length-1]=arr[arr.length-1]; return out; }
-function saveCurrentSession(){
+function saveCurrentSession(silent){
   // Rien joué ? Il n'y a pas de séance à archiver. Sans ce garde-fou, un arrêt automatique
   // (stop-loss de cycle au chargement) créait une séance fantôme qui faussait les statistiques.
   if(!S.log.length && !S.spins.length) return;
@@ -1439,8 +1459,8 @@ function saveCurrentSession(){
     parCh, miseMax:S.pieceEur, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
-  saveSessions(); renderSessions(); render();
-  toast("Session enregistrée");
+  saveSessions(); renderSessions();
+  if(!silent){ render(); toast("Session enregistrée"); }
 }
 function sparkSVG(curve, base){
   if(!curve||curve.length<2) return '<div class="chart-empty" style="padding:6px 0">Courbe non disponible pour cette session.</div>';
@@ -1722,7 +1742,7 @@ async function startNewSession(){
   RISK_PCT=riskPct;
   S.capitalEur=v; setMiseFromRisk(); recalcCapital(); S.tpFinal=SESSION_TP;
 
-  setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false;   // chrono armé au 1er 6-6
+  setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false; autoSavedThisEnd=false;   // chrono armé au 1er 6-6
   replay(false); save(); render(); closeStartModal();
 }
 
@@ -1736,17 +1756,20 @@ function setMiseFromRisk(){
 }
 
 function continueSession(){
-  saveCurrentSession();                        // « Continuer » enregistre d'abord automatiquement
-  // reporte le solde de fin de séance comme nouveau capital ; AUCUN rattrapage entre séances —
-  // chaque nouvelle séance recalcule sa propre mise sur le solde du moment, indépendamment du
-  // résultat de la précédente. On gagne ou on perd, on accepte, on repart.
+  // la séance a déjà été enregistrée automatiquement dès sa conclusion — on ne fait plus
+  // qu'enchaîner sur une nouvelle séance, mise recalculée sur le solde reporté.
   const finEur=Math.max(round2(S.solde*S.pieceEur), 0.5);
   const keep=S.spins.slice(-16);
   S.spins=keep; S.ctx=keep.length;
   S.capitalEur=finEur; setMiseFromRisk(); recalcCapital(); S.tpFinal=SESSION_TP;
-  S.log=[]; S.sessionStart=null; goalDismissed=false;                        // chrono armé au 1er 6-6
+  S.log=[]; S.sessionStart=null; goalDismissed=false; autoSavedThisEnd=false;   // chrono armé au 1er 6-6
   replay(false); save(); render();
   toast("Nouvelle séance — solde reporté : "+fmtEur2(finEur));
+}
+// « Arrêter là » : la séance est déjà enregistrée, on referme simplement et on revient à
+// l'accueil pour décider de la suite (rejouer plus tard, ajuster le solde, etc.).
+function stopSession(){
+  goalDismissed=true; render(); openStartModal();
 }
 
 /* ---- historique d'une chance simple (où j'en suis sur la montante) ---- */
@@ -1815,6 +1838,9 @@ function render(){
   const hitTP=gainPieces>=(S.tpFinal)-1e-9;
   const hitSL=gainPieces<=(S.sl)+1e-9;
   const ended=(hitTP||hitSL)&&!goalDismissed;
+  // la séance s'enregistre TOUTE SEULE dès qu'elle se conclut — plus besoin de cliquer pour
+  // que le résultat soit archivé ; la bannière ne sert plus qu'à décider de la suite.
+  if(ended && !autoSavedThisEnd){ autoSavedThisEnd=true; saveCurrentSession(true); }
   for(const ch of COUPLES){
     const C=S.cpl[ch], id=CID[ch];
     const bal=balancedUpto(ch,last);
@@ -1919,8 +1945,9 @@ function render(){
   banner.className="banner"+(hitSL?" banner-sl":"");
   if(ended){
     const gEur=gainPieces*S.pieceEur;
-    const main = hitTP ? "🎯 Take-profit · "+plusEur(gEur) : "🛑 Stop-loss · "+fmtEur2(gEur);
-    $("goalTxt").innerHTML=main;
+    $("goalIco").textContent=hitTP?"🎯":"🛑";
+    $("goalLab").textContent=hitTP?"Take-profit atteint":"Stop-loss atteint";
+    $("goalVal").textContent=plusEur(gEur);
   }
   updateRate();
   if(jview==="chart" && $("soldeModal").style.display==="flex") drawChart();
@@ -2038,7 +2065,7 @@ $("jToggle").addEventListener("click",()=> setJview(jview==="chart"?"log":"chart
 $("soldeBox").addEventListener("click",()=>{ $("soldeModal").style.display="flex"; drawChart(); });
 $("soldeClose").addEventListener("click",()=>{ $("soldeModal").style.display="none"; });
 $("soldeModal").addEventListener("click",e=>{ if(e.target===$("soldeModal")) $("soldeModal").style.display="none"; });
-$("goalDismiss").addEventListener("click",()=>{ goalDismissed=true; render(); });
+$("goalStop").addEventListener("click",stopSession);
 $("saveSessionBtn").addEventListener("click",saveCurrentSession);
 $("exportBtn").addEventListener("click",exportSessions);
 $("sheetUrl").addEventListener("change",e=>saveSheetUrl(e.target.value));
