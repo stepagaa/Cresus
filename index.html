@@ -214,8 +214,13 @@
   .cpt-dot{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px var(--card)}
   .cpt-dot.up{background:var(--win)} .cpt-dot.dn{background:var(--lose)}
   .cpt-lab{position:absolute;font-family:var(--mono);font-size:11px;font-weight:600;white-space:nowrap;padding:1px 6px;border-radius:7px;pointer-events:none}
-  .cpt-lab.high{transform:translate(-50%,-120%);color:var(--win);background:rgba(60,203,149,.15)}
-  .cpt-lab.low{transform:translate(-50%,20%);color:var(--lose);background:rgba(230,75,65,.15)}
+  .cpt-lab.high{transform:translate(-50%,-120%);color:var(--win);background:rgba(var(--win-rgb),.15)}
+  .cpt-lab.low{transform:translate(-50%,20%);color:var(--lose);background:rgba(var(--lose-rgb),.15)}
+  /* valeur courante : ancrée à droite du dernier point, pas centrée dessus, pour ne jamais
+     chevaucher l'étiquette mini/maxi si le point courant est aussi un extrême */
+  .cpt-lab.now{transform:translate(2px,-50%);font-weight:700}
+  .cpt-lab.now.pos{color:var(--win);background:rgba(var(--win-rgb),.15)}
+  .cpt-lab.now.neg{color:var(--lose);background:rgba(var(--lose-rgb),.15)}
   .chart-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--sage);margin-top:9px}
   .chart-empty{color:var(--sage-dim);font-size:13px;padding:14px 0}
   .chart-stats{display:flex;gap:7px;margin-top:12px}
@@ -1360,9 +1365,9 @@ function drawChart(){
   let bal=S.capital; const pts=[bal*S.pieceEur];
   for(const e of S.log){ bal += (e.r==="G"? e.amt : -e.amt); pts.push(bal*S.pieceEur); }
   if(pts.length<2){ el.innerHTML='<div class="chart-empty">Pas encore de coup joué — le graphique apparaîtra ici.</div>'+stats; return; }
-  const W=300,H=150,pad=20;
+  const W=300,H=150,pad=20,padR=54;               // padR réserve la marge de droite pour le P&L courant
   const min=Math.min(...pts), max=Math.max(...pts), span=(max-min)||1;
-  const X=i=> pad + i*(W-2*pad)/(pts.length-1);
+  const X=i=> pad + i*(W-pad-padR)/(pts.length-1);
   const Y=v=> H-pad - (v-min)*(H-2*pad)/span;
   const P=pts.map((v,i)=>({x:X(i),y:Y(v)}));
   const d=smoothPath(P);
@@ -1371,14 +1376,18 @@ function drawChart(){
   const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
   // points extrêmes + delta vs solde de départ
   let minI=0,maxI=0; pts.forEach((v,i)=>{ if(v<pts[minI])minI=i; if(v>pts[maxI])maxI=i; });
-  const dMax=pts[maxI]-base, dMin=pts[minI]-base;
+  const lastI=pts.length-1;
+  const dMax=pts[maxI]-base, dMin=pts[minI]-base, dNow=pts[lastI]-base;
   const xPct=i=>(X(i)/W*100), yPct=i=>(Y(pts[i])/H*100), cl=x=>Math.max(9,Math.min(91,x));
   const eurDelta=v=>(v>0?"+":v<0?"−":"")+fmtEur2(Math.abs(v));
   let over="";
-  if(dMax>1e-9){ over+=`<div class="cpt-dot up" style="left:${xPct(maxI).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%"></div>`
+  if(dMax>1e-9 && maxI!==lastI){ over+=`<div class="cpt-dot up" style="left:${xPct(maxI).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%"></div>`
     +`<div class="cpt-lab high" style="left:${cl(xPct(maxI)).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%">${eurDelta(dMax)}</div>`; }
-  if(dMin<-1e-9){ over+=`<div class="cpt-dot dn" style="left:${xPct(minI).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%"></div>`
+  if(dMin<-1e-9 && minI!==lastI){ over+=`<div class="cpt-dot dn" style="left:${xPct(minI).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%"></div>`
     +`<div class="cpt-lab low" style="left:${cl(xPct(minI)).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%">${eurDelta(dMin)}</div>`; }
+  // P&L courant : ancré à droite du dernier point, dans la marge réservée par padR
+  over+=`<div class="cpt-dot ${dNow>=0?'up':'dn'}" style="left:${xPct(lastI).toFixed(1)}%;top:${yPct(lastI).toFixed(1)}%"></div>`
+    +`<div class="cpt-lab now ${dNow>=0?'pos':'neg'}" style="left:${xPct(lastI).toFixed(1)}%;top:${yPct(lastI).toFixed(1)}%">${eurDelta(dNow)}</div>`;
   el.innerHTML=`<div class="chart-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chartsvg">
       <defs>
         <clipPath id="clipUp"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
@@ -1386,7 +1395,7 @@ function drawChart(){
       </defs>
       <path d="${area}" fill="var(--win)" fill-opacity="0.14" clip-path="url(#clipUp)"/>
       <path d="${area}" fill="var(--lose)" fill-opacity="0.14" clip-path="url(#clipDn)"/>
-      <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+      <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
       <path d="${d}" fill="none" stroke="var(--win)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#clipUp)"/>
       <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#clipDn)"/>
     </svg>${over}</div>`+stats;
@@ -1557,22 +1566,35 @@ function renderSessions(){
 
 function cumCurveSVG(vals){
   if(vals.length<2) return "";
-  const W=300,H=140,pad=12;
+  const W=300,H=140,pad=12,padR=54;               // padR réserve la marge de droite pour le P&L courant
   const min=Math.min(...vals,0), max=Math.max(...vals,0), span=(max-min)||1;
-  const X=i=>pad+i*(W-2*pad)/(vals.length-1), Y=v=>H-pad-(v-min)*(H-2*pad)/span;
+  const X=i=>pad+i*(W-pad-padR)/(vals.length-1), Y=v=>H-pad-(v-min)*(H-2*pad)/span;
   const P=vals.map((v,i)=>({x:X(i),y:Y(v)})), d=smoothPath(P);
   const yb=Y(0), x0=X(0), x1=X(vals.length-1);
   const area=d+` L${x1.toFixed(1)},${yb.toFixed(1)} L${x0.toFixed(1)},${yb.toFixed(1)} Z`;
   const hUp=Math.max(0,yb).toFixed(1), hDn=Math.max(0,H-yb).toFixed(1);
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="histsvg">
+  // extrêmes + valeur courante, comme sur la courbe de séance (les valeurs sont déjà des deltas
+  // cumulés depuis 0, pas besoin de soustraire un solde de départ ici)
+  let minI=0,maxI=0; vals.forEach((v,i)=>{ if(v<vals[minI])minI=i; if(v>vals[maxI])maxI=i; });
+  const lastI=vals.length-1;
+  const xPct=i=>(X(i)/W*100), yPct=i=>(Y(vals[i])/H*100), cl=x=>Math.max(9,Math.min(91,x));
+  const eurDelta=v=>(v>0?"+":v<0?"−":"")+fmtEur2(Math.abs(v));
+  let over="";
+  if(vals[maxI]>1e-9 && maxI!==lastI){ over+=`<div class="cpt-dot up" style="left:${xPct(maxI).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%"></div>`
+    +`<div class="cpt-lab high" style="left:${cl(xPct(maxI)).toFixed(1)}%;top:${yPct(maxI).toFixed(1)}%">${eurDelta(vals[maxI])}</div>`; }
+  if(vals[minI]<-1e-9 && minI!==lastI){ over+=`<div class="cpt-dot dn" style="left:${xPct(minI).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%"></div>`
+    +`<div class="cpt-lab low" style="left:${cl(xPct(minI)).toFixed(1)}%;top:${yPct(minI).toFixed(1)}%">${eurDelta(vals[minI])}</div>`; }
+  over+=`<div class="cpt-dot ${vals[lastI]>=0?'up':'dn'}" style="left:${xPct(lastI).toFixed(1)}%;top:${yPct(lastI).toFixed(1)}%"></div>`
+    +`<div class="cpt-lab now ${vals[lastI]>=0?'pos':'neg'}" style="left:${xPct(lastI).toFixed(1)}%;top:${yPct(lastI).toFixed(1)}%">${eurDelta(vals[lastI])}</div>`;
+  return `<div class="chart-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="histsvg">
     <defs><clipPath id="hclipU"><rect x="0" y="0" width="${W}" height="${hUp}"/></clipPath>
     <clipPath id="hclipD"><rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hDn}"/></clipPath></defs>
     <path d="${area}" fill="var(--win)" fill-opacity="0.13" clip-path="url(#hclipU)"/>
     <path d="${area}" fill="var(--lose)" fill-opacity="0.13" clip-path="url(#hclipD)"/>
-    <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${W-pad}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+    <line x1="${pad}" y1="${yb.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${yb.toFixed(1)}" stroke="var(--sage-dim)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
     <path d="${d}" fill="none" stroke="var(--win)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#hclipU)"/>
     <path d="${d}" fill="none" stroke="var(--lose)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" clip-path="url(#hclipD)"/>
-  </svg>`;
+  </svg>${over}</div>`;
 }
 /* ---- filtre du suivi longue durée, par montante ---- */
 const montKey=s=>s.mont||"?";
