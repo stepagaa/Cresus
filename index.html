@@ -135,6 +135,15 @@
   .mcell.play.hot{border-color:var(--lose);animation:redshimmer 2s ease-in-out infinite}
   .mcell.play.hot .mscore{color:var(--lose)}
   .mcell.play.hot .mname{color:var(--lose)}
+  /* Variante paroli : la montante normale a épuisé ses 4 paliers, on tente un rattrapage —
+     accent distinct (chaud, ni or « jeu normal » ni rouge « dernier palier ») pour bien le signaler. */
+  .mcell.play.paroli{border-color:var(--warn);background:rgba(var(--warn-rgb),.09)}
+  .mcell.play.paroli .mscore{color:var(--warn)}
+  .mcell.play.paroli .mname{color:var(--warn)}
+  .mcell.await.paroli{border-color:var(--warn)}
+  .mcell.await.paroli .mscore{color:var(--warn)}
+  .par-badge{display:none}
+  .mcell.paroli .par-badge{display:block;font-size:9.5px;letter-spacing:.02em;color:var(--warn);margin-top:5px}
   .mcell.won{border-color:rgba(16,185,129,.55);background:rgba(16,185,129,.07)}
   .mcell.won .mscore{color:var(--win)}
   .mcell.ended{opacity:.36;filter:saturate(.55)}
@@ -469,7 +478,7 @@
   .cyc-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 7px;margin-bottom:0;
     box-shadow:var(--shadow-card);flex:1 1 auto;min-height:0;min-width:0;width:100%;box-sizing:border-box;
     display:flex;flex-direction:column;overflow:hidden}
-  .cyc-top{display:flex;justify-content:center;align-items:baseline;margin-bottom:5px}
+  .cyc-top{display:flex;justify-content:center;align-items:baseline;gap:6px;margin-bottom:7px}
   .cyc-lab{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
   .cyc-bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:5px}
   .cyc-fill{height:100%;background:var(--win);border-radius:3px;transition:width .3s}
@@ -500,11 +509,6 @@
   .cyc-fig{font-size:14px;font-weight:600;color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
   .cyc-fig .pos{color:var(--win)} .cyc-fig .neg{color:var(--lose)}
   /* trois repères clés bien lisibles : MISE · TP · SL */
-  .cyc-slc{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);
-    font-size:9.5px;font-family:var(--mono);color:var(--sage-dim);
-    display:flex;justify-content:center;white-space:nowrap}
-  .cyc-slc.warn{color:var(--warn)}
-  .cyc-slc.danger{color:var(--lose);font-weight:600}
   .sb-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:var(--felt2);border:1px solid var(--line);border-radius:10px;padding:7px 5px}
   .sb-stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-dim);order:2}
@@ -718,6 +722,7 @@
     .mcell .mscore{font-size:12.5px;margin-top:4px;min-height:14px}
     .mcell.play .mscore{font-size:15px}
     .mcell .mscore.note{font-size:12px}
+    .mcell.paroli .par-badge{display:none}
     .mstrip{margin-top:5px;gap:1.5px}
     .mdot{height:5px}
 
@@ -757,7 +762,6 @@
   @media (max-width:380px){
     body.cycle-on #leftcol .cyc-box{padding:8px 4px}
     body.cycle-on #leftcol .cyc-body{gap:3px}
-    body.cycle-on #leftcol .cyc-slc{font-size:8.5px}
     body.cycle-on #leftcol .cyc-fig{font-size:10.5px}
     /* colonne trop étroite : les bornes de la barre font doublon avec les cases TP et SL */
     body.cycle-on #leftcol .cv-end{display:none}
@@ -766,10 +770,10 @@
 </head>
 <body>
   <header>
-    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono">Martingale</span></div>
+    <div class="brand"><span class="bname"><span class="c">C</span>résus</span><span class="tag">chances simples</span><span class="montbadge mono" id="montBadge">Martingale</span></div>
   </header>
 
-  <!-- BANNIÈRE FIN DE SÉANCE (TP / SL) -->
+  <!-- BANNIÈRE FIN DE SÉANCE (TP / perte acceptée) -->
   <div class="banner" id="goalBanner" style="display:none">
     <div class="banner-main">
       <span class="banner-ico" id="goalIco">🎯</span>
@@ -837,13 +841,17 @@
     <summary><span>Réglages</span><span style="color:var(--sage)">⚙</span></summary>
     <div class="set-body">
       <div class="field"><label>Take-profit<span class="hint">calculé automatiquement · verrouillé</span></label><input type="number" id="inTP" inputmode="decimal" value="10" step="1" readonly></div>
-      <div class="field"><label>Stop-loss<span class="hint">25 % du solde · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
+      <div class="field"><label>Perte / cycle perdu<span class="hint">montante + paroli si actif, intégralement perdus · clôture la séance dès qu'une chance en arrive là · auto</span></label><input type="number" id="inSL" inputmode="decimal" value="-50" step="1" readonly></div>
       <div class="field"><label>Apparence<span class="hint">suit le réglage du téléphone par défaut</span></label>
         <div class="seg" id="themeSeg">
           <button data-t="auto" class="on">Auto</button><button data-t="light">Jour</button><button data-t="dark">Nuit</button>
         </div>
       </div>
-      <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8"></div>
+      <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · perte/cycle = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8"></div>
+      <div class="field"><label>Variante paroli<span class="hint">4 paliers perdus → tentative de rattrapage en 2 coups, au lieu de s'arrêter</span></label>
+        <div class="seg" id="inParSeg"><button data-p="0" class="on">Simple</button><button data-p="1">+ Paroli</button></div>
+      </div>
+      <div class="field" id="inParMaxRow" style="display:none"><label>Tentatives de paroli max<span class="hint">la perte/cycle s'étend automatiquement pour les couvrir ; la séance clôture dès qu'une chance épuise tout ça</span></label><input type="number" id="inParMax" inputmode="decimal" value="6" step="1" min="1" max="15"></div>
       <div class="field"><label>Risque par séance<span class="hint">% du solde risqué · mise déduite (palier 0,50 €)</span></label><input type="number" id="inRisk" inputmode="decimal" value="10" step="1" min="1" max="100"></div>
       <div class="field"><label>Rythme du coffre<span class="hint">tous les combien de séances on propose de sécuriser 50% du gain</span></label><input type="number" id="inVault" inputmode="decimal" value="15" step="1" min="1"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
@@ -887,6 +895,16 @@
         <div class="strat-row">
           <label class="strat-lab" for="startRisk">Risque par séance (% du solde)</label>
           <input type="number" id="startRisk" inputmode="decimal" step="1" min="1" max="100" value="10">
+        </div>
+        <div class="strat-row">
+          <label class="strat-lab">Variante</label>
+          <div class="seg" id="startParSeg" style="flex:1;max-width:220px">
+            <button data-p="0" class="on">Simple</button><button data-p="1">+ Paroli</button>
+          </div>
+        </div>
+        <div class="strat-row" id="startParMaxRow" style="display:none">
+          <label class="strat-lab" for="startParMax">Tentatives de paroli max</label>
+          <input type="number" id="startParMax" inputmode="decimal" step="1" min="1" max="15" value="6">
         </div>
         <div class="strat-figs" id="startStratFigs"></div>
       </div>
@@ -966,7 +984,33 @@ const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 // Le SL de session est DÉRIVÉ de la progression : somme de tous les paliers (une montante complète
 // ratée). Changer la progression met à jour le SL automatiquement (1-2-4-8 → 15 ; 1-2-5-10 → 18).
 let SESSION_PROG=[1,2,4,8];
-const sessionSL=()=>SESSION_PROG.reduce((a,b)=>a+b,0);   // pertes cumulées d'une montante pleine
+const montanteSL=()=>SESSION_PROG.reduce((a,b)=>a+b,0);   // pertes cumulées d'une montante 1-2-4-8 pleine
+// ─── VARIANTE « MARTINGALE + PAROLI » ───
+// Si une montante perd ses 4 paliers (-15), au lieu de s'arrêter elle tente un PAROLI en 2 coups :
+// miser M, et si le 1er coup gagne, laisser porter 2M sur le 2e coup. Échec (au 1er ou au 2e coup) =
+// perte nette de M, toujours. Réussite (les 2 coups) = gain net de 3M. Si ça échoue, on retente avec
+// une mise plus grande, jusqu'à PAROLI_MAX tentatives. La mise de chaque tentative est dérivée du
+// déficit à résorber, arrondie au supérieur pour garantir +PAROLI_MIN_GAIN pièces net à chaque succès
+// (la méthode originale visait juste ~0, parfois -1 ou -2 à cause des arrondis) : ça reproduit
+// l'esprit de sa table (5,7,9,12,16,21,28,37,50…) en un peu plus large, et s'adapte automatiquement
+// si la progression change.
+// Un paroli gagné ne clôture PAS la séance de lui-même (seuls le TP, ou l'épuisement d'une chance,
+// décident) : la montante de cette chance repart juste de zéro, prête pour un nouveau signal.
+let PAROLI_ENABLED=false;                                 // choisi à l'accueil, au démarrage d'une séance
+let PAROLI_MAX=6;                                         // nombre de tentatives de paroli, réglable (défaut 6)
+// Gain net minimum garanti quand une tentative de paroli réussit (en pièces). La méthode originale
+// vise juste à ramener le déficit à ~0 (parfois 0, parfois -1 ou -2 pièce à cause des arrondis) : on
+// arrondit ici au SUPÉRIEUR pour garantir ce plancher à chaque succès, quitte à miser un peu plus.
+const PAROLI_MIN_GAIN=2;
+function parolyMises(){
+  const out=[]; let deficit=-montanteSL();
+  for(let i=0;i<PAROLI_MAX;i++){ const m=Math.max(1,Math.ceil((-deficit+PAROLI_MIN_GAIN)/3)); out.push(m); deficit-=m; }
+  return out;
+}
+const parolySL=()=>PAROLI_ENABLED?parolyMises().reduce((a,b)=>a+b,0):0; // pire cas si toutes les tentatives échouent
+// Le SL réel de la séance couvre la montante ET, si la variante est active, un paroli intégralement
+// perdu : il suit donc automatiquement la progression, PAROLI_MAX et l'activation de la variante.
+const sessionSL=()=>montanteSL()+parolySL();
 const SESSION_TP=5;                                       // objectif de session, en pièces (3 séances gagnées = 1 SL rattrapé)
 const RISK_PCT_DEFAULT=0.10;                              // % du solde risqué par séance, par défaut
 let RISK_PCT=RISK_PCT_DEFAULT;                            // réglable depuis l'accueil
@@ -977,7 +1021,7 @@ const VAULT_SHARE=0.5;                                    // part du profit séc
 const CUR_MONT="og";                // montante de l'app (les sessions sont étiquetées avec)
 // libellés pour l'historique : les anciennes montantes n'existent plus dans l'app,
 // mais des sessions enregistrées avant leur retrait peuvent encore les référencer
-const MONT_LABEL={og:"Martingale",m4:"Martingale",cresus:"Crésus"};
+const MONT_LABEL={og:"Martingale",m4:"Martingale",cresus:"Crésus",paroli:"Martingale + Paroli"};
 const COUPLES=["R/N","P/I","M/P"];
 const CLABELS={"R/N":["Rouge","Noir"],"P/I":["Pair","Impair"],"M/P":["1-18","19-36"]};
 const CNAME={"R/N":"Rouge / Noir","P/I":"Pair / Impair","M/P":"1-18 / 19-36"};
@@ -997,6 +1041,7 @@ let S={
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
   tpFinal:5, sl:-15, ctx:0, histFilter:CUR_MONT,
+  chanceBusted:false,             // un paroli s'est épuisé pendant cette séance → clôture forcée
   vaultEur:0,                     // coffre : profits sécurisés, hors-jeu, jamais remis en jeu
   vaultCheckpoint:null,           // solde de référence du dernier point de passage (null = pas encore initialisé)
   vaultSessions:0                 // séances conclues depuis le dernier point de passage
@@ -1021,15 +1066,17 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT,autoSavedThisEnd:autoSavedThisEnd,vaultEur:S.vaultEur,vaultCheckpoint:S.vaultCheckpoint,vaultSessions:S.vaultSessions,vaultRhythm:VAULT_RHYTHM}; }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT,autoSavedThisEnd:autoSavedThisEnd,vaultEur:S.vaultEur,vaultCheckpoint:S.vaultCheckpoint,vaultSessions:S.vaultSessions,vaultRhythm:VAULT_RHYTHM,parEnabled:PAROLI_ENABLED,parMax:PAROLI_MAX}; }
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:SESSION_TP; S.ctx=o.ctx||0; S.histFilter=o.histFilter||CUR_MONT;
   S.vaultEur=o.vaultEur||0; S.vaultCheckpoint=(o.vaultCheckpoint!=null)?o.vaultCheckpoint:null; S.vaultSessions=o.vaultSessions||0;
   if(o.vaultRhythm>0) VAULT_RHYTHM=o.vaultRhythm;
   autoSavedThisEnd=!!o.autoSavedThisEnd;
-  // restaurer la config réglable : progression de session et % de risque
+  // restaurer la config réglable : progression de session, % de risque, variante paroli
   if(Array.isArray(o.sessionProg) && o.sessionProg.length) SESSION_PROG=o.sessionProg.filter(x=>x>0);
   if(o.riskPct>0) RISK_PCT=o.riskPct;
-  recalcCapital();                                  // le SL de session dépend de SESSION_PROG
+  PAROLI_ENABLED=!!o.parEnabled;
+  if(o.parMax>0) PAROLI_MAX=Math.round(o.parMax);
+  recalcCapital();                                  // le SL de session dépend de SESSION_PROG (+ paroli si actif)
 }
 async function save(){ lastTs=Date.now(); await Store.set(STORE_KEY, JSON.stringify({...stateBlob(), ts:lastTs})); scheduleCloud(); }
 async function load(){ const v=await Store.get(STORE_KEY); if(v){ try{ const o=JSON.parse(v); hydrateState(o); lastTs=o.ts||0; }catch(e){} } }
@@ -1176,7 +1223,9 @@ async function cloudForce(){ if(!sheetUrl){ toast("Renseigne d'abord l'URL Apps 
 function memb(n,ch){ if(ch==="R/N")return RED.has(n)?"a":"b"; if(ch==="P/I")return (n%2===0)?"a":"b"; return (n<=18)?"a":"b"; }
 function countsUpto(ch,idx){ let a=0,b=0,c=0; for(let i=idx;i>=0&&c<12;i--){ const n=S.spins[i]; if(n===0)continue; (memb(n,ch)==="a")?a++:b++; c++; } return [a,b]; }
 // chaque chance porte sa propre montante : mIdx = palier courant (0 = mise de base)
-function freshCouple(){ return {pMise:0,pBilan:0,mIdx:0,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0}; }
+// parA (parAttempt) : -1 = pas en paroli ; sinon index de la tentative en cours (0-based).
+// parC (parCoup) : 0 = 1er coup de la tentative à jouer ; 1 = 1er coup gagné, on laisse porter le 2e.
+function freshCouple(){ return {pMise:0,pBilan:0,mIdx:0,pending:0,sig:{phase:"none",side:null,obs:null},acc:{a:0,b:0},flash:null,lastGain:0,parA:-1,parC:0}; }
 function freshAll(){ S.cpl={}; for(const ch of COUPLES) S.cpl[ch]=freshCouple(); }
 // même fenêtre que countsUpto, mais détaillée : les 12 dernières boules, plus ancienne en tête
 function windowUpto(ch,idx){ const out=[]; for(let i=idx;i>=0&&out.length<12;i--){ const n=S.spins[i]; if(n===0)continue; out.push(memb(n,ch)); } return out.reverse(); }
@@ -1186,21 +1235,30 @@ const activeC=C=>C.sig.phase==="await"||C.sig.phase==="play";
 /* ---- moteur par couple : une montante indépendante par chance ---- */
 function stakeC(C){
   // mise = palier courant de la montante de CETTE chance, en pièces.
+  if(C.parA>=0){
+    const mises=parolyMises(), base=mises[Math.min(C.parA,mises.length-1)];
+    return C.parC===1 ? base*2 : base;          // 2e coup du paroli : on laisse porter mise + gain = 2×
+  }
   return SESSION_PROG[Math.min(C.mIdx, SESSION_PROG.length-1)];
 }
 // Mise plafonnée au reste jusqu'au TP : inutile de miser plus que ce qu'il faut pour fermer la
 // session. Si le palier vaut 2 mais qu'il ne manque qu'1 pièce pour le TP, on ne mise qu'1.
-// Le coup plafonné reste un coup normal de la montante : perdu, elle avance au palier suivant.
+// Le coup plafonné reste un coup normal de la montante (ou du paroli) : perdu, elle avance normalement.
+// Pas de plafonnement symétrique côté perte : il n'y a plus de seuil de perte cumulée à ne pas
+// dépasser (c'est l'épuisement d'une montante/d'un paroli qui clôture, pas un solde cumulé précis).
 function cappedStake(C){
   const base=stakeC(C);
   const cum=S.solde-S.capital;                           // P&L courant, en pièces
   const resteTP=S.tpFinal-cum;                            // pièces restantes avant le take-profit
-  const resteSL=cum-S.sl;                                 // pièces de perte encore permises avant le stop-loss
   if(resteTP>0 && resteTP<base) return Math.max(1e-9, round2(resteTP));
-  if(resteSL>0 && resteSL<base) return Math.max(1e-9, round2(resteSL));
   return base;
 }
 function phaseLabel(C){
+  if(C.parA>=0){
+    const mises=parolyMises(), base=mises[Math.min(C.parA,mises.length-1)];
+    const coup=C.parC===1?"2e coup (mise "+(base*2)+")":"1er coup (mise "+base+")";
+    return "Paroli tentative "+(C.parA+1)+"/"+mises.length+" · "+coup;
+  }
   const b=SESSION_PROG[Math.min(C.mIdx,SESSION_PROG.length-1)];
   return "Montante palier "+(C.mIdx+1)+"/"+SESSION_PROG.length+" · mise "+b;
 }
@@ -1219,14 +1277,23 @@ function advanceC(ch,C,result){
   S.solde-=stake; C.pBilan-=stake;
   C.mIdx++;                                       // palier suivant
   S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
-  // Si la montante a épuisé tous ses paliers, elle est soldée en perte :
-  // elle NE rejoue PAS le dernier palier indéfiniment. On la remet à zéro et la chance repasse en
-  // veille — une nouvelle montante pourra démarrer sur un prochain signal. (Le SL de session, lui,
-  // reste géré à part sur le P&L global.)
+  // Si la montante a épuisé tous ses paliers : variante paroli active → on tente de rattraper le
+  // déficit (cf. advanceParoli). Sinon (ou si le paroli lui-même s'épuise), la séance se clôture ICI,
+  // immédiatement — on accepte la perte plutôt que de compter sur un éventuel coussin de gains
+  // antérieurs pour continuer. Il n'y a plus de seuil de perte cumulée séparé : c'est l'épuisement
+  // d'une montante (ou d'un paroli) qui plafonne la perte de la séance, chance par chance.
   if(C.mIdx>=SESSION_PROG.length){
     C.mIdx=0;
-    C.sig={phase:"none",side:null,obs:null};      // montante arrêtée → veille
-    mt(CLABELS[ch].join("/")+" · montante soldée (4 pertes)");
+    if(PAROLI_ENABLED){
+      C.parA=0; C.parC=0;
+      // le 4e palier vient de perdre : comme toute perte de montante, ça retie le compte → observation
+      C.sig={phase:"await",side:null,obs:null};
+      mt(CLABELS[ch].join("/")+" · 4 paliers perdus, paroli engagé");
+      return "paroli_start";
+    }
+    C.sig={phase:"none",side:null,obs:null};      // montante soldée → séance close
+    S.chanceBusted=true;
+    mt(CLABELS[ch].join("/")+" · montante soldée (4 pertes), on accepte la perte");
     return "stopped";
   }
   return "obs";                                  // perte : observation obligatoire avant de rejouer
@@ -1238,9 +1305,54 @@ function setNextState(C){
   if(C.acc.a===C.acc.b){ C.sig.phase="await"; C.sig.side=null; }
   else { C.sig.phase="play"; C.sig.side = C.acc.a>C.acc.b ? "a":"b"; }
 }
+// ─── Résolution d'un coup de PAROLI (variante martingale + paroli) ───
+// 1er coup gagné → on laisse porter mise+gain sur le 2e coup, IMMÉDIATEMENT (aucune observation :
+// c'est le principe même du paroli). 2e coup gagné → tentative réussie, le déficit de cette montante
+// est résorbé : retour en veille, prêt pour un nouveau signal. Un paroli gagné ne clôture PAS la
+// séance de lui-même — seul le TP (ou l'épuisement d'une chance) en décide.
+// Perte (1er ou 2e coup) → tentative suivante à mise plus grande, sauf si PAROLI_MAX tentatives ont
+// déjà échoué : on accepte alors la perte et la séance se clôture ici (voir S.chanceBusted).
+function advanceParoli(ch,C,result){
+  const mises=parolyMises();
+  const stake=(C.pending>0)?C.pending:stakeC(C), ph=phaseLabel(C);
+  S.wagered+=stake; C.pMise+=stake;
+  if(result==="G"){
+    S.solde+=stake; C.pBilan+=stake;
+    S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
+    if(C.parC===0){
+      C.parC=1; C.sig.phase="play";               // 1er coup gagné : on laisse porter, pas d'observation
+      return "riding";
+    }
+    C.parA=-1; C.parC=0; C.mIdx=0;                 // 2e coup gagné : paroli réussi
+    C.sig={phase:"none",side:null,obs:null};
+    mt(CLABELS[ch].join("/")+" · paroli réussi, retour à zéro");
+    return "paroli_won";
+  }
+  // perte
+  S.solde-=stake; C.pBilan-=stake;
+  S.log.push({ch,r:result,amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
+  if(C.parC===1){
+    // échec au 2e coup, après avoir gagné le 1er : le côté peut rester en avance (une victoire suivie
+    // d'une perte ne retie pas forcément le compte) — on calcule le véritable état, sans forcer.
+    setNextState(C);
+  } else {
+    // échec au 1er coup de la tentative : comme pour la montante, ça retie le compte → observation
+    C.sig={phase:"await", side:null, obs:null};
+  }
+  C.parC=0; C.parA++;
+  if(C.parA>=mises.length){
+    C.parA=-1; C.mIdx=0;
+    C.sig={phase:"none",side:null,obs:null};
+    S.chanceBusted=true;   // paroli épuisé : on clôture la séance ici, quel que soit le coussin restant
+    mt(CLABELS[ch].join("/")+" · paroli épuisé ("+mises.length+" tentatives), on accepte la perte");
+    return "paroli_lost";
+  }
+  return "paroli_retry";
+}
 function resolveC(ch,C,result){
+  if(C.parA>=0){ advanceParoli(ch,C,result); return; }  // en paroli : sig déjà mis à jour ci-dessus
   const ev=advanceC(ch,C,result);
-  if(ev==="stopped"){ return; }                  // montante soldée (4 pertes) : chance déjà en veille
+  if(ev==="stopped" || ev==="paroli_start"){ return; }  // chance déjà en veille / en attente, sig à jour
   if(ev==="won"||ev==="wait"){
     // sur GAIN : si un 6-6 est déjà présent (juste avant OU avec la boule gagnante),
     // celle-ci tient lieu d'observation → on rejoue son côté dès la boule suivante.
@@ -1256,11 +1368,38 @@ function resolveC(ch,C,result){
 }
 function zeroC(ch,C){
   // Zéro pendant un coup joué = perte sèche. Le zéro ne change pas le compte,
-  // donc le déséquilibre 7-6 tient toujours → on rejoue directement (pas d'observation).
+  // donc le déséquilibre 7-6 tient toujours → on rejoue directement (pas d'observation),
+  // sauf si la montante (ou le paroli) s'arrête net ici — même garde-fou que sur un coup normal.
   const stake=(C.pending>0)?C.pending:stakeC(C), ph=phaseLabel(C);
   S.wagered+=stake; C.pMise+=stake; S.solde-=stake; C.pBilan-=stake;
   S.log.push({ch,r:"Z",amt:stake,ph,n:S.spins[CUR_I],side:C.sig.side});
+  if(C.parA>=0){
+    // un zéro pendant un paroli vaut perte de la tentative en cours (y compris un 2e coup en train
+    // de laisser porter : le zéro l'interrompt aussi)
+    C.parC=0; C.parA++;
+    const mises=parolyMises();
+    if(C.parA>=mises.length){
+      C.parA=-1; C.mIdx=0; C.sig={phase:"none",side:null,obs:null};
+      S.chanceBusted=true;   // même règle que sur un coup normal : on clôture ici
+      mt(CLABELS[ch].join("/")+" · zéro · paroli épuisé, on accepte la perte");
+      return;
+    }
+    mt(CLABELS[ch].join("/")+" · zéro pendant le paroli");
+    setNextState(C); return;
+  }
   C.mIdx++;                                            // zéro = perte : palier suivant
+  if(C.mIdx>=SESSION_PROG.length){
+    C.mIdx=0;
+    if(PAROLI_ENABLED){
+      C.parA=0; C.parC=0;
+      mt(CLABELS[ch].join("/")+" · zéro · 4 paliers perdus, paroli engagé");
+      setNextState(C); return;
+    }
+    C.sig={phase:"none",side:null,obs:null};
+    S.chanceBusted=true;
+    mt(CLABELS[ch].join("/")+" · zéro · montante soldée (4 pertes), on accepte la perte");
+    return;
+  }
   mt(CLABELS[ch].join("/")+" · zéro");
   setNextState(C);
 }
@@ -1291,14 +1430,15 @@ function feedCouple(ch){
 
 /* ---- replay : tout est dérivé de S.spins ---- */
 function replay(emitLast){
-  S.solde=S.capital; S.wagered=0; S.log=[]; freshAll();
+  S.solde=S.capital; S.wagered=0; S.log=[]; S.chanceBusted=false; freshAll();
   const N=S.spins.length; const ctx=S.ctx||0;
   for(let i=0;i<N;i++){ CUR_I=i; if(i<ctx) continue;
-    // Séance déjà conclue (TP ou SL déjà atteint sur un coup précédent) : on arrête d'y toucher.
-    // Sans ce garde-fou, rejouer les numéros suivants continuait de miser indéfiniment et pouvait
-    // faire dériver le résultat très au-delà du TP/SL nominal.
+    // Séance déjà conclue (TP atteint, OU une chance a épuisé sa montante/son paroli) : on arrête
+    // d'y toucher. Il n'y a plus de seuil de perte cumulée séparé — c'est l'épuisement d'une montante
+    // ou d'un paroli qui clôture la séance, chance par chance, quel que soit le coussin de gains
+    // antérieurs. Sans ce garde-fou, rejouer les numéros suivants continuerait de miser indéfiniment.
     const cumSoFar=S.solde-S.capital;
-    if(cumSoFar>=S.tpFinal-1e-9 || cumSoFar<=S.sl+1e-9) break;
+    if(cumSoFar>=S.tpFinal-1e-9 || S.chanceBusted) break;
     EMIT=!!emitLast&&(i===N-1);
     // les paris sont posés AVANT la boule : on fige les mises pour que la résolution
     // d'une chance ne modifie pas la mise déjà engagée d'une autre (plafond TP)
@@ -1358,7 +1498,7 @@ function mt(msg){ if(EMIT) toast(msg); }
 
 function buildMini(){
   $("mini").innerHTML=COUPLES.map(ch=>{ const id=CID[ch]; const [A,B]=CLABELS[ch];
-    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w sa" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w sb" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div><div class="mstrip" id="${id}-str"></div></div>`;
+    return `<div class="mcell ${CCLASS[ch]}" id="m-${id}" data-ch="${ch}"><div class="mname"><span class="w sa" id="${id}-wa">${A.toUpperCase()}</span><span class="sep">/</span><span class="w sb" id="${id}-wb">${B.toUpperCase()}</span></div><div class="mscore mono" id="${id}-msc">0–0</div><div class="par-badge mono" id="${id}-par"></div><div class="mstrip" id="${id}-str"></div></div>`;
   }).join("");
 }
 
@@ -1469,7 +1609,7 @@ function saveCurrentSession(silent){
     const k=CID[e.ch]; if(parCh[k]){ parCh[k].g+=(e.r==="G"?e.amt:-e.amt)*S.pieceEur; parCh[k].n++; } }
   const rec={ date:Date.now(), debut:S.capitalEur, fin:finEur, gain:gainEur,
     pct:S.capitalEur>0?gainEur/S.capitalEur*100:0, duree:S.sessionStart?Date.now()-S.sessionStart:0,
-    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:CUR_MONT,
+    coups:S.spins.length, base:S.pieceEur, wins:nG, losses:nP, wagered:S.wagered*S.pieceEur, mont:PAROLI_ENABLED?"paroli":CUR_MONT,
     parCh, miseMax:S.pieceEur, curve:downsample(curve,140) };
   sessions.unshift(rec);
   if(sessions.length>100) sessions.pop();
@@ -1731,6 +1871,10 @@ function openStartModal(){
   $("startSolde").value=S.capitalEur||200;
   if($("startProg")) $("startProg").value=SESSION_PROG.join("-");
   if($("startRisk")) $("startRisk").value=Math.round(RISK_PCT*100);
+  const seg=$("startParSeg");
+  if(seg) [...seg.children].forEach(b=>b.classList.toggle("on", (b.dataset.p==="1")===PAROLI_ENABLED));
+  if($("startParMax")) $("startParMax").value=PAROLI_MAX;
+  $("startParMaxRow").style.display=PAROLI_ENABLED?"":"none";
   updateStartMise(); updateSyncUI();
   const has=S.spins&&S.spins.length>0;
   const rb=$("startResume"); rb.style.display=has?"":"none";
@@ -1753,16 +1897,22 @@ function updateStartMise(){
 // Mise déduite du % de risque accepté pour une séance : mise = (solde × risque%) ÷ somme des
 // paliers, arrondie au palier de 0,5 €. Le SL réel qui en résulte vaut alors très exactement
 // ce % du solde.
-// Arrondit la mise déduite du risque. En dessous de 150 € de solde, un palier de 0,50 € est trop
-// grossier (il peut à lui seul représenter une grosse part du budget de risque) : on descend à
-// un palier de 0,10 € pour rester proche du % demandé. Au-dessus, on garde le palier de 0,50 €.
+// Arrondit la mise déduite du risque. Un palier d'arrondi fixe (0,50 € ou 0,10 €) se démultiplie
+// par slUnites pour donner la perte maximale d'un cycle — avec un paroli profond, slUnites peut
+// dépasser 200, et un simple écart d'arrondi de quelques centimes peut alors représenter des
+// dizaines d'euros, trahissant largement le % de risque demandé (bug constaté : jusqu'à 79% de
+// perte réelle pour un risque demandé de 10%). Le palier choisi ne doit donc jamais dépasser
+// ~20% de la mise théorique (budget ÷ slUnites) : on part du palier "monnaie confortable" habituel
+// et on descend jusqu'à ce que ce soit respecté, plus fin que nécessaire quand slUnites est grand.
 function roundMise(budget, slUnites, solde){
-  const step = solde<150 ? 0.1 : 0.5;
-  const mini = solde<150 ? 0.1 : 0.5;
-  return Math.max(mini, round2(Math.round((budget/slUnites)/step)*step));
+  const ideal = budget/slUnites;
+  const steps = solde<150 ? [0.10,0.05,0.02,0.01] : [0.50,0.20,0.10,0.05,0.02,0.01];
+  let step = steps[steps.length-1];
+  for(const s of steps){ if(s <= ideal*0.2){ step=s; break; } }
+  return Math.max(step, round2(Math.round(ideal/step)*step));
 }
 function miseFromRisk(solde){
-  const slUnites=SESSION_PROG.reduce((a,b)=>a+b,0);
+  const slUnites=sessionSL();                       // somme des paliers, + paroli si la variante est cochée
   const riskPct=Math.max(1,Math.min(100,parseFloat($("startRisk")&&$("startRisk").value)||RISK_PCT_DEFAULT*100))/100;
   const budget=solde*riskPct;
   return roundMise(budget, slUnites, solde);
@@ -1772,10 +1922,10 @@ function updateStratFigs(){
   const el=$("startStratFigs"); if(!el) return;
   const v=Math.max(0,parseFloat($("startSolde").value)||0);
   const p=v>0?miseFromRisk(v):1;                   // mise de base, déduite du % de risque
-  const slPieces=SESSION_PROG.reduce((a,b)=>a+b,0);// SL session = somme des paliers
+  const slPieces=sessionSL();                      // SL session = somme des paliers (+ paroli si actif)
   el.innerHTML=
     `<div class="strat-fig"><span class="sf-lab">TP SÉANCE</span><span class="sf-val pos">+${fmtEurC(SESSION_TP*p)}</span></div>`
-   +`<div class="strat-fig"><span class="sf-lab">SL SÉANCE</span><span class="sf-val neg">−${fmtEurC(slPieces*p)}</span></div>`
+   +`<div class="strat-fig"><span class="sf-lab">PERTE / CYCLE</span><span class="sf-val neg">−${fmtEurC(slPieces*p)}</span></div>`
    +`<div class="strat-fig"><span class="sf-lab">MISE</span><span class="sf-val">${fmtEurC(p)}</span></div>`;
 }
 // l'interruption, on repart donc sur des numéros vierges, mais le cycle (cumul, mise de base,
@@ -1788,6 +1938,9 @@ async function startNewSession(){
   if(parts.length){ SESSION_PROG=parts; }
   const riskPct=Math.max(1,Math.min(100,parseFloat($("startRisk").value)||RISK_PCT_DEFAULT*100))/100;
   RISK_PCT=riskPct;
+  const parBtn=$("startParSeg")&&$("startParSeg").querySelector(".on");
+  PAROLI_ENABLED = parBtn ? parBtn.dataset.p==="1" : PAROLI_ENABLED;
+  if($("startParMax")) PAROLI_MAX=Math.max(1,Math.min(15,Math.round(parseFloat($("startParMax").value))||6));
   S.capitalEur=v; setMiseFromRisk(); recalcCapital(); S.tpFinal=SESSION_TP;
 
   setRev(false); S.spins=[]; S.log=[]; S.ctx=0; S.sessionStart=null; goalDismissed=false; autoSavedThisEnd=false;   // chrono armé au 1er 6-6
@@ -1825,7 +1978,13 @@ function openHist(ch){
   const C=S.cpl[ch];
   $("histTitle").textContent=CNAME[ch].toUpperCase();
   let cur;
-  {
+  if(C.parA>=0){
+    const mises=parolyMises(), pIdx=Math.min(C.parA,mises.length-1), base=mises[pIdx];
+    const echelle=mises.map((v,k)=>k===pIdx?("<b>["+v+"]</b>"):v).join(" ");
+    const bet = C.parC===1 ? base*2 : base;
+    const coup = C.parC===1 ? "2e coup (laisser porter)" : "1er coup";
+    cur=`<div class="hist-cur">⚠ Paroli — tentative <b>${pIdx+1}/${mises.length}</b> · ${coup}<br>échelle des tentatives ${echelle}<br>prochaine mise <b>${eur(bet)}</b></div>`;
+  } else {
     const idx=Math.min(C.mIdx, SESSION_PROG.length-1);
     const bet=SESSION_PROG[idx];
     const echelle=SESSION_PROG.map((v,k)=>k===idx?("<b>["+v+"]</b>"):v).join(" ");
@@ -1884,8 +2043,8 @@ function render(){
   const last=S.spins.length-1;
   const gainPieces=S.solde-S.capital;
   const hitTP=gainPieces>=(S.tpFinal)-1e-9;
-  const hitSL=gainPieces<=(S.sl)+1e-9;
-  const ended=(hitTP||hitSL)&&!goalDismissed;
+  const busted=!!S.chanceBusted;
+  const ended=(hitTP||busted)&&!goalDismissed;
   // la séance s'enregistre TOUTE SEULE dès qu'elle se conclut — plus besoin de cliquer pour
   // que le résultat soit archivé ; la bannière ne sert plus qu'à décider de la suite.
   if(ended && !autoSavedThisEnd){ autoSavedThisEnd=true; saveCurrentSession(true); checkVaultMilestone(); }
@@ -1897,9 +2056,12 @@ function render(){
     const won=C.flash==="won", g=C.lastGain||0;
     const playNow=C.sig.phase==="play" && !ended;
     const awaitNow=C.sig.phase==="await" && !ended;
+    const inParoli=C.parA>=0;
     // un nouveau signal jouable passe AVANT la confirmation de gain (sinon le vert le masque)
     const cls = playNow?"play":awaitNow?"await":won?"won":bal?"bal":"";
-    mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(cls?" "+cls:"");
+    mc.className="mcell "+CCLASS[ch]+(ended?" ended":"")+(cls?" "+cls:"")+(inParoli?" paroli":"");
+    const parEl=$(id+"-par");
+    if(parEl) parEl.textContent = inParoli ? ("Paroli "+(C.parA+1)+"/"+parolyMises().length+" · "+(C.parC===1?"2e coup":"1er coup")) : "";
     const wa=$(id+"-wa"), wb=$(id+"-wb"), sepEl=mc.querySelector(".sep"), mscEl=$(id+"-msc");
     wa.className="w sa"; wb.className="w sb"; wa.style.display=""; wb.style.display=""; if(sepEl)sepEl.style.display="";
     mscEl.className="mscore mono";
@@ -1912,7 +2074,8 @@ function render(){
       const st=shownStake(C);
       scoreTxt=eur(st);                                 // montant à jouer à la place de l'équilibre 7/6
       // ROUGE uniquement au dernier palier de la montante (le 4e coup, mise 5) : le coup le plus risqué.
-      if(C.mIdx>=SESSION_PROG.length-1) mc.classList.add("hot");
+      // (Pas en paroli : cet état a son propre accent, cf. classe .paroli.)
+      if(!inParoli && C.mIdx>=SESSION_PROG.length-1) mc.classList.add("hot");
     } else if(won){
       mscEl.className="mscore mono note";
       scoreTxt="✓ "+plusEur(g);
@@ -1934,26 +2097,44 @@ function render(){
     +`<div class="sb-stat"><span class="v lose">${nP}</span><span class="k">pertes</span></div>`
     +`<div class="sb-stat"><span class="v">${eur(S.wagered)}</span><span class="k">misé</span></div>`;
 
-  // carte de séance : mise, TP, SL — la barre va du stop-loss au take-profit. On calcule les deux
-  // jeux de coordonnées (verticale pour le portrait, horizontale pour le paysage) à partir des
-  // mêmes fractions : ça évite de dupliquer la logique, seule la mise en page CSS choisit laquelle
-  // s'affiche selon l'orientation.
-  // ─── crans (1 cran = 1 pièce) ───
+  // carte de séance : mise, TP, perte/cycle — la barre va de la perte d'un cycle intégralement
+  // perdu au take-profit. Ce n'est plus un plafond dur de la séance (la séance se clôture dès
+  // qu'UNE chance épuise sa montante/son paroli, pas seulement quand ce repère est atteint), mais
+  // il reste le bon ordre de grandeur à garder en tête. On calcule les deux jeux de coordonnées
+  // (verticale pour le portrait, horizontale pour le paysage) à partir des mêmes fractions : ça
+  // évite de dupliquer la logique, seule la mise en page CSS choisit laquelle s'affiche selon
+  // l'orientation.
+  // ─── crans (1 cran = 1 pièce, côté TP qui reste petit) ───
+  // Côté perte, un paroli profond peut faire grimper le SL à plusieurs centaines de pièces : un
+  // cran par pièce deviendrait des centaines de traits illisibles, et ça ne refléterait plus la
+  // réalité (une chance qui épuise son paroli fait sauter le solde d'un coup, pas pièce par pièce).
+  // Au-delà de MAX_SL_NOTCHES, on regroupe donc plusieurs pièces par cran ; en dessous (SL simple ou
+  // paroli peu profond), le comportement reste inchangé : un cran = une pièce, comme avant.
   const tpAbs=S.tpFinal, slAbs=Math.abs(S.sl);
-  const tpUnits=Math.round(tpAbs), slUnits=Math.round(slAbs), total=tpUnits+slUnits;
+  const tpUnits=Math.round(tpAbs), slUnits=Math.round(slAbs);
   const filled=Math.max(-slUnits, Math.min(tpUnits, Math.round(gainPieces)));
+  const MAX_SL_NOTCHES=20;
+  const slStep=Math.max(1, Math.ceil(slUnits/MAX_SL_NOTCHES));
+  const slNotchCount=Math.ceil(slUnits/slStep);
+  const filledSlNotches=filled<0 ? Math.ceil(-filled/slStep) : 0;
   let topNotches="", botNotches="";
   for(let v=tpUnits; v>=1; v--) topNotches+=`<div class="cr-notch${(filled>0&&v<=filled)?' on pos':''}"></div>`;
-  for(let v=1; v<=slUnits; v++) botNotches+=`<div class="cr-notch${(filled<0&&v<=-filled)?' on neg':''}"></div>`;
+  for(let v=1; v<=slNotchCount; v++) botNotches+=`<div class="cr-notch${(v<=filledSlNotches)?' on neg':''}"></div>`;
   // position du P&L courant sur l'échelle : la même graduation que le dernier cran acquis.
+  // Important : chaque cran occupe le MÊME espace visuel (flex:1), qu'il représente 1 pièce (côté
+  // TP) ou plusieurs pièces regroupées (côté perte, cf. slStep) — la position doit donc se calculer
+  // en nombre de CRANS, pas en pièces, sinon elle se désaligne du cran réellement allumé dès qu'un
+  // regroupement s'applique.
   // Calculée pour les deux orientations (top% en portrait, left% en paysage) ; la carte n'affiche
   // que celle pertinente selon l'orientation, via CSS.
-  const boundaryTop=Math.max(3,Math.min(97,(tpUnits-filled)/total*100));
-  const boundaryLeft=Math.max(3,Math.min(97,(slUnits+filled)/total*100));
+  const totalNotches=tpUnits+slNotchCount;
+  const posFromSlEnd=filled>=0 ? (slNotchCount+filled) : (slNotchCount-filledSlNotches);
+  const boundaryTop=Math.max(3,Math.min(97,(totalNotches-posFromSlEnd)/totalNotches*100));
+  const boundaryLeft=Math.max(3,Math.min(97,posFromSlEnd/totalNotches*100));
   const plCls=gainPieces>=0?"pos":"neg";
   const plTxt=(gainPieces>=0?"+":"−")+fmtEur2(Math.abs(gainPieces)*S.pieceEur);
   const cycHTML=`<div class="cyc-box">
-      <div class="cyc-top"><span class="cyc-top-lab">MISE</span> <span class="cyc-fig mono">${fmtEurC(S.pieceEur)}</span></div>
+      <div class="cyc-top"><span class="cyc-top-lab">MISE</span><span class="cyc-fig mono">${fmtEurC(S.pieceEur)}</span></div>
       <div class="cyc-body">
         <div class="cyc-vwrap mono">
           <span class="cv-end pos" title="take-profit de la séance">+${fmtEurC(tpAbs*S.pieceEur)}</span>
@@ -1961,10 +2142,9 @@ function render(){
             <div class="cr-strip">${topNotches}<div class="cr-zero"></div>${botNotches}</div>
             <span class="cr-pl ${plCls}" style="top:${boundaryTop}%;--pll:${boundaryLeft}%">${plTxt}</span>
           </div>
-          <span class="cv-end neg" title="stop-loss de la séance">−${fmtEurC(slAbs*S.pieceEur)}</span>
+          <span class="cv-end neg" title="perte d'un cycle (montante + paroli) intégralement perdu${slStep>1?" · 1 cran ≈ "+slStep+" pièces":""}">−${fmtEurC(slAbs*S.pieceEur)}</span>
         </div>
       </div>
-      <div class="cyc-slc"><span title="risque accepté par séance">${Math.round(RISK_PCT*100)}% du solde en jeu</span></div>
     </div>`;
   $("mbList").innerHTML=cycHTML;
 
@@ -1988,18 +2168,29 @@ function render(){
         const cpl=CNAME[e.ch]; const sign=e.r==="G"?"+":"−";
         return `<li class="${cls}" data-li="${it.idx}"><span><span class="lword">${word}</span> <span class="lphase">· ${cpl} · ${e.ph}</span></span><span class="lamt">${sign}${eur(amt)}</span></li>`; }).join("");
 
+  const mb=$("montBadge"); if(mb) mb.textContent=PAROLI_ENABLED?"Martingale + Paroli":"Martingale";
   $("inBank").value=S.capitalEur; if($("inProg"))$("inProg").value=SESSION_PROG.join("-");
   $("inTP").value=S.tpFinal; $("inSL").value=S.sl; if($("inRisk")) $("inRisk").value=Math.round(RISK_PCT*100);
   if($("inVault")) $("inVault").value=VAULT_RHYTHM;
+  const inSeg=$("inParSeg");
+  if(inSeg) [...inSeg.children].forEach(b=>b.classList.toggle("on",(b.dataset.p==="1")===PAROLI_ENABLED));
+  if($("inParMax")) $("inParMax").value=PAROLI_MAX;
+  if($("inParMaxRow")) $("inParMaxRow").style.display=PAROLI_ENABLED?"":"none";
 
-  // fin de séance : take-profit ou stop-loss
+  // fin de séance : take-profit, ou perte acceptée (une chance a épuisé sa montante — et son paroli
+  // si la variante est active) — il n'y a plus de seuil de perte cumulée distinct.
   const banner=$("goalBanner");
   banner.style.display=ended?"":"none";
-  banner.className="banner"+(hitSL?" banner-sl":"");
+  banner.className="banner"+(busted&&!hitTP?" banner-sl":"");
   if(ended){
     const gEur=gainPieces*S.pieceEur;
-    $("goalIco").textContent=hitTP?"🎯":"🛑";
-    $("goalLab").textContent=hitTP?"Take-profit atteint":"Stop-loss atteint";
+    if(hitTP){
+      $("goalIco").textContent="🎯";
+      $("goalLab").textContent="Take-profit atteint";
+    } else {
+      $("goalIco").textContent="⚠️";
+      $("goalLab").textContent=PAROLI_ENABLED?"Paroli épuisé — perte acceptée":"Montante soldée — perte acceptée";
+    }
     $("goalVal").textContent=plusEur(gEur);
   }
   updateRate();
@@ -2084,7 +2275,7 @@ $("inProg").addEventListener("change",e=>{
   e.target.value=SESSION_PROG.join("-");
   setMiseFromRisk(); recalcCapital();    // met à jour la mise et le SL (somme des paliers)
   replay(false); render(); save();
-  toast("Montante "+SESSION_PROG.join("-")+" · SL "+sessionSL()+" pièces");
+  toast("Montante "+SESSION_PROG.join("-")+" · perte/cycle "+sessionSL()+" pièces");
 });
 $("inRisk").addEventListener("change",e=>{
   const pct=Math.max(1,Math.min(100,parseFloat(e.target.value)||10));
@@ -2096,6 +2287,20 @@ $("inVault").addEventListener("change",e=>{
   const n=Math.max(1,Math.round(parseFloat(e.target.value)||VAULT_RHYTHM_DEFAULT));
   VAULT_RHYTHM=n; e.target.value=n; save();
   toast("Rythme du coffre : tous les "+n+" séances");
+});
+$("inParSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  [...$("inParSeg").children].forEach(x=>x.classList.toggle("on",x===b));
+  PAROLI_ENABLED = b.dataset.p==="1";
+  $("inParMaxRow").style.display=PAROLI_ENABLED?"":"none";
+  setMiseFromRisk(); recalcCapital(); replay(false); render(); save();
+  toast(PAROLI_ENABLED?"Variante paroli activée · perte/cycle "+sessionSL()+" pièces":"Retour à la montante simple · perte/cycle "+sessionSL()+" pièces");
+});
+$("inParMax").addEventListener("change",e=>{
+  const n=Math.max(1,Math.min(15,Math.round(parseFloat(e.target.value))||6));
+  PAROLI_MAX=n; e.target.value=n;
+  setMiseFromRisk(); recalcCapital(); replay(false); render(); save();
+  toast("Paroli : "+n+" tentatives max · perte/cycle "+sessionSL()+" pièces");
 });
 $("clearSessions").addEventListener("click",async()=>{
   const n=sessions.length;
@@ -2141,6 +2346,17 @@ $("startProg").addEventListener("input",()=>{
 });
 $("startProg").addEventListener("change",()=>{ $("startProg").value=SESSION_PROG.join("-"); if($("inProg"))$("inProg").value=SESSION_PROG.join("-"); recalcCapital(); updateStratFigs(); });
 $("startRisk").addEventListener("input",updateStratFigs);
+$("startParSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  [...$("startParSeg").children].forEach(x=>x.classList.toggle("on",x===b));
+  PAROLI_ENABLED = b.dataset.p==="1";
+  $("startParMaxRow").style.display=PAROLI_ENABLED?"":"none";
+  updateStartMise();
+});
+$("startParMax").addEventListener("input",()=>{
+  const n=Math.max(1,Math.min(15,Math.round(parseFloat($("startParMax").value))||6));
+  PAROLI_MAX=n; updateStartMise();
+});
 $("startSolde").addEventListener("keydown",e=>{ if(e.key==="Enter") startNewSession(); });
 $("histBody").addEventListener("click",async e=>{
   const b=e.target.closest("[data-mig]"); if(!b) return;
