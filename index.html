@@ -517,6 +517,10 @@
   .solde-box .sb-pnl.neg{color:var(--lose)}
   /* rythme de la séance : durée écoulée et P&L ramené à l'heure */
   .sb-rate{font-family:var(--mono);font-size:10px;color:var(--sage-dim);white-space:nowrap}
+  .sb-vault{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;
+    padding-top:7px;border-top:1px solid var(--line-soft)}
+  .sb-vault-lab{font-size:10.5px;color:var(--sage-dim);letter-spacing:.02em}
+  .sb-vault-val{font-size:13px;font-weight:600;color:var(--gold-2)}
   .sb-rate .sb-sep{opacity:.5}
   #sessRate.pos{color:var(--win)} #sessRate.neg{color:var(--lose)}
 
@@ -803,6 +807,7 @@
           <div class="sb-main"><span class="sb-lab">Solde</span><span class="sb-solde mono" id="solde">200,00 €</span></div>
           <div class="sb-side"><span class="sb-pnl mono" id="pnl">0,00 €</span><span class="sb-rate mono" id="sessDur">00:00</span></div>
         </div>
+        <div class="sb-vault" id="soldeVault" style="display:none"><span class="sb-vault-lab">🔒 Coffre</span><span class="sb-vault-val mono" id="vaultVal">0,00 €</span></div>
       </div>
       <div id="mini"></div>
       <div class="mont-box">
@@ -840,6 +845,7 @@
       </div>
       <div class="field"><label>Montante de session<span class="hint">paliers séparés par des tirets · SL = leur somme</span></label><input type="text" id="inProg" inputmode="text" value="1-2-4-8" placeholder="1-2-4-8"></div>
       <div class="field"><label>Risque par séance<span class="hint">% du solde risqué · mise déduite (palier 0,50 €)</span></label><input type="number" id="inRisk" inputmode="decimal" value="10" step="1" min="1" max="100"></div>
+      <div class="field"><label>Rythme du coffre<span class="hint">tous les combien de séances on propose de sécuriser 50% du gain</span></label><input type="number" id="inVault" inputmode="decimal" value="15" step="1" min="1"></div>
       <div class="field"><label>Solde de départ<span class="hint">en € · remet le solde</span></label><input type="number" id="inBank" inputmode="decimal" value="200" step="1"></div>
       <div class="sheet-sync">
         <div class="sheet-h">Sauvegarde Google Sheets <span id="syncStatus" class="sync-pill off">● non configuré</span></div>
@@ -964,6 +970,9 @@ const sessionSL=()=>SESSION_PROG.reduce((a,b)=>a+b,0);   // pertes cumulées d'u
 const SESSION_TP=5;                                       // objectif de session, en pièces (3 séances gagnées = 1 SL rattrapé)
 const RISK_PCT_DEFAULT=0.10;                              // % du solde risqué par séance, par défaut
 let RISK_PCT=RISK_PCT_DEFAULT;                            // réglable depuis l'accueil
+const VAULT_RHYTHM_DEFAULT=15;                            // tous les combien de séances on regarde le coffre
+let VAULT_RHYTHM=VAULT_RHYTHM_DEFAULT;                     // réglable dans les réglages
+const VAULT_SHARE=0.5;                                    // part du profit sécurisée à chaque point de passage
 // Palier dynamique : un cycle qui a creusé doit rapporter davantage avant d'être soldé.
 const CUR_MONT="og";                // montante de l'app (les sessions sont étiquetées avec)
 // libellés pour l'historique : les anciennes montantes n'existent plus dans l'app,
@@ -987,7 +996,10 @@ let S={
   solde:200, wagered:0,
   spins:[],                  // numéros 0–36
   cpl:{}, log:[],
-  tpFinal:5, sl:-15, ctx:0, histFilter:CUR_MONT
+  tpFinal:5, sl:-15, ctx:0, histFilter:CUR_MONT,
+  vaultEur:0,                     // coffre : profits sécurisés, hors-jeu, jamais remis en jeu
+  vaultCheckpoint:null,           // solde de référence du dernier point de passage (null = pas encore initialisé)
+  vaultSessions:0                 // séances conclues depuis le dernier point de passage
 };
 
 // ─── Montante par chance : plus de pool partagé, plus d'attribution dynamique. ───
@@ -1009,8 +1021,10 @@ const Store={
   }
 };
 let lastTs=0;            // horodatage du dernier changement local
-function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT,autoSavedThisEnd:autoSavedThisEnd}; }
+function stateBlob(){ return {capitalEur:S.capitalEur,pieceEur:S.pieceEur,spins:S.spins,sessionStart:S.sessionStart,tpFinal:S.tpFinal,sl:S.sl,ctx:S.ctx,histFilter:S.histFilter,sessionProg:SESSION_PROG,riskPct:RISK_PCT,autoSavedThisEnd:autoSavedThisEnd,vaultEur:S.vaultEur,vaultCheckpoint:S.vaultCheckpoint,vaultSessions:S.vaultSessions,vaultRhythm:VAULT_RHYTHM}; }
 function hydrateState(o){ if(!o) return; S.pieceEur=o.pieceEur??1; S.capitalEur=(o.capitalEur!=null)?o.capitalEur:((o.capital!=null?o.capital:200)*S.pieceEur); S.spins=o.spins||[]; S.sessionStart=(o.sessionStart!=null)?o.sessionStart:null; S.tpFinal=(o.tpFinal!=null)?o.tpFinal:SESSION_TP; S.ctx=o.ctx||0; S.histFilter=o.histFilter||CUR_MONT;
+  S.vaultEur=o.vaultEur||0; S.vaultCheckpoint=(o.vaultCheckpoint!=null)?o.vaultCheckpoint:null; S.vaultSessions=o.vaultSessions||0;
+  if(o.vaultRhythm>0) VAULT_RHYTHM=o.vaultRhythm;
   autoSavedThisEnd=!!o.autoSavedThisEnd;
   // restaurer la config réglable : progression de session et % de risque
   if(Array.isArray(o.sessionProg) && o.sessionProg.length) SESSION_PROG=o.sessionProg.filter(x=>x>0);
@@ -1462,6 +1476,33 @@ function saveCurrentSession(silent){
   saveSessions(); renderSessions();
   if(!silent){ render(); toast("Session enregistrée"); }
 }
+// Tous les VAULT_RHYTHM séances conclues, on regarde si le solde de jeu a progressé depuis le
+// dernier point de passage. Si oui, on PROPOSE de sécuriser la moitié du gain dans le coffre —
+// rien ne bouge sans confirmation. Le coffre est ensuite totalement hors-jeu : la mise ne se
+// recalcule plus que sur le solde de jeu restant.
+async function checkVaultMilestone(){
+  if(S.vaultCheckpoint==null){ S.vaultCheckpoint=S.capitalEur; save(); return; }  // premier repère posé
+  S.vaultSessions++;
+  if(S.vaultSessions<VAULT_RHYTHM){ save(); return; }
+  S.vaultSessions=0;
+  const gain=round2(S.capitalEur-S.vaultCheckpoint);
+  if(gain>0.01){
+    const retrait=round2(gain*VAULT_SHARE);
+    const gainTxt=(gain>=0?"+":"−")+fmtEur2(Math.abs(gain));
+    const ok=await ask("Sécuriser une partie des gains ?",
+      "Depuis "+VAULT_RHYTHM+" séances, ton solde de jeu est passé de "+fmtEur2(S.vaultCheckpoint)+" à "+fmtEur2(S.capitalEur)+
+      " ("+gainTxt+"). Tu peux en sécuriser la moitié dans le coffre, définitivement hors de portée du jeu.",
+      "Sécuriser "+fmtEur2(retrait),false);
+    if(ok){
+      S.vaultEur=round2(S.vaultEur+retrait);
+      S.capitalEur=round2(S.capitalEur-retrait);
+      setMiseFromRisk(); recalcCapital();
+      toast("🔒 "+fmtEur2(retrait)+" sécurisés dans le coffre");
+    }
+  }
+  S.vaultCheckpoint=S.capitalEur;   // qu'on ait retiré ou non, nouveau repère pour la prochaine fenêtre
+  replay(false); render(); save();
+}
 function sparkSVG(curve, base){
   if(!curve||curve.length<2) return '<div class="chart-empty" style="padding:6px 0">Courbe non disponible pour cette session.</div>';
   const W=300,H=72,pad=7;
@@ -1675,6 +1716,13 @@ function renderHistory(){
       <div class="hstat"><span class="hv ${cls(tg)}">${tw>0?((tg/tw*100)>=0?"+":"−")+Math.abs(tg/tw*100).toFixed(1)+" %":"—"}</span><span class="hl">rendement · net ÷ misé</span></div>
       <div class="hstat"><span class="hv ${eph==null?"":cls(eph)}">${eph==null?"—":sg(eph)+"/h"}</span><span class="hl">par heure · net ÷ temps de jeu</span></div>
     </div>
+    ${S.vaultEur>0.01?`<div class="hsplit" style="grid-column:1/-1">
+      <div class="hstat"><span class="hv">${fmtEur2(S.capitalEur)}</span><span class="hl">solde en jeu</span></div>
+      <div class="hstat"><span class="hv" style="color:var(--gold-2)">${fmtEur2(S.vaultEur)}</span><span class="hl">🔒 coffre sécurisé</span></div>
+    </div>
+    <div class="hstat" style="grid-column:1/-1;background:none;border:none;padding-top:2px">
+      <span class="hv" style="font-size:16px">${fmtEur2(round2(S.capitalEur+S.vaultEur))}</span><span class="hl">patrimoine total</span>
+    </div>`:""}
   </div>`;
   el.innerHTML=mig+grid+cumCurveSVG(cum)+
     `<div class="chart-meta"><span>${pos}/${n} positives</span><span>${tCoups} coups</span><span>${fmtDur(tDur)}</span></div>`;
@@ -1840,7 +1888,7 @@ function render(){
   const ended=(hitTP||hitSL)&&!goalDismissed;
   // la séance s'enregistre TOUTE SEULE dès qu'elle se conclut — plus besoin de cliquer pour
   // que le résultat soit archivé ; la bannière ne sert plus qu'à décider de la suite.
-  if(ended && !autoSavedThisEnd){ autoSavedThisEnd=true; saveCurrentSession(true); }
+  if(ended && !autoSavedThisEnd){ autoSavedThisEnd=true; saveCurrentSession(true); checkVaultMilestone(); }
   for(const ch of COUPLES){
     const C=S.cpl[ch], id=CID[ch];
     const bal=balancedUpto(ch,last);
@@ -1924,6 +1972,10 @@ function render(){
   const pnl=round2(S.solde-S.capital);
   const pe=$("pnl"); const sg=pnl>0?"+":pnl<0?"−":""; pe.textContent=sg+eur(Math.abs(pnl)); pe.className="sb-pnl mono "+(pnl>0?"pos":pnl<0?"neg":"");
 
+  const vaultRow=$("soldeVault");
+  if(S.vaultEur>0.005){ vaultRow.style.display=""; $("vaultVal").textContent=fmtEur2(S.vaultEur); }
+  else vaultRow.style.display="none";
+
   const l12=S.spins.slice(-12).reverse();
   const tr=$("track");
   tr.innerHTML=S.spins.length===0?'<span class="empty-note">Les numéros sortis apparaîtront ici</span>'
@@ -1938,6 +1990,7 @@ function render(){
 
   $("inBank").value=S.capitalEur; if($("inProg"))$("inProg").value=SESSION_PROG.join("-");
   $("inTP").value=S.tpFinal; $("inSL").value=S.sl; if($("inRisk")) $("inRisk").value=Math.round(RISK_PCT*100);
+  if($("inVault")) $("inVault").value=VAULT_RHYTHM;
 
   // fin de séance : take-profit ou stop-loss
   const banner=$("goalBanner");
@@ -2038,6 +2091,11 @@ $("inRisk").addEventListener("change",e=>{
   RISK_PCT=pct/100; e.target.value=pct;
   setMiseFromRisk(); recalcCapital(); replay(false); render(); save();
   toast("Risque par séance : "+pct+"% du solde — mise "+fmtEur2(S.pieceEur));
+});
+$("inVault").addEventListener("change",e=>{
+  const n=Math.max(1,Math.round(parseFloat(e.target.value)||VAULT_RHYTHM_DEFAULT));
+  VAULT_RHYTHM=n; e.target.value=n; save();
+  toast("Rythme du coffre : tous les "+n+" séances");
 });
 $("clearSessions").addEventListener("click",async()=>{
   const n=sessions.length;
