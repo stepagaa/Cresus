@@ -1897,15 +1897,19 @@ function updateStartMise(){
 // Mise déduite du % de risque accepté pour une séance : mise = (solde × risque%) ÷ somme des
 // paliers, arrondie au palier de 0,5 €. Le SL réel qui en résulte vaut alors très exactement
 // ce % du solde.
-// Arrondit la mise déduite du risque. Un palier d'arrondi fixe (0,50 € ou 0,10 €) se démultiplie
-// par slUnites pour donner la perte maximale d'un cycle — avec un paroli profond, slUnites peut
-// dépasser 200, et un simple écart d'arrondi de quelques centimes peut alors représenter des
-// dizaines d'euros, trahissant largement le % de risque demandé (bug constaté : jusqu'à 79% de
-// perte réelle pour un risque demandé de 10%). Le palier choisi ne doit donc jamais dépasser
-// ~20% de la mise théorique (budget ÷ slUnites) : on part du palier "monnaie confortable" habituel
-// et on descend jusqu'à ce que ce soit respecté, plus fin que nécessaire quand slUnites est grand.
+// Arrondit la mise déduite du risque.
+// - Si la mise théorique (budget ÷ slUnites) vaut au moins 1 €, on privilégie la commodité d'un
+//   palier de jeu réel : 0,50 €, quel que soit le solde ou slUnites. Une mise déjà significative ne
+//   se fait pas trahir de façon disproportionnée par un arrondi de 0,50 €.
+// - En dessous d'1 €, un palier fixe se démultiplierait trop par slUnites pour donner la perte
+//   maximale d'un cycle — avec un paroli profond, slUnites peut dépasser 200, et un simple écart
+//   d'arrondi de quelques centimes peut alors représenter des dizaines d'euros, trahissant
+//   largement le % de risque demandé (bug constaté : jusqu'à 79% de perte réelle pour un risque
+//   demandé de 10%). Le palier choisi ne doit donc jamais dépasser ~20% de la mise théorique : on
+//   part du palier "monnaie confortable" habituel et on descend jusqu'à ce que ce soit respecté.
 function roundMise(budget, slUnites, solde){
   const ideal = budget/slUnites;
+  if(ideal>=1) return Math.max(0.5, round2(Math.round(ideal/0.5)*0.5));
   const steps = solde<150 ? [0.10,0.05,0.02,0.01] : [0.50,0.20,0.10,0.05,0.02,0.01];
   let step = steps[steps.length-1];
   for(const s of steps){ if(s <= ideal*0.2){ step=s; break; } }
