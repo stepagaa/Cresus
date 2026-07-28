@@ -1897,23 +1897,24 @@ function updateStartMise(){
 // Mise déduite du % de risque accepté pour une séance : mise = (solde × risque%) ÷ somme des
 // paliers, arrondie au palier de 0,5 €. Le SL réel qui en résulte vaut alors très exactement
 // ce % du solde.
-// Arrondit la mise déduite du risque.
-// - Si la mise théorique (budget ÷ slUnites) vaut au moins 1 €, on privilégie la commodité d'un
-//   palier de jeu réel : 0,50 €, quel que soit le solde ou slUnites. Une mise déjà significative ne
-//   se fait pas trahir de façon disproportionnée par un arrondi de 0,50 €.
+// Arrondit la mise déduite du risque — TOUJOURS vers le bas, jamais au-dessus de la mise théorique
+// (budget ÷ slUnites). Arrondir au plus proche peut faire dépasser le budget de risque demandé,
+// voire le solde lui-même une fois multiplié par slUnites (bug constaté : à 100% de risque sur
+// 123 €, une mise arrondie à 1,50 € donnait une perte/cycle de 147 € — plus que le solde total).
+// - Si la mise théorique vaut au moins 1 €, on privilégie la commodité d'un palier de jeu réel :
+//   0,50 €, quel que soit le solde ou slUnites.
 // - En dessous d'1 €, un palier fixe se démultiplierait trop par slUnites pour donner la perte
 //   maximale d'un cycle — avec un paroli profond, slUnites peut dépasser 200, et un simple écart
-//   d'arrondi de quelques centimes peut alors représenter des dizaines d'euros, trahissant
-//   largement le % de risque demandé (bug constaté : jusqu'à 79% de perte réelle pour un risque
-//   demandé de 10%). Le palier choisi ne doit donc jamais dépasser ~20% de la mise théorique : on
-//   part du palier "monnaie confortable" habituel et on descend jusqu'à ce que ce soit respecté.
+//   d'arrondi de quelques centimes peut alors représenter des dizaines d'euros. Le palier choisi ne
+//   doit donc jamais dépasser ~20% de la mise théorique : on part du palier "monnaie confortable"
+//   habituel et on descend jusqu'à ce que ce soit respecté.
 function roundMise(budget, slUnites, solde){
   const ideal = budget/slUnites;
-  if(ideal>=1) return Math.max(0.5, round2(Math.round(ideal/0.5)*0.5));
+  if(ideal>=1) return Math.max(0.5, round2(Math.floor(ideal/0.5)*0.5));
   const steps = solde<150 ? [0.10,0.05,0.02,0.01] : [0.50,0.20,0.10,0.05,0.02,0.01];
   let step = steps[steps.length-1];
   for(const s of steps){ if(s <= ideal*0.2){ step=s; break; } }
-  return Math.max(step, round2(Math.round(ideal/step)*step));
+  return Math.max(step, round2(Math.floor(ideal/step)*step));
 }
 function miseFromRisk(solde){
   const slUnites=sessionSL();                       // somme des paliers, + paroli si la variante est cochée
